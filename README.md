@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/PlattySSH/branding/main/mascot/sol-256.png" alt="Platty" width="140" />
+<img src="https://raw.githubusercontent.com/northlighthq/branding/main/mascot/sol-256.png" alt="Platty" width="140" />
 
 # Platty
 
-**A fast, native SSH client and terminal for Windows.**
+**A fast, native SSH client and terminal for Windows, by [Northlight](https://github.com/northlighthq).**
 
 No Electron, no web view: Platty is written in Go and draws its whole interface on
 the GPU with [Gio](https://gioui.org). It brings a **Termius-style host manager**, a
@@ -15,7 +15,7 @@ snippets**) into one calm, monochrome window.
 
 ---
 
-![Platty](https://raw.githubusercontent.com/PlattySSH/branding/main/screens/terminal-carbon.png)
+![Platty](https://raw.githubusercontent.com/northlighthq/branding/main/screens/terminal-carbon.png)
 
 ## ✨ Features
 
@@ -59,9 +59,9 @@ snippets**) into one calm, monochrome window.
 
 | | |
 |---|---|
-| ![Home](https://raw.githubusercontent.com/PlattySSH/branding/main/screens/welcome-carbon.png) | ![Search Everywhere](https://raw.githubusercontent.com/PlattySSH/branding/main/screens/palette-carbon.png) |
-| ![SSH + SFTP](https://raw.githubusercontent.com/PlattySSH/branding/main/screens/ssh-sftp-carbon.png) | ![Host editor](https://raw.githubusercontent.com/PlattySSH/branding/main/screens/host-editor-carbon.png) |
-| ![Settings](https://raw.githubusercontent.com/PlattySSH/branding/main/screens/settings-carbon.png) | ![Keychain](https://raw.githubusercontent.com/PlattySSH/branding/main/screens/keychain-graphite.png) |
+| ![Home](https://raw.githubusercontent.com/northlighthq/branding/main/screens/welcome-carbon.png) | ![Search Everywhere](https://raw.githubusercontent.com/northlighthq/branding/main/screens/palette-carbon.png) |
+| ![SSH + SFTP](https://raw.githubusercontent.com/northlighthq/branding/main/screens/ssh-sftp-carbon.png) | ![Host editor](https://raw.githubusercontent.com/northlighthq/branding/main/screens/host-editor-carbon.png) |
+| ![Settings](https://raw.githubusercontent.com/northlighthq/branding/main/screens/settings-carbon.png) | ![Keychain](https://raw.githubusercontent.com/northlighthq/branding/main/screens/keychain-graphite.png) |
 
 ## 🧱 Tech stack
 
@@ -77,7 +77,7 @@ snippets**) into one calm, monochrome window.
 
 ### Download
 
-Grab the installer or the portable `.zip` from [Releases](https://github.com/PlattySSH/platty/releases);
+Grab the installer or the portable `.zip` from [Releases](https://github.com/northlighthq/platty/releases);
 on Windows on ARM, pick the `arm64` files for a native build. Platty needs **Windows 10 1809** or later. Beta builds aren't code-signed yet, so Windows may
 ask you to confirm before running them.
 
@@ -123,9 +123,9 @@ profiles to that folder every few seconds.
 
 ## 📚 Documentation
 
-- [Website](https://plattyssh.github.io): the landing page and documentation.
+- [Website](https://northlighthq.github.io/plattyssh.github.io/): the landing page and documentation.
 - [Changelog](CHANGELOG.md): what changed in each version.
-- [Branding](https://github.com/PlattySSH/branding): Sol, the logo and the screenshots.
+- [Branding](https://github.com/northlighthq/branding): the Northlight brand, Sol and the screenshots.
 - [Third-party notices](THIRD_PARTY_NOTICES.md): icon and font licenses.
 
 ## 📂 Structure
@@ -152,7 +152,7 @@ platty/
 ```
 
 The libraries in `libs/` are also published as their own repositories under
-[github.com/PlattySSH](https://github.com/PlattySSH); the main module uses them through
+[github.com/northlighthq](https://github.com/northlighthq); the main module uses them through
 `replace` directives.
 
 ## 🖥️ Platform support
@@ -161,8 +161,8 @@ The libraries in `libs/` are also published as their own repositories under
 |---|---|
 | Windows 10 (1809+) and 11, x64 | ✅ Supported |
 | Windows 11 on ARM64 | 🧪 Native builds, not yet tested on ARM hardware |
-| macOS (Apple Silicon and Intel) | 🛠️ Planned, see [#1](https://github.com/PlattySSH/platty/issues/1) |
-| Linux (X11 and Wayland) | 🛠️ Planned, see [#2](https://github.com/PlattySSH/platty/issues/2) |
+| macOS (Apple Silicon and Intel) | 🛠️ Planned, see [#1](https://github.com/northlighthq/platty/issues/1) |
+| Linux (X11 and Wayland) | 🛠️ Planned, see [#2](https://github.com/northlighthq/platty/issues/2) |
 
 The SSH layer, the terminal engine and the vault are portable Go; the issues list what's
 left for each system.
