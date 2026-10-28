@@ -15,14 +15,12 @@ import (
 	"github.com/plattyssh/platty/internal/app/core"
 	"github.com/plattyssh/platty/internal/ui/icons"
 	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/sol"
 	"github.com/plattyssh/platty/internal/vault"
 )
 
 type lockScreen struct {
 	password widget.Editor
 	unlock   widget.Clickable
-	mascot   sol.Sol
 	focused  bool
 	busy     bool
 	err      string
@@ -31,7 +29,7 @@ type lockScreen struct {
 
 func (a *App) LockVault() {
 	if !a.vault.HasPassword() {
-		a.toasts.Info("No master password", "Set one in Settings → Security to lock Platty.")
+		a.toasts.Info("No master password", "Set one in Settings → Security to lock Boreal.")
 		return
 	}
 
@@ -136,10 +134,10 @@ func (a *App) lockLayout(gtx C) {
 		gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(340))
 
 		return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-			layout.Rigid(func(gtx C) D { return l.mascot.Layout(gtx, k, 72) }),
+			layout.Rigid(func(gtx C) D { return lockBadge(gtx, th) }),
 			layout.Rigid(kit.Gap(18)),
 			layout.Rigid(func(gtx C) D {
-				return k.Label(gtx, kit.TextStyle{Size: th.TextSizeLarge, Weight: font.SemiBold}, "Platty is locked")
+				return k.Label(gtx, kit.TextStyle{Size: th.TextSizeLarge, Weight: font.SemiBold}, "Boreal is locked")
 			}),
 			layout.Rigid(kit.Gap(6)),
 			layout.Rigid(func(gtx C) D {
