@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	platty "github.com/northlighthq/boreal/internal/app"
+	boreal "github.com/northlighthq/boreal/internal/app"
 	"github.com/northlighthq/boreal/internal/config"
 )
 
@@ -27,7 +27,7 @@ func init() {
 		}
 	}
 
-	dir := os.Getenv("PLATTY_DIAG")
+	dir := os.Getenv("BOREAL_DIAG")
 
 	if dir == "" {
 		return
@@ -53,7 +53,7 @@ func init() {
 	go func() {
 		for {
 			time.Sleep(diagInterval)
-			n := platty.Frames.Swap(0)
+			n := boreal.Frames.Swap(0)
 			os.WriteFile(filepath.Join(dir, "fps.txt"), []byte(strconv.FormatFloat(float64(n)/diagInterval.Seconds(), 'f', 1, 64)), 0o644)
 
 			if f, err := os.Create(filepath.Join(dir, "goroutines.txt")); err == nil {

@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=Platty
+Name=Boreal
 GenericName=SSH Client
 Comment=A fast, native SSH client and terminal
-Exec=platty
-Icon=platty
+Exec=boreal
+Icon=boreal
 Terminal=false
 Categories=Network;System;TerminalEmulator;
 Keywords=ssh;sftp;terminal;shell;

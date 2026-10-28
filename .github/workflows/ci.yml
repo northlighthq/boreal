@@ -26,11 +26,11 @@ jobs:
           done
 
       - name: Build
-        run: go build -ldflags "-H windowsgui" -o bin/platty.exe ./cmd/platty
+        run: go build -ldflags "-H windowsgui" -o bin/boreal.exe ./cmd/boreal
 
       - name: Build for ARM64
         shell: bash
-        run: GOARCH=arm64 go build -ldflags "-H windowsgui" -o bin/platty-arm64.exe ./cmd/platty
+        run: GOARCH=arm64 go build -ldflags "-H windowsgui" -o bin/boreal-arm64.exe ./cmd/boreal
 
   linux:
     runs-on: ubuntu-latest
@@ -54,7 +54,7 @@ jobs:
           done
 
       - name: Build
-        run: go build -o bin/platty ./cmd/platty
+        run: go build -o bin/boreal ./cmd/boreal
 
   macos:
     runs-on: macos-latest
@@ -75,7 +75,7 @@ jobs:
           done
 
       - name: Build
-        run: go build -o bin/platty ./cmd/platty
+        run: go build -o bin/boreal ./cmd/boreal
 
       - name: Build for Intel
-        run: CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -o bin/platty-amd64 ./cmd/platty
+        run: CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -o bin/boreal-amd64 ./cmd/boreal

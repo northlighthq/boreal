@@ -16,7 +16,7 @@ try {
 
     $numeric = ($Version -split "-")[0] + ".0"
 
-    Push-Location "cmd/platty"
+    Push-Location "cmd/boreal"
     go run github.com/tc-hib/go-winres@v0.3.3 make --arch ($Arch -join ",") --product-version $numeric --file-version $numeric
     Pop-Location
 
@@ -32,12 +32,12 @@ try {
     $ldflags = "-H windowsgui -s -w -X github.com/northlighthq/boreal/internal/version.Version=$Version"
 
     foreach ($a in $Arch) {
-        $stage = Join-Path $dist "platty-$a"
+        $stage = Join-Path $dist "boreal-$a"
         New-Item -ItemType Directory -Force $stage | Out-Null
 
         $env:GOOS = "windows"
         $env:GOARCH = $a
-        go build -trimpath -ldflags $ldflags -o (Join-Path $stage "platty.exe") ./cmd/platty
+        go build -trimpath -ldflags $ldflags -o (Join-Path $stage "boreal.exe") ./cmd/boreal
         $built = $LASTEXITCODE
         Remove-Item Env:GOOS, Env:GOARCH
 
@@ -46,14 +46,24 @@ try {
         }
 
         Copy-Item LICENSE, README.md, THIRD_PARTY_NOTICES.md $stage
-        Compress-Archive -Path (Join-Path $stage "*") -DestinationPath (Join-Path $dist "platty-$Version-windows-$a.zip")
+        Compress-Archive -Path (Join-Path $stage "*") -DestinationPath (Join-Path $dist "boreal-$Version-windows-$a.zip")
+
+        $legacy = Join-Path $dist "legacy-$a"
+        New-Item -ItemType Directory -Force $legacy | Out-Null
+        Copy-Item (Join-Path $stage "*") $legacy
+        Rename-Item (Join-Path $legacy "boreal.exe") "platty.exe"
+        Compress-Archive -Path (Join-Path $legacy "*") -DestinationPath (Join-Path $dist "platty-$Version-windows-$a.zip")
+        Remove-Item $legacy -Recurse -Force
 
         if ($Installer) {
-            & $iscc "/DVersion=$Version" "/DArch=$a" "/DSourceDir=$stage" "/O$dist" "packaging/platty.iss"
+            & $iscc "/DVersion=$Version" "/DArch=$a" "/DSourceDir=$stage" "/O$dist" "packaging/boreal.iss"
 
             if ($LASTEXITCODE -ne 0) {
                 throw "Inno Setup failed for $a"
             }
+
+            $setup = if ($a -eq "amd64") { "$Version-setup.exe" } else { "$Version-$a-setup.exe" }
+            Copy-Item (Join-Path $dist "boreal-$setup") (Join-Path $dist "platty-$setup")
         }
     }
 
