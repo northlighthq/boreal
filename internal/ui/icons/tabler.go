@@ -16,12 +16,20 @@ func tabler(name string) *Icon {
 	return tablerIcon("outline-"+name, false)
 }
 
+func lucide(name string) *Icon {
+	return tablerIcon("lucide-"+name, false)
+}
+
 func tablerFilled(name string) *Icon {
 	return tablerIcon("filled-"+name, true)
 }
 
 func tablerIcon(key string, fill bool) *Icon {
 	d, ok := tablerPaths[key]
+
+	if !ok {
+		d, ok = lucidePaths[key]
+	}
 
 	if !ok {
 		panic("icons: no such icon " + key)
