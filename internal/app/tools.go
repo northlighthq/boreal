@@ -152,6 +152,11 @@ func (t *tools) panel(a *App, gtx C, s core.Side) D {
 		a.ws.focusActive()
 	}
 
+	if s == core.Right && a.docked[core.Right] == nil {
+		t.open[s] = -1
+		return D{}
+	}
+
 	if i := t.open[s]; i >= 0 {
 		t.shown[s] = i
 	}
