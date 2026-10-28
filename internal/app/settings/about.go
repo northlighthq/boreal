@@ -8,12 +8,11 @@ import (
 	"github.com/plattyssh/platty/internal/app/core"
 	"github.com/plattyssh/platty/internal/ui/icons"
 	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/sol"
+	"github.com/plattyssh/platty/internal/ui/mark"
 	"github.com/plattyssh/platty/internal/version"
 )
 
 type about struct {
-	mascot                         sol.Sol
 	website, repo, issue, licenses widget.Clickable
 	upgrade                        widget.Clickable
 }
@@ -122,12 +121,12 @@ func (d *Dialog) aboutPage(a core.Host, gtx C) []layout.FlexChild {
 	children := []layout.FlexChild{
 		layout.Rigid(func(gtx C) D {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return s.mascot.Layout(gtx, k, 64) }),
+				layout.Rigid(func(gtx C) D { return mark.Layout(gtx, 40) }),
 				layout.Rigid(kit.Gap(16)),
 				layout.Rigid(func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
-							return k.Label(gtx, kit.TextStyle{Size: th.TextSizeTitle, Weight: font.SemiBold}, "Platty")
+							return k.Label(gtx, kit.TextStyle{Size: th.TextSizeTitle, Weight: font.SemiBold}, "Boreal")
 						}),
 						layout.Rigid(kit.Gap(4)),
 						layout.Rigid(func(gtx C) D {
