@@ -84,7 +84,7 @@ func (t *tools) toggleIndex(a *App, i int) {
 		return
 	}
 
-	s := t.list[i].Side()
+	s := core.Left
 
 	if t.open[s] == i {
 		t.open[s] = -1
@@ -99,7 +99,7 @@ func (t *tools) toggleIndex(a *App, i int) {
 func (t *tools) show(a *App, w core.Tool) {
 	for i, x := range t.list {
 		if x == w {
-			t.open[w.Side()] = i
+			t.open[core.Left] = i
 		}
 	}
 
@@ -119,6 +119,10 @@ func (t *tools) toggleSide(a *App, s core.Side) {
 		t.open[s] = -1
 		t.saveOpen(a)
 		a.ws.focusActive()
+		return
+	}
+
+	if s == core.Right && a.docked[core.Right] == nil {
 		return
 	}
 
