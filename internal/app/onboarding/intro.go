@@ -52,7 +52,7 @@ const (
 var cursorStyles = []string{config.CursorBlock, config.CursorBar, config.CursorUnderline}
 
 var says = [steps]string{
-	stepWelcome:  "Hi! I'm Sol. Let's get Platty ready together, it only takes a minute.",
+	stepWelcome:  "Hi! Let's get Boreal ready together, it only takes a minute.",
 	stepLook:     "Let's make it yours! Try a theme, everything changes right away.",
 	stepTerminal: "Which shell do you like? I'll open it every time you press Ctrl+Shift+T.",
 	stepSecurity: "I keep your hosts and keys in an encrypted vault. Want to lock it with a password?",
@@ -61,7 +61,7 @@ var says = [steps]string{
 }
 
 var titles = [steps]string{
-	stepWelcome:  "Welcome to Platty",
+	stepWelcome:  "Welcome to Boreal",
 	stepLook:     "Pick your look",
 	stepTerminal: "Your terminal",
 	stepSecurity: "Lock your vault",
@@ -77,7 +77,7 @@ var shortcuts = [][2]string{
 	{"New host", "Ctrl+Shift+N"},
 	{"Split right / down", "Ctrl+Shift+D / E"},
 	{"Tool panels", "Alt+1 … Alt+6"},
-	{"Lock Platty", "Ctrl+Shift+L"},
+	{"Lock Boreal", "Ctrl+Shift+L"},
 }
 
 type Intro struct {
@@ -440,7 +440,7 @@ func (d *Intro) footer(gtx C) D {
 	case stepWelcome:
 		next = "Let's go"
 	case stepDone:
-		next = "Start using Platty"
+		next = "Start using Boreal"
 	}
 
 	children := []layout.FlexChild{

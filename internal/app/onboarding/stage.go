@@ -14,6 +14,7 @@ import (
 	"gioui.org/unit"
 
 	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/plattyssh/platty/internal/ui/mark"
 	"github.com/plattyssh/platty/internal/ui/sol"
 )
 
@@ -126,7 +127,8 @@ func drawSol(gtx layout.Context, k *kit.Kit, s *sol.Sol, p pose) {
 
 	g := gtx
 	g.Constraints = layout.Exact(image.Pt(int(size), int(size)))
-	s.Layout(g, k, unit.Dp(size/gtx.Metric.PxPerDp))
+	defer op.Offset(image.Pt(int(size*0.19), int(size*0.19))).Push(gtx.Ops).Pop()
+	mark.Layout(g, unit.Dp(size*0.62/gtx.Metric.PxPerDp))
 }
 
 type burst struct {
