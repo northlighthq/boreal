@@ -78,6 +78,7 @@ func (r *Row) Hovered() bool {
 }
 
 type RowOpts struct {
+	Plain    bool
 	Selected bool
 	Focused  bool
 	Height   unit.Dp
@@ -108,7 +109,7 @@ func (k *Kit) Row(gtx C, r *Row, o RowOpts, w W) D {
 		inner := image.Rect(gtx.Dp(6), 1, width-gtx.Dp(6), height-1)
 		radius := gtx.Dp(th.RadiusSmall)
 
-		if bg := Lerp(Fade(th.Hover, hv), selColor, sel); bg.A > 0 {
+		if bg := Lerp(Fade(th.Hover, hv), selColor, sel); bg.A > 0 && !o.Plain {
 			RRect(gtx, inner, radius, bg)
 		}
 
