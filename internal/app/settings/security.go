@@ -91,7 +91,7 @@ func (s *security) update(a core.Host, gtx C) {
 	}
 
 	if s.forget.Clicked(gtx) {
-		s.report(v.ForgetPassphrases(), "Saved passphrases forgotten. Platty will ask for them when connecting.")
+		s.report(v.ForgetPassphrases(), "Saved passphrases forgotten. Boreal will ask for them when connecting.")
 	}
 
 	if s.lockNow.Clicked(gtx) {

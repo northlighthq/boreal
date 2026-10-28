@@ -275,7 +275,7 @@ func get(ctx context.Context, url, current string, timeout time.Duration) (*http
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "Platty/"+current)
+	req.Header.Set("User-Agent", "Boreal/"+current)
 	req.Header.Set("Accept", "application/vnd.github+json, application/octet-stream")
 	resp, err := http.DefaultClient.Do(req)
 

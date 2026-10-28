@@ -203,7 +203,7 @@ func (p *Panel) edit(a core.Host, c *sftpConn, src, cwd string) {
 			return
 		}
 
-		a.Toasts().Info("Editing "+name, "Save it in your editor and Platty uploads it back.")
+		a.Toasts().Info("Editing "+name, "Save it in your editor and Boreal uploads it back.")
 		go p.watch(a, c, local, src, cwd, info.ModTime())
 	})
 }

@@ -103,9 +103,9 @@ func (a *App) checkUpdates(manual bool) {
 
 	switch {
 	case info.State == core.UpdateAvailable && prev.Version != info.Version:
-		a.toasts.Info("Platty "+info.Version+" is available", "Download it from the sidebar or Settings › About.")
+		a.toasts.Info("Boreal "+info.Version+" is available", "Download it from the sidebar or Settings › About.")
 	case info.State == core.UpdateCurrent && manual:
-		a.toasts.Success("Platty is up to date", "You have version "+version.Version+".")
+		a.toasts.Success("Boreal is up to date", "You have version "+version.Version+".")
 	}
 }
 
@@ -168,7 +168,7 @@ func (a *App) DownloadUpdate() {
 			return
 		}
 
-		a.toasts.Success("Update ready", "Platty "+rel.Version+" installs when you restart or close Platty.")
+		a.toasts.Success("Update ready", "Boreal "+rel.Version+" installs when you restart or close Boreal.")
 	}()
 }
 

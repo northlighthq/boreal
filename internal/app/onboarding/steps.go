@@ -204,7 +204,7 @@ func (d *Intro) security(gtx C) D {
 		}),
 		layout.Rigid(kit.Gap(12)),
 		layout.Rigid(func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, "If you forget the master password and turn the "+vault.OSName+" option off, Platty can't open the vault again.")
+			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, "If you forget the master password and turn the "+vault.OSName+" option off, Boreal can't open the vault again.")
 		}),
 	)
 

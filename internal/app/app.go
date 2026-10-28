@@ -47,7 +47,7 @@ type (
 )
 
 const (
-	appName      = "Platty"
+	appName      = "Boreal"
 	windowWidth  = 1280
 	windowHeight = 800
 	minWidth     = 640
@@ -130,7 +130,6 @@ func Run() error {
 	a.started = time.Now()
 	a.welcome = welcome.New(a)
 	a.palette = palette.New(a.kit, a.paletteEntries, a.paletteQuick, a.ws.focusActive)
-	a.welcome.Art.OnRun(a.runTyped)
 
 	if !a.settings.Onboarded {
 		a.Open(onboarding.New(a))
@@ -201,7 +200,7 @@ func (a *App) confirmClose() bool {
 	}
 
 	msg := fmt.Sprintf("There are %d SSH sessions and %d active tunnels. All of them will be closed.", ssh, tunnels)
-	a.Open(dialogs.NewConfirm(a.kit, "Quit Platty?", msg, "Quit", func() {
+	a.Open(dialogs.NewConfirm(a.kit, "Quit Boreal?", msg, "Quit", func() {
 		a.closing = true
 		a.win.Perform(system.ActionClose)
 	}))

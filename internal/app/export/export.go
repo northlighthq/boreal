@@ -220,7 +220,7 @@ func (d *Dialog) Layout(gtx C) bool {
 		}))
 	}
 
-	children = append(children, muted("Anyone with the file and its password can read what's inside, so keep them apart. Platty can't recover a lost password."))
+	children = append(children, muted("Anyone with the file and its password can read what's inside, so keep them apart. Boreal can't recover a lost password."))
 
 	return k.Dialog(gtx, &d.dlg, kit.DialogOpts{
 		Title:    "Export data",

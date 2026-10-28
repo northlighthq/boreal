@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	ErrNotExport     = errors.New("this isn't a Platty export file")
-	ErrNewerVersion  = errors.New("this export was made by a newer version of Platty")
+	ErrNotExport     = errors.New("this isn't a Boreal export file")
+	ErrNewerVersion  = errors.New("this export was made by a newer version of Boreal")
 	ErrWrongPassword = errors.New("wrong password, or the file is damaged")
 	ErrShortPassword = errors.New("the password must be at least 12 characters long")
 

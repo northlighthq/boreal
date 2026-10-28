@@ -118,13 +118,13 @@ func (i UpdateInfo) Label() string {
 	case UpdateChecking:
 		return "Checking for updates…"
 	case UpdateCurrent:
-		return "Platty is up to date."
+		return "Boreal is up to date."
 	case UpdateAvailable:
 		return "Version " + i.Version + " is available."
 	case UpdateDownloading:
 		return "Downloading version " + i.Version + "… " + strconv.Itoa(int(i.Progress*100)) + "%"
 	case UpdateReady:
-		return "Version " + i.Version + " is ready. It installs when Platty closes."
+		return "Version " + i.Version + " is ready. It installs when Boreal closes."
 	case UpdateFailed:
 		return "Couldn't update. " + i.Err
 	}

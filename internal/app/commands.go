@@ -53,7 +53,7 @@ func (a *App) paletteEntries() []palette.Entry {
 		}},
 		{"Open SFTP", "Alt+6", icons.Folder, func() { a.tools.show(a, a.tools.sftp) }},
 		{"Settings", "Ctrl+Alt+S", icons.Settings, func() { a.Open(settings.New(a)) }},
-		{"Lock Platty", "Ctrl+Shift+L", icons.Lock, a.LockVault},
+		{"Lock Boreal", "Ctrl+Shift+L", icons.Lock, a.LockVault},
 		{"Show the introduction", "", icons.Info, func() { a.Open(onboarding.New(a)) }},
 		{"Export data…", "", icons.Upload, a.ExportData},
 		{"Import data…", "", icons.Download, a.ImportData},
