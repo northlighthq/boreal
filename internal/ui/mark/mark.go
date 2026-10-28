@@ -3,11 +3,9 @@ package mark
 import (
 	"image"
 	"image/color"
-	"math"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
-	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
@@ -41,21 +39,4 @@ func Paint(gtx layout.Context, size unit.Dp, col color.NRGBA) layout.Dimensions 
 	}
 
 	return layout.Dimensions{Size: image.Pt(px, px)}
-}
-
-func Stage(gtx layout.Context, box, size unit.Dp, col color.NRGBA, t float64, bounce bool) layout.Dimensions {
-	b := gtx.Dp(box)
-	px := gtx.Dp(size)
-	lift := 0
-
-	if bounce {
-		lift = int(math.Abs(math.Sin(t*math.Pi*1.4)) * float64(gtx.Dp(10)))
-		col.A = uint8(float64(col.A) * (0.75 + 0.25*math.Cos(t*math.Pi*1.4*2)))
-	}
-
-	defer op.Offset(image.Pt((b-px)/2, (b-px)/2-lift)).Push(gtx.Ops).Pop()
-	Paint(gtx, size, col)
-	gtx.Execute(op.InvalidateCmd{})
-
-	return layout.Dimensions{Size: image.Pt(b, b)}
 }
