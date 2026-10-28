@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/northlighthq/branding/main/mascot/sol-256.png" alt="Platty" width="140" />
+<img src=".github/boreal.svg" alt="Boreal" width="96" />
 
-# Platty
+# Boreal
 
 **A fast, native SSH client and terminal for Windows, by [Northlight](https://github.com/northlighthq).**
 
-No Electron, no web view: Platty is written in Go and draws its whole interface on
+No Electron, no web view: Boreal is written in Go and draws its whole interface on
 the GPU with [Gio](https://gioui.org). It brings a **Termius-style host manager**, a
 **terminal emulator of its own** and the everyday SSH tools (**keys, tunnels, SFTP and
 snippets**) into one calm, monochrome window.
@@ -15,7 +15,7 @@ snippets**) into one calm, monochrome window.
 
 ---
 
-![Platty](https://raw.githubusercontent.com/northlighthq/branding/main/screens/terminal-carbon.png)
+![Boreal](https://raw.githubusercontent.com/northlighthq/branding/main/screens/terminal-carbon.png)
 
 ## ✨ Features
 
@@ -27,7 +27,7 @@ snippets**) into one calm, monochrome window.
   system font fallback.
 - **Selection, copy and paste**, bracketed paste, **search in the scrollback**, Ctrl+click
   links and mouse reporting for vim and htop.
-- **Tabs and split panes** that come back when you reopen Platty; rename, reorder, duplicate,
+- **Tabs and split panes** that come back when you reopen Boreal; rename, reorder, duplicate,
   and type into several panes of a tab at once (broadcast), choosing which ones receive the
   input. Local profiles: PowerShell, cmd,
   WSL and Git Bash.
@@ -47,14 +47,14 @@ snippets**) into one calm, monochrome window.
 - **Snippets**: saved commands you run in the active session with one click.
 - **Server metrics** for SSH sessions: CPU, memory, disk, network, load and uptime.
 - **Search Everywhere** (Ctrl+Shift+P): hosts, snippets, actions and quick connect.
-- **A short introduction** on first launch, with Sol: theme, terminal, master password and
+- **A short introduction** on first launch: theme, terminal, master password and
   importing your servers.
 - **Encrypted vault** (XChaCha20-Poly1305): opens with your Windows user, an optional
   **master password** (Argon2id), or both; **locks** on demand (Ctrl+Shift+L) or when idle.
-  Key passphrases are only kept for the session unless you ask Platty to remember them.
+  Key passphrases are only kept for the session unless you ask Boreal to remember them.
 - **Export and import**: a `.platty` file encrypted with a password of your choice, where
   you pick what goes in (secrets stay out by default), plus export to `~/.ssh/config`.
-- **Monochrome themes** (Carbon, Graphite, Midnight and Paper) and an option to hide
+- **Themes**: Northlight (the default, with the Aurora accent) plus monochrome Carbon, Graphite, Midnight and Paper, and an option to hide
   IP addresses on screen.
 
 | | |
@@ -68,7 +68,7 @@ snippets**) into one calm, monochrome window.
 | Layer | Technology |
 |-------|------------|
 | Language | Go 1.26 · no cgo on Windows |
-| UI | Gio 0.10 (Direct3D 11) · Phosphor icons · Segoe UI, Geist and JetBrains Mono |
+| UI | Gio 0.10 (Direct3D 11) · Lucide and Phosphor icons · Segoe UI, Geist and JetBrains Mono |
 | Terminal | Own VT emulator (`libs/vt`) · pseudo terminals with ConPTY or `/dev/ptmx` (`libs/pty`) · own glyph rasterizer (`libs/glyphs`) |
 | SSH | golang.org/x/crypto/ssh · pkg/sftp |
 | Storage | XChaCha20-Poly1305 vault · key wrapped with DPAPI or the system keyring and/or Argon2id · JSON settings |
@@ -77,8 +77,8 @@ snippets**) into one calm, monochrome window.
 
 ### Download
 
-Grab the installer or the portable `.zip` from [Releases](https://github.com/northlighthq/platty/releases);
-on Windows on ARM, pick the `arm64` files for a native build. Platty needs **Windows 10 1809** or later. Beta builds aren't code-signed yet, so Windows may
+Grab the installer or the portable `.zip` from [Releases](https://github.com/northlighthq/boreal/releases);
+on Windows on ARM, pick the `arm64` files for a native build. Boreal needs **Windows 10 1809** or later. Beta builds aren't code-signed yet, so Windows may
 ask you to confirm before running them.
 
 ### Build from source
@@ -93,7 +93,7 @@ go build -ldflags "-H windowsgui" -o bin/platty.exe ./cmd/platty
 bin/platty.exe
 ```
 
-Settings, the vault and the crash log are kept in `%AppData%\Platty`.
+Settings, the vault and the crash log are kept in `%AppData%\Boreal`.
 
 ### Development
 
@@ -119,19 +119,19 @@ profiles to that folder every few seconds.
 | Copy / paste | Ctrl+Shift+C (or Ctrl+C with a selection) / Ctrl+Shift+V |
 | Find in terminal | Ctrl+Shift+F |
 | Settings | Ctrl+Alt+S |
-| Lock Platty | Ctrl+Shift+L |
+| Lock Boreal | Ctrl+Shift+L |
 
 ## 📚 Documentation
 
 - [Website](https://northlighthq.github.io/plattyssh.github.io/): the landing page and documentation.
 - [Changelog](CHANGELOG.md): what changed in each version.
-- [Branding](https://github.com/northlighthq/branding): the Northlight brand, Sol and the screenshots.
+- [Branding](https://github.com/northlighthq/branding): the Northlight brand and the screenshots.
 - [Third-party notices](THIRD_PARTY_NOTICES.md): icon and font licenses.
 
 ## 📂 Structure
 
 ```
-platty/
+boreal/
 ├── cmd/platty/            # the app
 ├── internal/
 │   ├── app/               # the window: sidebar, tabs, split panes and wiring
@@ -143,7 +143,7 @@ platty/
 │   ├── vault/             # encrypted storage
 │   ├── tunnel/  sshconfig/  config/  fonts/  format/  privacy/
 │   ├── platform/          # OS integration: local shells, file drop, keyring
-│   └── ui/                # theme, icons, component kit and widgets (termview, sol...)
+│   └── ui/                # theme, icons, component kit and widgets (termview, mark...)
 ├── libs/                  # reusable libraries, each with its own go.mod
 │   ├── vt/                # terminal emulator (parser/, input/)
 │   ├── pty/               # pseudo terminals (ConPTY, Unix)
@@ -161,17 +161,17 @@ The libraries in `libs/` are also published as their own repositories under
 |---|---|
 | Windows 10 (1809+) and 11, x64 | ✅ Supported |
 | Windows 11 on ARM64 | 🧪 Native builds, not yet tested on ARM hardware |
-| macOS (Apple Silicon and Intel) | 🛠️ Planned, see [#1](https://github.com/northlighthq/platty/issues/1) |
-| Linux (X11 and Wayland) | 🛠️ Planned, see [#2](https://github.com/northlighthq/platty/issues/2) |
+| macOS (Apple Silicon and Intel) | 🛠️ Planned, see [#1](https://github.com/northlighthq/boreal/issues/1) |
+| Linux (X11 and Wayland) | 🛠️ Planned, see [#2](https://github.com/northlighthq/boreal/issues/2) |
 
 The SSH layer, the terminal engine and the vault are portable Go; the issues list what's
 left for each system.
 
 ## ⚠️ Notice
 
-Platty is in early development. Segoe UI isn't bundled: it's loaded from the Windows
+Boreal is in early development. Segoe UI isn't bundled: it's loaded from the Windows
 fonts folder, and Geist is used when it's missing.
 
 Released under the [MIT license](LICENSE). The embedded fonts (JetBrains Mono, Fira Code,
 Geist and Geist Mono) are under the SIL Open Font License 1.1, and the icons come from
-Phosphor (MIT).
+Lucide (ISC) and Phosphor (MIT).
