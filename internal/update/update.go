@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	releasesURL = "https://api.github.com/repos/northlighthq/platty/releases?per_page=20"
+	releasesURL = "https://api.github.com/repos/northlighthq/boreal/releases?per_page=20"
 	sumsName    = "SHA256SUMS"
 	sigName     = "SHA256SUMS.sig"
 	maxMeta     = 1 << 20
@@ -121,14 +121,14 @@ func (r Release) assetName(k Kind) string {
 	}
 
 	if k != Installer {
-		return "platty-" + r.Version + "-windows-" + runtime.GOARCH + ".zip"
+		return "boreal-" + r.Version + "-windows-" + runtime.GOARCH + ".zip"
 	}
 
 	if runtime.GOARCH == "amd64" {
-		return "platty-" + r.Version + "-setup.exe"
+		return "boreal-" + r.Version + "-setup.exe"
 	}
 
-	return "platty-" + r.Version + "-" + runtime.GOARCH + "-setup.exe"
+	return "boreal-" + r.Version + "-" + runtime.GOARCH + "-setup.exe"
 }
 
 func (r Release) Download(ctx context.Context, k Kind, dir string, progress func(done, total int64)) (string, error) {

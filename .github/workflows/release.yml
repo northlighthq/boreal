@@ -29,7 +29,7 @@ jobs:
         shell: bash
         env:
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
-        run: go run ./packaging/sign dist/platty-*.zip dist/platty-*-setup.exe
+        run: go run ./packaging/sign dist/boreal-*.zip dist/boreal-*-setup.exe dist/platty-*.zip dist/platty-*-setup.exe
 
       - name: Release notes
         shell: bash
@@ -38,9 +38,9 @@ jobs:
           cat >> dist/notes.md <<NOTES
 
           ### Install
-          - **platty-$VERSION-setup.exe** installs Platty for your user, without administrator rights.
-          - **platty-$VERSION-windows-amd64.zip** is the portable version: unzip it and run \`platty.exe\`.
-          - On Windows on ARM (Snapdragon, Surface Pro X), use **platty-$VERSION-arm64-setup.exe** or **platty-$VERSION-windows-arm64.zip** for a native build.
+          - **boreal-$VERSION-setup.exe** installs Boreal for your user, without administrator rights.
+          - **boreal-$VERSION-windows-amd64.zip** is the portable version: unzip it and run \`boreal.exe\`.
+          - On Windows on ARM (Snapdragon, Surface Pro X), use **boreal-$VERSION-arm64-setup.exe** or **boreal-$VERSION-windows-arm64.zip** for a native build.
 
           Beta builds aren't code-signed yet. If SmartScreen stops the download or the first launch, choose *More info* and then *Run anyway*.
           NOTES
@@ -50,5 +50,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/platty-*.zip dist/platty-*-setup.exe dist/SHA256SUMS dist/SHA256SUMS.sig \
-            --title "Platty $VERSION" --notes-file dist/notes.md --prerelease
+          gh release create "$GITHUB_REF_NAME" dist/boreal-*.zip dist/boreal-*-setup.exe dist/platty-*.zip dist/platty-*-setup.exe dist/SHA256SUMS dist/SHA256SUMS.sig \
+            --title "Boreal $VERSION" --notes-file dist/notes.md --prerelease
