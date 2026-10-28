@@ -59,7 +59,7 @@ var keymap = [][2]string{
 	{"Font size", "Ctrl+= / Ctrl+- / Ctrl+0"},
 	{"Open link", "Ctrl+click"},
 	{"Settings", "Ctrl+Alt+S · Ctrl+,"},
-	{"Lock Platty", "Ctrl+Shift+L"},
+	{"Lock Boreal", "Ctrl+Shift+L"},
 }
 
 type Dialog struct {
@@ -84,10 +84,10 @@ type Dialog struct {
 	accent   string
 	tabIcons widget.Bool
 
-	fontSize, lineHeight, scrollback, keepAlive     widget.Editor
+	fontSize, lineHeight, scrollback, keepAlive         widget.Editor
 	blink, copySel, confirm, hideIPs, restore, ligs, hl widget.Bool
-	autoUpdate                                      widget.Bool
-	skipTags                                        widget.Editor
+	autoUpdate                                          widget.Bool
+	skipTags                                            widget.Editor
 
 	ok, apply, cancel widget.Clickable
 	list              layout.List
@@ -253,6 +253,12 @@ func (d *Dialog) Layout(gtx C) bool {
 			gtx.Constraints.Min.Y, gtx.Constraints.Max.Y = h, h
 			return layout.Flex{}.Layout(gtx,
 				layout.Rigid(func(gtx C) D { return d.sidebar(a, gtx) }),
+				layout.Rigid(kit.Gap(16)),
+				layout.Rigid(func(gtx C) D {
+					size := image.Pt(gtx.Dp(1), gtx.Constraints.Min.Y)
+					kit.Rect(gtx, image.Rectangle{Max: size}, a.Kit().Th.Divider)
+					return D{Size: size}
+				}),
 				layout.Rigid(kit.Gap(28)),
 				layout.Flexed(1, func(gtx C) D {
 					return d.list.Layout(gtx, 1, func(gtx C, _ int) D { return d.content(a, gtx) })
@@ -290,11 +296,27 @@ func (d *Dialog) sidebar(a core.Host, gtx C) D {
 				gtx.Constraints = layout.Exact(size)
 				layout.Inset{Left: 10}.Layout(gtx, func(gtx C) D {
 					return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-						layout.Rigid(func(gtx C) D { return pg.icon.Layout(gtx, 16, th.TextMuted) }),
+						layout.Rigid(func(gtx C) D {
+							col := th.TextFaint
+
+							if d.page == i {
+								col = th.Accent
+							}
+
+							return pg.icon.Layout(gtx, 16, col)
+						}),
 						layout.Rigid(kit.Gap(8)),
 						layout.Rigid(func(gtx C) D {
 							gtx.Constraints.Min.Y = h
-							return layout.W.Layout(gtx, func(gtx C) D { return k.Text(gtx, pg.title) })
+							return layout.W.Layout(gtx, func(gtx C) D {
+								col := th.TextMuted
+
+								if d.page == i {
+									col = th.Text
+								}
+
+								return k.Label(gtx, kit.TextStyle{Color: col}, pg.title)
+							})
 						}),
 					)
 				})
