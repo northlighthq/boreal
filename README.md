@@ -9,13 +9,13 @@
 No Electron, no web view: Boreal is written in Go and draws its whole interface on
 the GPU with [Gio](https://gioui.org). It brings a **Termius-style host manager**, a
 **terminal emulator of its own** and the everyday SSH tools (**keys, tunnels, SFTP and
-snippets**) into one calm, monochrome window.
+snippets**) into one calm window, with an activity bar for the tools and the Northlight look.
 
 </div>
 
 ---
 
-![Boreal](https://raw.githubusercontent.com/northlighthq/branding/main/screens/terminal-carbon.png)
+![Boreal](.github/screens/home.png)
 
 ## ✨ Features
 
@@ -59,9 +59,9 @@ snippets**) into one calm, monochrome window.
 
 | | |
 |---|---|
-| ![Home](https://raw.githubusercontent.com/northlighthq/branding/main/screens/welcome-carbon.png) | ![Search Everywhere](https://raw.githubusercontent.com/northlighthq/branding/main/screens/palette-carbon.png) |
-| ![SSH + SFTP](https://raw.githubusercontent.com/northlighthq/branding/main/screens/ssh-sftp-carbon.png) | ![Host editor](https://raw.githubusercontent.com/northlighthq/branding/main/screens/host-editor-carbon.png) |
-| ![Settings](https://raw.githubusercontent.com/northlighthq/branding/main/screens/settings-carbon.png) | ![Keychain](https://raw.githubusercontent.com/northlighthq/branding/main/screens/keychain-graphite.png) |
+| ![Search Everywhere](.github/screens/search.png) | ![Host editor](.github/screens/host-editor.png) |
+| ![Connecting](.github/screens/connect.png) | ![Snippets](.github/screens/snippets.png) |
+| ![Settings](.github/screens/settings.png) | |
 
 ## 🧱 Tech stack
 
@@ -125,7 +125,7 @@ profiles to that folder every few seconds.
 
 - [Website](https://northlighthq.github.io/plattyssh.github.io/): the landing page and documentation.
 - [Changelog](CHANGELOG.md): what changed in each version.
-- [Branding](https://github.com/northlighthq/branding): the Northlight brand and the screenshots.
+- [Branding](https://github.com/northlighthq/branding): the Northlight brand.
 - [Third-party notices](THIRD_PARTY_NOTICES.md): icon and font licenses.
 
 ## 📂 Structure
