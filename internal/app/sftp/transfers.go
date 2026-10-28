@@ -181,7 +181,7 @@ func unique(p string) string {
 }
 
 func (p *Panel) edit(a core.Host, c *sftpConn, src, cwd string) {
-	dir, err := os.MkdirTemp("", "platty-edit-")
+	dir, err := os.MkdirTemp("", "boreal-edit-")
 
 	if err != nil {
 		a.Toasts().Error("Couldn't edit", err.Error())

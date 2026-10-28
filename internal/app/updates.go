@@ -30,7 +30,7 @@ type updater struct {
 }
 
 func updateDir() string {
-	return filepath.Join(os.TempDir(), "platty-update")
+	return filepath.Join(os.TempDir(), "boreal-update")
 }
 
 func (a *App) startUpdates() {

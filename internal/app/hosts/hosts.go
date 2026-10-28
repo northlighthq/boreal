@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	hostMime   = "application/x-platty-host"
-	folderMime = "application/x-platty-folder"
+	hostMime   = "application/x-boreal-host"
+	folderMime = "application/x-boreal-folder"
 )
 
 const folderIndent = 16

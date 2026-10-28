@@ -76,7 +76,7 @@ func (p *Panel) trackDrag(a core.Host, gtx C, c *sftpConn, cwd string, e sshx.En
 }
 
 func (p *Panel) dragOut(a core.Host, c *sftpConn, cwd string, e sshx.Entry) {
-	dir, err := os.MkdirTemp("", "platty-drag-")
+	dir, err := os.MkdirTemp("", "boreal-drag-")
 
 	if err != nil {
 		a.Toasts().Error("Couldn't drag the file out", err.Error())

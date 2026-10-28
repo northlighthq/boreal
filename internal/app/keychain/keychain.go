@@ -289,7 +289,7 @@ func NewGenerateKey(a core.Host) *GenerateKey {
 		label := strings.TrimSpace(v[0])
 
 		if label == "" {
-			label = "platty"
+			label = "boreal"
 		}
 
 		key, err := sshx.GenerateEd25519(label, v[1])
