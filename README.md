@@ -52,7 +52,7 @@ snippets**) into one calm, monochrome window.
 - **Encrypted vault** (XChaCha20-Poly1305): opens with your Windows user, an optional
   **master password** (Argon2id), or both; **locks** on demand (Ctrl+Shift+L) or when idle.
   Key passphrases are only kept for the session unless you ask Boreal to remember them.
-- **Export and import**: a `.platty` file encrypted with a password of your choice, where
+- **Export and import**: a `.boreal` file encrypted with a password of your choice, where
   you pick what goes in (secrets stay out by default), plus export to `~/.ssh/config`.
 - **Themes**: Northlight (the default, with the Aurora accent) plus monochrome Carbon, Graphite, Midnight and Paper, and an option to hide
   IP addresses on screen.
@@ -87,13 +87,13 @@ You need **Go 1.26+**.
 
 ```sh
 # Build the app
-go build -ldflags "-H windowsgui" -o bin/platty.exe ./cmd/platty
+go build -ldflags "-H windowsgui" -o bin/boreal.exe ./cmd/boreal
 
 # Run it
-bin/platty.exe
+bin/boreal.exe
 ```
 
-Settings, the vault and the crash log are kept in `%AppData%\Boreal`.
+Settings, the vault and the crash log are kept in `%AppData%\Boreal`; an existing `%AppData%\Platty` folder moves there on first launch.
 
 ### Development
 
@@ -101,7 +101,7 @@ Settings, the vault and the crash log are kept in `%AppData%\Boreal`.
 ./packaging/build.ps1 -Version 0.1.0          # portable zip in dist/ (add -Installer for the setup)
 ```
 
-Run with `PLATTY_DIAG=<folder>` to write the frame rate, memory stats and CPU/heap
+Run with `BOREAL_DIAG=<folder>` to write the frame rate, memory stats and CPU/heap
 profiles to that folder every few seconds.
 
 ## ⌨️ Shortcuts
@@ -132,7 +132,7 @@ profiles to that folder every few seconds.
 
 ```
 boreal/
-├── cmd/platty/            # the app
+├── cmd/boreal/            # the app
 ├── internal/
 │   ├── app/               # the window: sidebar, tabs, split panes and wiring
 │   │   ├── core/          # interfaces between the window and its parts

@@ -2,7 +2,7 @@
 
 A cached glyph rasterizer for terminal grids: regular, bold and italic faces, system font fallback, COLR color emoji and ligature shaping.
 
-It draws the text in [Platty](https://github.com/PlattySSH/platty).
+It draws the text in [Boreal](https://github.com/northlighthq/boreal).
 
 ```sh
 go get github.com/northlighthq/glyphs
