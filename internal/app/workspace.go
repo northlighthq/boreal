@@ -40,6 +40,7 @@ type Pane struct {
 	view       *termview.View
 	color      color.NRGBA
 	icon       *icons.Icon
+	asker      *int
 }
 
 type node struct {
