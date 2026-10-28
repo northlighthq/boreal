@@ -19,8 +19,8 @@ import (
 	"github.com/northlighthq/boreal/internal/platform/titlebar"
 	"github.com/northlighthq/boreal/internal/ui/icons"
 	"github.com/northlighthq/boreal/internal/ui/kit"
-	"github.com/northlighthq/boreal/internal/ui/metrics"
 	"github.com/northlighthq/boreal/internal/ui/mark"
+	"github.com/northlighthq/boreal/internal/ui/metrics"
 )
 
 const (
