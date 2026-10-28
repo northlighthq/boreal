@@ -38,6 +38,7 @@ const (
 var closeHover = color.NRGBA{R: 0xc4, G: 0x2b, B: 0x1c, A: 0xff}
 
 type chrome struct {
+	tipOff     *kit.Row
 	sideToggle widget.Clickable
 	home       kit.Row
 	newTerm    kit.Row
@@ -216,7 +217,11 @@ func (c *chrome) activityButton(a *App, gtx C, r *kit.Row, ic *icons.Icon, label
 	ic.Layout(gtx, 20, fg)
 	off.Pop()
 
-	if r.Hovered() {
+	if !r.Hovered() && c.tipOff == r {
+		c.tipOff = nil
+	}
+
+	if r.Hovered() && c.tipOff != r {
 		c.tooltip(a, gtx, size, label)
 	}
 
@@ -408,11 +413,13 @@ func (c *chrome) handleNav(a *App, gtx C) {
 	}
 
 	if ev := c.settings.Update(gtx); ev.Click {
+		c.tipOff = &c.settings
 		a.Open(settings.New(a))
 	}
 
 	for i := range a.tools.list {
 		if ev := a.tools.rows[i].Update(gtx); ev.Click {
+			c.tipOff = &a.tools.rows[i]
 			a.docked[core.Left] = nil
 			a.tools.toggleIndex(a, i)
 		}
