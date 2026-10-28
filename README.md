@@ -15,7 +15,7 @@ snippets**) into one calm window, with an activity bar for the tools and the Nor
 
 ---
 
-![Boreal](.github/screens/home.png)
+![Boreal](.github/screens/search.png)
 
 ## ✨ Features
 
@@ -59,8 +59,7 @@ snippets**) into one calm window, with an activity bar for the tools and the Nor
 
 | | |
 |---|---|
-| ![Search Everywhere](.github/screens/search.png) | ![Host editor](.github/screens/host-editor.png) |
-| ![Connecting](.github/screens/connect.png) | ![Snippets](.github/screens/snippets.png) |
+| ![Host editor](.github/screens/host-editor.png) | ![Connecting](.github/screens/connect.png) |
 | ![Settings](.github/screens/settings.png) | |
 
 ## 🧱 Tech stack
