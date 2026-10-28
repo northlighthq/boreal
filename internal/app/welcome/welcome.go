@@ -8,30 +8,25 @@ import (
 	"strings"
 	"time"
 
-	"gioui.org/font"
 	"gioui.org/layout"
-	"gioui.org/unit"
-	"gioui.org/widget"
 
 	"github.com/plattyssh/platty/internal/app/core"
 	"github.com/plattyssh/platty/internal/app/hosts"
 	"github.com/plattyssh/platty/internal/ui/icons"
 	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/retro"
-	"github.com/plattyssh/platty/internal/ui/sol"
+	"github.com/plattyssh/platty/internal/ui/mark"
 	"github.com/plattyssh/platty/internal/vault"
 )
 
 type Screen struct {
 	h      core.Host
 	Hidden bool
-	Art    retro.Computer
 
-	mascot  sol.Sol
-	newTerm widget.Clickable
-	newHost widget.Clickable
-	import_ widget.Clickable
-	recent  map[string]*kit.Row
+	newTerm  kit.Row
+	newHost  kit.Row
+	import_  kit.Row
+	commands kit.Row
+	recent   map[string]*kit.Row
 
 	hosts    []vault.Host
 	hostsRev uint64
@@ -40,7 +35,7 @@ type Screen struct {
 
 func (w *Screen) recentHosts(v *vault.Vault) []vault.Host {
 	if rev := v.Revision(); !w.hostsOK || rev != w.hostsRev {
-		w.hosts, w.hostsRev, w.hostsOK = RecentHosts(v, 5), rev, true
+		w.hosts, w.hostsRev, w.hostsOK = RecentHosts(v, 3), rev, true
 	}
 
 	return w.hosts
@@ -67,106 +62,88 @@ func RecentHosts(v *vault.Vault, n int) []vault.Host {
 	return out
 }
 
-const welcomeArtMin = unit.Dp(860)
-
 func (w *Screen) Layout(gtx C) D {
 	a := w.h
 
-	if w.newTerm.Clicked(gtx) {
+	if ev := w.newTerm.Update(gtx); ev.Click {
 		a.NewLocalTab(a.DefaultProfile())
 	}
 
-	if w.newHost.Clicked(gtx) {
+	if ev := w.newHost.Update(gtx); ev.Click {
 		a.OpenDocked(core.Right, hosts.NewEditor(a, hosts.Defaults()))
 	}
 
-	if w.import_.Clicked(gtx) {
+	if ev := w.import_.Update(gtx); ev.Click {
 		a.ImportSSHConfig()
 	}
 
-	recent := w.recentHosts(a.Vault())
-	command := "ssh user@server"
-
-	if len(recent) > 0 {
-		command = "ssh " + recent[0].Target()
+	if ev := w.commands.Update(gtx); ev.Click {
+		a.ShowPalette()
 	}
 
-	side := gtx.Constraints.Max.X >= gtx.Dp(welcomeArtMin)
+	k := a.Kit()
+	th := k.Th
+	recent := w.recentHosts(a.Vault())
+
 	return layout.Center.Layout(gtx, func(gtx C) D {
 		gtx.Constraints.Min = image.Point{}
+		gtx.Constraints.Max.X = min(gtx.Constraints.Max.X-gtx.Dp(48), gtx.Dp(360))
+		gtx.Constraints.Min.X = gtx.Constraints.Max.X
+
 		children := []layout.FlexChild{
 			layout.Rigid(func(gtx C) D {
-				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(400))
-				gtx.Constraints.Min.X = gtx.Constraints.Max.X
-				return w.intro(a, gtx, recent)
+				return layout.Center.Layout(gtx, func(gtx C) D { return mark.Paint(gtx, 30, kit.Fade(th.TextFaint, 0.55)) })
 			}),
+			layout.Rigid(kit.Gap(40)),
+			layout.Rigid(func(gtx C) D { return w.action(a, gtx, &w.newTerm, icons.Terminal, "New terminal", "") }),
+			layout.Rigid(func(gtx C) D { return w.action(a, gtx, &w.newHost, icons.PlusOutline, "New host", "") }),
+			layout.Rigid(func(gtx C) D { return w.action(a, gtx, &w.import_, icons.Download, "Import from ~/.ssh/config", "") }),
 		}
 
-		if side {
-			children = append(children,
-				layout.Rigid(kit.Gap(56)),
-				layout.Rigid(func(gtx C) D { return w.Art.Layout(gtx, a.Kit(), command) }),
-			)
+		if len(recent) > 0 {
+			children = append(children, layout.Rigid(kit.Gap(18)))
+
+			for _, h := range recent {
+				children = append(children, layout.Rigid(func(gtx C) D { return w.recentRow(a, gtx, h) }))
+			}
 		}
 
-		return layout.Flex{Alignment: layout.Middle}.Layout(gtx, children...)
+		children = append(children,
+			layout.Rigid(kit.Gap(18)),
+			layout.Rigid(func(gtx C) D { return w.action(a, gtx, &w.commands, nil, "Show all commands", "Ctrl+Shift+P") }),
+		)
+
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
 	})
 }
 
-func (w *Screen) intro(a core.Host, gtx C, recent []vault.Host) D {
+func (w *Screen) action(a core.Host, gtx C, r *kit.Row, ic *icons.Icon, label, hint string) D {
 	k := a.Kit()
-	th := a.Kit().Th
+	th := k.Th
+	hv := k.Hover(gtx, kit.Key(r, 9), r.Hovered())
+	fg := kit.Lerp(th.TextMuted, th.Text, hv)
 
-	children := []layout.FlexChild{
-		layout.Rigid(func(gtx C) D {
-			w.mascot.Follow = true
+	return layout.Inset{Left: -12, Right: -12}.Layout(gtx, func(gtx C) D {
+		return k.Row(gtx, r, kit.RowOpts{Height: 30}, func(gtx C) D {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return w.mascot.Layout(gtx, a.Kit(), 68) }),
-				layout.Rigid(kit.Gap(14)),
-				layout.Flexed(1, func(gtx C) D {
-					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-						layout.Rigid(func(gtx C) D {
-							return k.Label(gtx, kit.TextStyle{Size: th.TextSizeTitle, Weight: font.SemiBold}, greeting(time.Now(), userName()))
-						}),
-						layout.Rigid(kit.Gap(4)),
-						layout.Rigid(func(gtx C) D {
-							return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, MaxLines: 2}, summary(a))
-						}),
-					)
+				layout.Rigid(func(gtx C) D {
+					if ic == nil {
+						return D{}
+					}
+
+					return layout.Inset{Right: 10}.Layout(gtx, func(gtx C) D { return ic.Layout(gtx, 16, kit.Lerp(th.TextFaint, th.Text, hv)) })
+				}),
+				layout.Flexed(1, func(gtx C) D { return k.Label(gtx, kit.TextStyle{Color: fg, MaxLines: 1}, label) }),
+				layout.Rigid(func(gtx C) D {
+					if hint == "" {
+						return D{}
+					}
+
+					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextFaint}, hint)
 				}),
 			)
-		}),
-		layout.Rigid(kit.Gap(22)),
-		layout.Rigid(func(gtx C) D {
-			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return k.Button(gtx, &w.newTerm, kit.Primary, icons.Terminal, "New terminal") }),
-				layout.Rigid(kit.Gap(8)),
-				layout.Rigid(func(gtx C) D { return k.Button(gtx, &w.newHost, kit.Secondary, icons.PlusOutline, "New host") }),
-			)
-		}),
-	}
-
-	if len(recent) == 0 {
-		children = append(children,
-			layout.Rigid(kit.Gap(14)),
-			layout.Rigid(func(gtx C) D { return k.Link(gtx, &w.import_, "Import hosts from ~/.ssh/config") }),
-		)
-	} else {
-		children = append(children,
-			layout.Rigid(kit.Gap(34)),
-			layout.Rigid(func(gtx C) D {
-				return layout.Inset{Bottom: 6}.Layout(gtx, func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextFaint}, "Recent")
-				})
-			}),
-		)
-
-		for _, h := range recent {
-			children = append(children, layout.Rigid(func(gtx C) D { return w.recentRow(a, gtx, h) }))
-		}
-	}
-
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
+		})
+	})
 }
 
 func (w *Screen) recentRow(a core.Host, gtx C, h vault.Host) D {
@@ -188,12 +165,12 @@ func (w *Screen) recentRow(a core.Host, gtx C, h vault.Host) D {
 		a.Connect(h)
 	}
 
-	return layout.Inset{Left: -12}.Layout(gtx, func(gtx C) D {
+	return layout.Inset{Left: -12, Right: -12}.Layout(gtx, func(gtx C) D {
 		hv := k.Hover(gtx, kit.Key(r, 9), r.Hovered())
 		fg := kit.Lerp(th.TextMuted, th.Text, hv)
-		return k.Row(gtx, r, kit.RowOpts{Height: 36}, func(gtx C) D {
+		return k.Row(gtx, r, kit.RowOpts{Height: 30}, func(gtx C) D {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return icons.Terminal.Layout(gtx, 16, fg) }),
+				layout.Rigid(func(gtx C) D { return icons.Terminal.Layout(gtx, 16, kit.Lerp(th.TextFaint, th.Text, hv)) }),
 				layout.Rigid(kit.Gap(10)),
 				layout.Rigid(func(gtx C) D { return k.Label(gtx, kit.TextStyle{Color: kit.Lerp(fg, th.Text, 0.6)}, h.Title()) }),
 				layout.Rigid(kit.Gap(10)),
