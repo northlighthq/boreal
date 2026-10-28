@@ -63,7 +63,7 @@ var renamedThemes = map[string]string{"ember": "gruvbox", "tide": "tokyonight", 
 
 func Defaults() Settings {
 	return Settings{
-		Theme:         "mono",
+		Theme:         "northlight",
 		FontSize:      13,
 		LineHeight:    1.2,
 		CursorStyle:   CursorBlock,

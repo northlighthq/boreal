@@ -89,7 +89,7 @@ func Build(name string, o Options) *Theme {
 	sp, ok := specs[name]
 
 	if !ok {
-		sp = specs[Carbon]
+		sp = specs[Northlight]
 	}
 
 	if slot, ok := accentSlots[o.Accent]; ok {
