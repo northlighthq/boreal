@@ -4,7 +4,7 @@ import (
 	"image/color"
 
 	"gioui.org/unit"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 )
 
 const (

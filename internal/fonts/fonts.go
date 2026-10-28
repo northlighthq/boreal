@@ -9,7 +9,7 @@ import (
 	"gioui.org/font"
 	"gioui.org/font/opentype"
 	"gioui.org/text"
-	"github.com/plattyssh/glyphs"
+	"github.com/northlighthq/glyphs"
 )
 
 const (

@@ -13,7 +13,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 
-	"github.com/plattyssh/platty/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
 const doubleClick = 400 * time.Millisecond

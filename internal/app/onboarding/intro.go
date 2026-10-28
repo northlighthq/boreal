@@ -18,14 +18,14 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/hosts"
-	"github.com/plattyssh/platty/internal/config"
-	"github.com/plattyssh/platty/internal/fonts"
-	"github.com/plattyssh/platty/internal/sshconfig"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/sol"
-	"github.com/plattyssh/platty/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/hosts"
+	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/fonts"
+	"github.com/northlighthq/boreal/internal/sshconfig"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/sol"
+	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
 type (

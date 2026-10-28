@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/plattyssh/platty/internal/config"
+	"github.com/northlighthq/boreal/internal/config"
 )
 
 const sessionFile = "tabs.json"

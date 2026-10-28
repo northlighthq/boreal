@@ -9,9 +9,9 @@ import (
 
 	"gioui.org/io/system"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/update"
-	"github.com/plattyssh/platty/internal/version"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/update"
+	"github.com/northlighthq/boreal/internal/version"
 )
 
 const (

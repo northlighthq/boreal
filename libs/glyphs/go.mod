@@ -1,4 +1,4 @@
-module github.com/plattyssh/glyphs
+module github.com/northlighthq/glyphs
 
 go 1.26.5
 

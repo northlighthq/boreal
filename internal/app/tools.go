@@ -12,15 +12,15 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/forwards"
-	"github.com/plattyssh/platty/internal/app/hosts"
-	"github.com/plattyssh/platty/internal/app/keychain"
-	"github.com/plattyssh/platty/internal/app/knownhosts"
-	"github.com/plattyssh/platty/internal/app/sftp"
-	"github.com/plattyssh/platty/internal/app/snippets"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/forwards"
+	"github.com/northlighthq/boreal/internal/app/hosts"
+	"github.com/northlighthq/boreal/internal/app/keychain"
+	"github.com/northlighthq/boreal/internal/app/knownhosts"
+	"github.com/northlighthq/boreal/internal/app/sftp"
+	"github.com/northlighthq/boreal/internal/app/snippets"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 const (

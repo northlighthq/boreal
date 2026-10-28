@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	platty "github.com/plattyssh/platty/internal/app"
-	"github.com/plattyssh/platty/internal/config"
+	platty "github.com/northlighthq/boreal/internal/app"
+	"github.com/northlighthq/boreal/internal/config"
 )
 
 const (

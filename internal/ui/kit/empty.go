@@ -7,7 +7,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/text"
 
-	"github.com/plattyssh/platty/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/icons"
 )
 
 func (k *Kit) EmptyState(gtx C, ic *icons.Icon, title, hint string, actions ...layout.Widget) D {

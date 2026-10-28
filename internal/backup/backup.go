@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plattyssh/platty/internal/secure"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/secure"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const (

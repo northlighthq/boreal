@@ -29,7 +29,7 @@ try {
         }
     }
 
-    $ldflags = "-H windowsgui -s -w -X github.com/plattyssh/platty/internal/version.Version=$Version"
+    $ldflags = "-H windowsgui -s -w -X github.com/northlighthq/boreal/internal/version.Version=$Version"
 
     foreach ($a in $Arch) {
         $stage = Join-Path $dist "platty-$a"

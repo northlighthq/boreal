@@ -33,7 +33,7 @@ jobs:
           echo "VERSION=0.1.1-dev.preview.${GITHUB_REF_NAME#preview-}" >> "$GITHUB_ENV"
 
       - name: Build
-        run: go build -trimpath -ldflags "-s -w -X github.com/plattyssh/platty/internal/version.Version=$VERSION" -o build/platty ./cmd/platty
+        run: go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/version.Version=$VERSION" -o build/platty ./cmd/platty
 
       - name: Package AppImage
         env:
@@ -87,7 +87,7 @@ jobs:
             app="build/$arch/Platty.app"
             mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
             CGO_ENABLED=1 GOARCH=$arch CC="clang -arch $([ "$arch" = amd64 ] && echo x86_64 || echo arm64)" \
-              go build -trimpath -ldflags "-s -w -X github.com/plattyssh/platty/internal/version.Version=$VERSION" -o "$app/Contents/MacOS/platty" ./cmd/platty
+              go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/version.Version=$VERSION" -o "$app/Contents/MacOS/platty" ./cmd/platty
             sed "s/VERSION/${VERSION%%-*}/g" packaging/macos/Info.plist > "$app/Contents/Info.plist"
             cp build/platty.icns "$app/Contents/Resources/platty.icns"
             cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"

@@ -15,9 +15,9 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 const (

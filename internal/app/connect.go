@@ -9,17 +9,17 @@ import (
 	"gioui.org/layout"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 
-	"github.com/plattyssh/platty/internal/config"
-	"github.com/plattyssh/platty/internal/platform/shell"
-	"github.com/plattyssh/platty/internal/privacy"
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/termview"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/platform/shell"
+	"github.com/northlighthq/boreal/internal/privacy"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/termview"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const maxJumpDepth = 5

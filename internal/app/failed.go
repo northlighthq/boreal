@@ -13,12 +13,12 @@ import (
 	"gioui.org/text"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/hosts"
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/hosts"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 type failure struct {

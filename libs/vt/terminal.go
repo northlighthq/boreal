@@ -5,7 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/plattyssh/vt/parser"
+	"github.com/northlighthq/vt/parser"
 )
 
 const (

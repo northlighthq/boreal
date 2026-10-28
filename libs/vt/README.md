@@ -5,7 +5,7 @@ A VT terminal emulator for Go with no GUI attached: an escape sequence parser, s
 It powers the terminal in [Platty](https://github.com/PlattySSH/platty).
 
 ```sh
-go get github.com/plattyssh/vt
+go get github.com/northlighthq/vt
 ```
 
 ```go

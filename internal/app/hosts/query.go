@@ -1,6 +1,6 @@
 package hosts
 
-import "github.com/plattyssh/platty/internal/vault"
+import "github.com/northlighthq/boreal/internal/vault"
 
 func (p *Panel) Collapsed(folder string) bool {
 	return p.collapsed[folder]

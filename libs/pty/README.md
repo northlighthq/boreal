@@ -5,7 +5,7 @@ Start processes inside a pseudo terminal, with resize and clean shutdown. It use
 It runs the local shells in [Platty](https://github.com/PlattySSH/platty).
 
 ```sh
-go get github.com/plattyssh/pty
+go get github.com/northlighthq/pty
 ```
 
 ```go

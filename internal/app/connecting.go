@@ -11,9 +11,9 @@ import (
 	"gioui.org/op"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 type connecting struct {

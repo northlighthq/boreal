@@ -8,7 +8,7 @@ import (
 
 	"gioui.org/app"
 
-	platty "github.com/plattyssh/platty/internal/app"
+	platty "github.com/northlighthq/boreal/internal/app"
 )
 
 func main() {

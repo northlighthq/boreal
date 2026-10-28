@@ -6,8 +6,8 @@ import (
 
 	"gioui.org/io/event"
 
-	"github.com/plattyssh/platty/internal/app/snippets"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/app/snippets"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 type snippetKeys struct {

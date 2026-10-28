@@ -12,9 +12,9 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/op/clip"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/transfer"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/transfer"
 )
 
 const (

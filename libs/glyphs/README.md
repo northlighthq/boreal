@@ -5,7 +5,7 @@ A cached glyph rasterizer for terminal grids: regular, bold and italic faces, sy
 It draws the text in [Platty](https://github.com/PlattySSH/platty).
 
 ```sh
-go get github.com/plattyssh/glyphs
+go get github.com/northlighthq/glyphs
 ```
 
 - `NewSet` loads the four styles of a monospace font from an `fs.FS` and adds the system fallbacks.

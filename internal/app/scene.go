@@ -9,10 +9,10 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/paint"
 
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/mark"
-	"github.com/plattyssh/platty/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/mark"
+	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
 func lockBadge(gtx C, th *theme.Theme) D {

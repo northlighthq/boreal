@@ -12,9 +12,9 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/mascot"
-	"github.com/plattyssh/platty/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/mascot"
+	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
 const orbitPeriod = 2.4

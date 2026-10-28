@@ -13,11 +13,11 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/io/transfer"
 	"gioui.org/layout"
-	"github.com/plattyssh/vt"
-	"github.com/plattyssh/vt/input"
+	"github.com/northlighthq/vt"
+	"github.com/northlighthq/vt/input"
 
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 const (

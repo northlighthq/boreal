@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/plattyssh/platty/internal/sshconfig"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/sshconfig"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 func (a *App) ImportSSHConfig() {

@@ -1,4 +1,4 @@
-module github.com/plattyssh/pty
+module github.com/northlighthq/pty
 
 go 1.26.5
 

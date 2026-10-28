@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"io"
 
-	"github.com/plattyssh/vt/parser"
+	"github.com/northlighthq/vt/parser"
 )
 
 type textLog struct {

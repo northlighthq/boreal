@@ -14,13 +14,13 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/settings"
-	"github.com/plattyssh/platty/internal/platform/titlebar"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/metrics"
-	"github.com/plattyssh/platty/internal/ui/mark"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/settings"
+	"github.com/northlighthq/boreal/internal/platform/titlebar"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/metrics"
+	"github.com/northlighthq/boreal/internal/ui/mark"
 )
 
 const (

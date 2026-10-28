@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 func ParseQuickConnect(s string) (vault.Host, bool) {

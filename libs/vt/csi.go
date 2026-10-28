@@ -3,7 +3,7 @@ package vt
 import (
 	"fmt"
 
-	"github.com/plattyssh/vt/parser"
+	"github.com/northlighthq/vt/parser"
 )
 
 const (

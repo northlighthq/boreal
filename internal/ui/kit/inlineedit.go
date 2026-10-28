@@ -10,7 +10,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/icons"
 )
 
 type InlineEdit struct {

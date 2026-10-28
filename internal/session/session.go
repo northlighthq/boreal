@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plattyssh/pty"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/pty"
+	"github.com/northlighthq/vt"
 
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const (

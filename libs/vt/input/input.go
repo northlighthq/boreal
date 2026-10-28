@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 )
 
 type Key uint8

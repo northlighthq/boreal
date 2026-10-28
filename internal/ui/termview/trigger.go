@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	"gioui.org/io/key"
-	"github.com/plattyssh/vt/input"
+	"github.com/northlighthq/vt/input"
 )
 
 const maxWord = 64

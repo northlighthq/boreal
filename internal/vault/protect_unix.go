@@ -7,7 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"github.com/plattyssh/platty/internal/platform/keyring"
+	"github.com/northlighthq/boreal/internal/platform/keyring"
 )
 
 var keyringRef = []byte("keyring:")

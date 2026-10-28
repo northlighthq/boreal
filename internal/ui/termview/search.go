@@ -10,10 +10,10 @@ import (
 	"gioui.org/op"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 const (

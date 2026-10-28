@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/go-text/typesetting/font"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 )
 
 const ligatureChars = `-=<>!&|:/*.+~#%?^$@_[]{};w`
