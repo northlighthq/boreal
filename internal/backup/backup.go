@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	Extension   = ".platty"
-	MinPassword = 12
+	Extension       = ".boreal"
+	LegacyExtension = ".platty"
+	MinPassword     = 12
 
 	fileFormat  = "platty-export"
 	fileVersion = 1

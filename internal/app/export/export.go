@@ -91,7 +91,7 @@ func write(h core.Host, data vault.Data, s backup.Selection, pass string) {
 		return
 	}
 
-	w, err := h.Explorer().CreateFile("platty-export" + backup.Extension)
+	w, err := h.Explorer().CreateFile("boreal-export" + backup.Extension)
 
 	if err != nil {
 		return
@@ -224,7 +224,7 @@ func (d *Dialog) Layout(gtx C) bool {
 
 	return k.Dialog(gtx, &d.dlg, kit.DialogOpts{
 		Title:    "Export data",
-		Subtitle: "Creates an encrypted .platty file you can import on another computer.",
+		Subtitle: "Creates an encrypted .boreal file you can import on another computer.",
 		Width:    520,
 		Body: func(gtx C) D {
 			return d.list.Layout(gtx, 1, func(gtx C, _ int) D {
@@ -239,7 +239,7 @@ func (d *Dialog) Layout(gtx C) bool {
 }
 
 func Import(h core.Host) {
-	f, err := h.Explorer().ChooseFile(backup.Extension)
+	f, err := h.Explorer().ChooseFile(backup.Extension, backup.LegacyExtension)
 
 	if err != nil {
 		return
