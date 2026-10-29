@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/boreal.svg" alt="Boreal" width="96" />
+<img src=".github/boreal.svg" alt="Boreal" width="56" />
 
 # Boreal
 
