@@ -2,7 +2,9 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## 0.1.1-beta.3 (2026-10-29)
+
+Platty is now Boreal, with a new interface built around an activity bar.
 
 ### Boreal
 - Platty is now Boreal, part of Northlight: new name, the Northlight mark and app icon, and a Northlight theme with the Aurora accent as the default.
