@@ -29,6 +29,7 @@ AppUpdatesURL=https://github.com/northlighthq/boreal/releases
 DefaultDirName={localappdata}\Programs\Boreal
 DisableProgramGroupPage=yes
 DisableDirPage=yes
+UsePreviousAppDir=no
 PrivilegesRequired=lowest
 OutputBaseFilename={#SetupName}
 Compression=lzma2
@@ -52,9 +53,9 @@ Source: "{#SourceDir}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [InstallDelete]
-Type: files; Name: "{app}platty.exe"
-Type: files; Name: "{autoprograms}Platty.lnk"
-Type: files; Name: "{autodesktop}Platty.lnk"
+Type: filesandordirs; Name: "{localappdata}\Programs\Platty"
+Type: files; Name: "{autoprograms}\Platty.lnk"
+Type: files; Name: "{autodesktop}\Platty.lnk"
 
 [Icons]
 Name: "{autoprograms}\Boreal"; Filename: "{app}\boreal.exe"
