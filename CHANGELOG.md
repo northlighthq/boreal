@@ -2,7 +2,7 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
-## 0.1.1-beta.3 (2026-10-29)
+## 0.1.1-beta.4 (2026-10-29)
 
 Platty is now Boreal, with a new interface built around an activity bar.
 
@@ -10,6 +10,7 @@ Platty is now Boreal, with a new interface built around an activity bar.
 - Platty is now Boreal, part of Northlight: new name, the Northlight mark and app icon, and a Northlight theme with the Aurora accent as the default.
 - Settings and the vault move from `%AppData%\Platty` to `%AppData%\Boreal` on first launch. Exports use the `.boreal` extension; `.platty` files still import.
 - Updates keep working: releases also ship the old file names for versions that still look for them.
+- The installer moves Boreal to its own folder and removes the old Platty program and shortcuts.
 
 ### Interface
 - An activity bar on the left opens hosts, SFTP, snippets, keys, port forwarding and known hosts, with Lucide icons.
