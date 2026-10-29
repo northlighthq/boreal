@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	Repo    = "https://github.com/PlattySSH/platty"
-	Website = "https://plattyssh.github.io"
+	Repo    = "https://github.com/northlighthq/platty"
+	Website = "https://northlighthq.github.io/plattyssh.github.io/"
 )
 
 var Version = "0.1.0-dev"

@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	releasesURL = "https://api.github.com/repos/PlattySSH/platty/releases?per_page=20"
+	releasesURL = "https://api.github.com/repos/northlighthq/platty/releases?per_page=20"
 	sumsName    = "SHA256SUMS"
 	sigName     = "SHA256SUMS.sig"
 	maxMeta     = 1 << 20
