@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"gioui.org/f32"
 	"gioui.org/font"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
@@ -24,7 +23,7 @@ import (
 	"github.com/northlighthq/boreal/internal/fonts"
 	"github.com/northlighthq/boreal/internal/sshconfig"
 	"github.com/northlighthq/boreal/internal/ui/kit"
-	"github.com/northlighthq/boreal/internal/ui/sol"
+	"github.com/northlighthq/boreal/internal/ui/mark"
 	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
@@ -46,18 +45,17 @@ const (
 const (
 	minPassword = 10
 	columnWidth = 560
-	wideLayout  = 1050
 )
 
 var cursorStyles = []string{config.CursorBlock, config.CursorBar, config.CursorUnderline}
 
 var says = [steps]string{
-	stepWelcome:  "Hi! Let's get Boreal ready together, it only takes a minute.",
-	stepLook:     "Let's make it yours! Try a theme, everything changes right away.",
-	stepTerminal: "Which shell do you like? I'll open it every time you press Ctrl+Shift+T.",
-	stepSecurity: "I keep your hosts and keys in an encrypted vault. Want to lock it with a password?",
-	stepHosts:    "Now let's bring in your servers!",
-	stepDone:     "Yay, we're done! These are the shortcuts I use all the time.",
+	stepWelcome:  "Let's get Boreal ready. It only takes a minute.",
+	stepLook:     "Pick a theme. Everything changes right away.",
+	stepTerminal: "Choose the shell that opens with Ctrl+Shift+T.",
+	stepSecurity: "Hosts and keys live in an encrypted vault. You can lock it with a password.",
+	stepHosts:    "Bring in your servers.",
+	stepDone:     "You're all set. These shortcuts are worth knowing.",
 }
 
 var titles = [steps]string{
@@ -68,8 +66,6 @@ var titles = [steps]string{
 	stepHosts:    "Your servers",
 	stepDone:     "You're all set",
 }
-
-var sideY = [steps]float32{stepLook: 0.40, stepTerminal: 0.58, stepSecurity: 0.36, stepHosts: 0.56}
 
 var shortcuts = [][2]string{
 	{"Search hosts, snippets and actions", "Ctrl+Shift+P"},
@@ -84,14 +80,8 @@ type Intro struct {
 	h    core.Host
 	step int
 
-	sol     sol.Sol
-	actor   actor
-	born    time.Time
 	stepAt  time.Time
-	bursts  []burst
 	blocker bool
-	wide    bool
-	area    image.Rectangle
 
 	themes   []widget.Clickable
 	termFont kit.Select
@@ -194,40 +184,12 @@ func (d *Intro) savePassword() bool {
 	return true
 }
 
-func (d *Intro) sided(step int) bool {
-	return d.wide && step != stepWelcome && step != stepDone
-}
-
-func (d *Intro) spot(step int, size image.Point, dp float32) spot {
-	if d.sided(step) {
-		return spot{center: f32.Pt(float32(size.X)*0.2, float32(size.Y)*sideY[step]), size: 124 * dp}
-	}
-
-	s := float32(140)
-
-	if !d.wide {
-		s = 92
-	}
-
-	return spot{center: f32.Pt(float32(size.X)/2, 64*dp+s*dp*0.75), size: s * dp}
-}
-
 func (d *Intro) goTo(step int, now time.Time) {
 	if step == d.step {
 		return
 	}
 
-	d.actor.jump(d.actor.current, now)
 	d.step, d.stepAt, d.passErr = step, now, ""
-
-	if step == stepDone {
-		d.celebrate(now.Add(jumpTime), 26, 220)
-	}
-}
-
-func (d *Intro) celebrate(at time.Time, count int, reach float32) {
-	d.bursts = append(d.bursts, burst{born: at, count: count, reach: reach})
-	d.sol.Cheer(at)
 }
 
 func (d *Intro) update(gtx C) bool {
@@ -238,7 +200,6 @@ func (d *Intro) update(gtx C) bool {
 		if d.themes[i].Clicked(gtx) && theme.Names[i] != s.Theme {
 			name := theme.Names[i]
 			d.apply(func(s *config.Settings) { s.Theme = name })
-			d.celebrate(now, 12, 120)
 		}
 	}
 
@@ -258,7 +219,6 @@ func (d *Intro) update(gtx C) bool {
 	if d.importSSH.Clicked(gtx) && !d.imported {
 		d.imported = true
 		d.h.ImportSSHConfig()
-		d.celebrate(now, 12, 120)
 	}
 
 	if d.addHost.Clicked(gtx) {
@@ -300,15 +260,11 @@ func (d *Intro) update(gtx C) bool {
 }
 
 func (d *Intro) Layout(gtx C) bool {
-	now := gtx.Now
-	k := d.h.Kit()
-	th := k.Th
+	th := d.h.Kit().Th
 	size := gtx.Constraints.Max
-	dp := gtx.Metric.PxPerDp
-	d.wide = size.X >= gtx.Dp(wideLayout)
 
-	if d.born.IsZero() {
-		d.born, d.stepAt, d.actor.landed = now, now, now
+	if d.stepAt.IsZero() {
+		d.stepAt = gtx.Now
 	}
 
 	if d.update(gtx) {
@@ -326,55 +282,12 @@ func (d *Intro) Layout(gtx C) bool {
 		}
 	}
 
-	stars(gtx, size, now.Sub(d.born).Seconds(), th.TextMuted, d.area)
-
-	target := d.spot(d.step, size, dp)
-	p := d.actor.pose(target, now, d.born, dp)
-	d.actor.current = spot{center: p.center, size: p.size}
-
-	d.content(gtx, target)
-	d.drawBursts(gtx, target)
-
-	d.sol.Follow = true
-	d.sol.Backdrop = th.Window
-	drawSol(gtx, k, &d.sol, p)
-
-	if !d.actor.jumping(now) {
-		since := now.Sub(d.actor.landed)
-		alpha := float32(clamp01(since.Seconds() / 0.2))
-		width := min(gtx.Dp(420), size.X-gtx.Dp(32))
-
-		if d.sided(d.step) {
-			width = min(width, int(float32(size.X)*0.34))
-		}
-
-		at := f32.Pt(p.center.X, target.center.Y+target.size/2+6*dp)
-		bubble(gtx, k, says[d.step], typed(says[d.step], since-120*time.Millisecond), at, width, alpha)
-	}
-
+	d.content(gtx)
 	d.h.TitleBar(gtx)
-	gtx.Execute(op.InvalidateCmd{})
 	return false
 }
 
-func (d *Intro) drawBursts(gtx C, target spot) {
-	now := gtx.Now
-	live := d.bursts[:0]
-
-	for _, b := range d.bursts {
-		if b.at == (f32.Point{}) {
-			b.at = target.center
-		}
-
-		if now.Before(b.born) || b.draw(gtx, now, d.h.Kit().Th.Text) {
-			live = append(live, b)
-		}
-	}
-
-	d.bursts = live
-}
-
-func (d *Intro) content(gtx C, target spot) {
+func (d *Intro) content(gtx C) {
 	k := d.h.Kit()
 	th := k.Th
 	size := gtx.Constraints.Max
@@ -384,10 +297,16 @@ func (d *Intro) content(gtx C, target spot) {
 	g := gtx
 	g.Constraints = layout.Constraints{Min: image.Pt(width, 0), Max: image.Pt(width, size.Y)}
 	dims := layout.Flex{Axis: layout.Vertical}.Layout(g,
+		layout.Rigid(func(gtx C) D { return mark.Paint(gtx, 30, kit.Fade(th.TextFaint, 0.55)) }),
+		layout.Rigid(kit.Gap(28)),
 		layout.Rigid(func(gtx C) D {
 			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeTitle, Weight: font.SemiBold}, titles[d.step])
 		}),
-		layout.Rigid(kit.Gap(22)),
+		layout.Rigid(kit.Gap(6)),
+		layout.Rigid(func(gtx C) D {
+			return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, MaxLines: 3}, says[d.step])
+		}),
+		layout.Rigid(kit.Gap(24)),
 		layout.Rigid(d.stepBody),
 		layout.Rigid(kit.Gap(28)),
 		layout.Rigid(d.footer),
@@ -395,20 +314,13 @@ func (d *Intro) content(gtx C, target spot) {
 	call := rec.Stop()
 
 	x := (size.X - width) / 2
-	y := (size.Y - dims.Size.Y) / 2
-
-	if d.sided(d.step) {
-		x = max(int(float32(size.X)*0.4), x)
-	} else {
-		y = max(y, int(target.center.Y+target.size/2)+gtx.Dp(130))
-	}
+	y := max((size.Y-dims.Size.Y)/2, gtx.Dp(48))
 
 	e := float32(ease(clamp01(gtx.Now.Sub(d.stepAt).Seconds() / contentFade.Seconds())))
-	y += int((1 - e) * float32(gtx.Dp(18)))
-
-	d.area = image.Rectangle{Min: image.Pt(x, y), Max: image.Pt(x, y).Add(dims.Size)}
+	y += int((1 - e) * float32(gtx.Dp(12)))
 
 	if e < 1 {
+		gtx.Execute(op.InvalidateCmd{})
 		defer paint.PushOpacity(gtx.Ops, max(e, 0.01)).Pop()
 	}
 	defer op.Offset(image.Pt(x, y)).Push(gtx.Ops).Pop()
