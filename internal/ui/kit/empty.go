@@ -5,6 +5,7 @@ import (
 
 	"gioui.org/font"
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/text"
 
 	"github.com/northlighthq/boreal/internal/ui/icons"
@@ -54,7 +55,30 @@ func (k *Kit) EmptyState(gtx C, ic *icons.Icon, title, hint string, actions ...l
 
 				children = append(children,
 					layout.Rigid(Gap(18)),
-					layout.Rigid(func(gtx C) D { return layout.Flex{Alignment: layout.Middle}.Layout(gtx, row...) }),
+					layout.Rigid(func(gtx C) D {
+						wide := gtx
+						wide.Constraints = layout.Constraints{Max: image.Pt(1<<20, gtx.Constraints.Max.Y)}
+						rec := op.Record(gtx.Ops)
+						dims := layout.Flex{Alignment: layout.Middle}.Layout(wide, row...)
+						call := rec.Stop()
+
+						if dims.Size.X <= gtx.Constraints.Max.X {
+							call.Add(gtx.Ops)
+							return dims
+						}
+
+						stack := make([]layout.FlexChild, 0, 2*len(actions))
+
+						for i, act := range actions {
+							if i > 0 {
+								stack = append(stack, layout.Rigid(Gap(8)))
+							}
+
+							stack = append(stack, layout.Rigid(act))
+						}
+
+						return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx, stack...)
+					}),
 				)
 			}
 

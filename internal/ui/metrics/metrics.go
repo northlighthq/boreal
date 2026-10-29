@@ -179,12 +179,6 @@ func (b *Bar) item(gtx C, k *kit.Kit, hover *widget.Clickable, m metric) D {
 				layout.Rigid(func(gtx C) D { return m.icon.Layout(gtx, 14, kit.Lerp(iconColor(th, m), th.Text, hv)) }),
 				layout.Rigid(kit.Gap(6)),
 				layout.Rigid(func(gtx C) D {
-					if len(m.chart) > 0 && len(m.chart[0].values) >= 2 {
-						return layout.Inset{Right: 6}.Layout(gtx, func(gtx C) D {
-							return chart(gtx, image.Pt(gtx.Dp(44), gtx.Dp(14)), m.top, m.chart...)
-						})
-					}
-
 					if m.frac < 0 {
 						return D{}
 					}
