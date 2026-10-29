@@ -2,10 +2,10 @@
 
 Start processes inside a pseudo terminal, with resize and clean shutdown. It uses ConPTY on Windows and `/dev/ptmx` on Linux and macOS, with no cgo. On other platforms `Start` returns `ErrUnsupported`.
 
-It runs the local shells in [Platty](https://github.com/PlattySSH/platty).
+It runs the local shells in [Boreal](https://github.com/northlighthq/boreal).
 
 ```sh
-go get github.com/plattyssh/pty
+go get github.com/northlighthq/pty
 ```
 
 ```go

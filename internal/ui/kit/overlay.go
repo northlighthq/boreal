@@ -17,7 +17,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/icons"
 )
 
 const (

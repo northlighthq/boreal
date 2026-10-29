@@ -7,20 +7,18 @@ import (
 	"strings"
 	"time"
 
-	"gioui.org/font"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/hosts"
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/sol"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/hosts"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 type failure struct {
@@ -50,7 +48,7 @@ func explain(err error, port int) (title, hint string) {
 
 	switch {
 	case errors.Is(err, sshx.ErrHostKeyRejected):
-		return "Server key rejected", "The server's identity wasn't trusted, so Platty didn't connect."
+		return "Server key rejected", "The server's identity wasn't trusted, so Boreal didn't connect."
 	case has("timeout", "timed out", "deadline exceeded"):
 		return "The server didn't answer", "Check the address and that the server is online and reachable from this network."
 	case has("connection refused"):
@@ -101,7 +99,6 @@ func (a *App) failedView(gtx C, p *Pane) {
 
 	title, hint := explain(err, port)
 	t := gtx.Now.Sub(f.start).Seconds()
-	who := sshx.User(host) + "@" + host.Address
 
 	reveal := func(delay float64, w layout.Widget) layout.FlexChild {
 		return layout.Rigid(func(gtx C) D {
@@ -127,21 +124,12 @@ func (a *App) failedView(gtx C, p *Pane) {
 		})
 	}
 
-	a.stage(gtx, 1,
-		func(gtx C) D { return sol.Sad(gtx, th, solPlaySize, f.orbit, t) },
+	a.brandStage(gtx, 1, false, title, th.Danger,
+		func(gtx C) D { return a.stepList(gtx, p, false) },
 		func(gtx C) D {
 			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(kit.Gap(4)),
-				reveal(0.35, func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeLarge + 1, Weight: font.SemiBold}, title)
-				}),
-				layout.Rigid(kit.Gap(4)),
-				reveal(0.42, func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextFaint, Mono: true, MaxLines: 1}, who)
-				}),
-				layout.Rigid(kit.Gap(12)),
 				reveal(0.5, func(gtx C) D {
-					gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(340))
+					gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(460))
 					return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, MaxLines: 3, Align: text.Middle}, hint)
 				}),
 				layout.Rigid(kit.Gap(22)),

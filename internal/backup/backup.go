@@ -7,13 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plattyssh/platty/internal/secure"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/secure"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const (
-	Extension   = ".platty"
-	MinPassword = 12
+	Extension       = ".boreal"
+	LegacyExtension = ".platty"
+	MinPassword     = 12
 
 	fileFormat  = "platty-export"
 	fileVersion = 1
@@ -23,8 +24,8 @@ const (
 )
 
 var (
-	ErrNotExport     = errors.New("this isn't a Platty export file")
-	ErrNewerVersion  = errors.New("this export was made by a newer version of Platty")
+	ErrNotExport     = errors.New("this isn't a Boreal export file")
+	ErrNewerVersion  = errors.New("this export was made by a newer version of Boreal")
 	ErrWrongPassword = errors.New("wrong password, or the file is damaged")
 	ErrShortPassword = errors.New("the password must be at least 12 characters long")
 

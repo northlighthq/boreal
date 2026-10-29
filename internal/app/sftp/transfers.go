@@ -13,13 +13,13 @@ import (
 	"gioui.org/layout"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/format"
-	"github.com/plattyssh/platty/internal/platform/open"
-	"github.com/plattyssh/platty/internal/transfer"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/format"
+	"github.com/northlighthq/boreal/internal/platform/open"
+	"github.com/northlighthq/boreal/internal/transfer"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
 const (
@@ -181,7 +181,7 @@ func unique(p string) string {
 }
 
 func (p *Panel) edit(a core.Host, c *sftpConn, src, cwd string) {
-	dir, err := os.MkdirTemp("", "platty-edit-")
+	dir, err := os.MkdirTemp("", "boreal-edit-")
 
 	if err != nil {
 		a.Toasts().Error("Couldn't edit", err.Error())
@@ -203,7 +203,7 @@ func (p *Panel) edit(a core.Host, c *sftpConn, src, cwd string) {
 			return
 		}
 
-		a.Toasts().Info("Editing "+name, "Save it in your editor and Platty uploads it back.")
+		a.Toasts().Info("Editing "+name, "Save it in your editor and Boreal uploads it back.")
 		go p.watch(a, c, local, src, cwd, info.ModTime())
 	})
 }

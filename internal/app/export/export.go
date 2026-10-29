@@ -10,11 +10,11 @@ import (
 	"gioui.org/layout"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/backup"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/backup"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 type (
@@ -91,7 +91,7 @@ func write(h core.Host, data vault.Data, s backup.Selection, pass string) {
 		return
 	}
 
-	w, err := h.Explorer().CreateFile("platty-export" + backup.Extension)
+	w, err := h.Explorer().CreateFile("boreal-export" + backup.Extension)
 
 	if err != nil {
 		return
@@ -220,11 +220,11 @@ func (d *Dialog) Layout(gtx C) bool {
 		}))
 	}
 
-	children = append(children, muted("Anyone with the file and its password can read what's inside, so keep them apart. Platty can't recover a lost password."))
+	children = append(children, muted("Anyone with the file and its password can read what's inside, so keep them apart. Boreal can't recover a lost password."))
 
 	return k.Dialog(gtx, &d.dlg, kit.DialogOpts{
 		Title:    "Export data",
-		Subtitle: "Creates an encrypted .platty file you can import on another computer.",
+		Subtitle: "Creates an encrypted .boreal file you can import on another computer.",
 		Width:    520,
 		Body: func(gtx C) D {
 			return d.list.Layout(gtx, 1, func(gtx C, _ int) D {
@@ -239,7 +239,7 @@ func (d *Dialog) Layout(gtx C) bool {
 }
 
 func Import(h core.Host) {
-	f, err := h.Explorer().ChooseFile(backup.Extension)
+	f, err := h.Explorer().ChooseFile(backup.Extension, backup.LegacyExtension)
 
 	if err != nil {
 		return

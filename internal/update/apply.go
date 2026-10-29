@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	exeName       = "platty.exe"
+	exeName       = "boreal.exe"
 	uninstallName = "unins000.exe"
 )
 
-var ErrNoBinary = errors.New("update: the archive has no platty.exe")
+var ErrNoBinary = errors.New("update: the archive has no boreal.exe")
 
 func Detect() Kind {
 	exe, err := os.Executable()

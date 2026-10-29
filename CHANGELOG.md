@@ -1,8 +1,20 @@
 # Changelog
 
-All notable changes to Platty are listed here. Versions follow [Semantic Versioning](https://semver.org).
+All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
 ## Unreleased
+
+### Boreal
+- Platty is now Boreal, part of Northlight: new name, the Northlight mark and app icon, and a Northlight theme with the Aurora accent as the default.
+- Settings and the vault move from `%AppData%\Platty` to `%AppData%\Boreal` on first launch. Exports use the `.boreal` extension; `.platty` files still import.
+- Updates keep working: releases also ship the old file names for versions that still look for them.
+
+### Interface
+- An activity bar on the left opens hosts, SFTP, snippets, keys, port forwarding and known hosts, with Lucide icons.
+- A minimal home screen with quick actions, recent hosts and the command list.
+- Passwords and passphrases are asked inside the tab that needs them, and the tab shows a lock while it waits.
+- New connecting and failed screens that list each step as it happens.
+- Search Everywhere opens centered over the content.
 
 ### Windows on ARM
 - Native ARM64 builds: an installer and a portable `.zip` next to the x64 ones.

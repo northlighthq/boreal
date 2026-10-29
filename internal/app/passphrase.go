@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plattyssh/platty/internal/app/export"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/app/export"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 type passphrases struct {
@@ -40,7 +40,7 @@ func (p *passphrases) clear() {
 	p.m = nil
 }
 
-func (a *App) keyPassphrase(k vault.Key) (string, bool) {
+func (a *App) keyPassphrase(k vault.Key, owner *int) (string, bool) {
 	if pass, ok := a.passes.get(k.ID); ok && sshx.CheckPassphrase(k, pass) == nil {
 		return pass, true
 	}
@@ -48,7 +48,8 @@ func (a *App) keyPassphrase(k vault.Key) (string, bool) {
 	msg := fmt.Sprintf("The key “%s” is protected. Enter its passphrase.", k.Label)
 
 	for {
-		pass, remember, ok := a.AskKeyPassphrase(msg)
+		r := a.ask(&prompt{kind: promptSecret, title: "Key passphrase", message: msg, offer: true, owner: owner})
+		pass, remember, ok := r.text, r.remember, r.ok
 
 		if !ok {
 			return "", false

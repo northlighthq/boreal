@@ -19,9 +19,9 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 
-	"github.com/plattyssh/platty/internal/fonts"
-	"github.com/plattyssh/platty/internal/ui/shape"
-	"github.com/plattyssh/platty/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/fonts"
+	"github.com/northlighthq/boreal/internal/ui/shape"
+	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
 type (

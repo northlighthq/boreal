@@ -3,7 +3,7 @@ package app
 import (
 	gioapp "gioui.org/app"
 
-	"github.com/plattyssh/platty/internal/platform/titlebar"
+	"github.com/northlighthq/boreal/internal/platform/titlebar"
 )
 
 const trafficLightsX = 20

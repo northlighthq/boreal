@@ -8,7 +8,7 @@ import (
 
 	"gioui.org/app"
 
-	platty "github.com/plattyssh/platty/internal/app"
+	boreal "github.com/northlighthq/boreal/internal/app"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 		debug.FreeOSMemory()
 	}()
 	go func() {
-		if err := platty.Run(); err != nil {
+		if err := boreal.Run(); err != nil {
 			log.Fatal(err)
 		}
 

@@ -15,9 +15,9 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
 const (
@@ -35,6 +35,7 @@ type Entry struct {
 }
 
 type Palette struct {
+	Area    image.Rectangle
 	k       *kit.Kit
 	entries func() []Entry
 	quick   func(q string) (Entry, bool)
@@ -194,14 +195,20 @@ func (p *Palette) Layout(gtx C) {
 
 	size := gtx.Constraints.Max
 	ap := p.appear.Animate(gtx, 1, kit.Normal)
-	kit.Rect(gtx, image.Rectangle{Max: size}, kit.Fade(theme.WithAlpha(th.Scrim, th.Scrim.A/2), ap))
+	kit.Rect(gtx, image.Rectangle{Max: size}, kit.Fade(th.Scrim, ap*0.8))
 	area := clip.Rect{Max: size}.Push(gtx.Ops)
 	event.Op(gtx.Ops, &p.scrim)
 	area.Pop()
 
-	w := min(gtx.Dp(paletteWidth), size.X-gtx.Dp(32))
-	x := (size.X - w) / 2
-	y := gtx.Dp(th.ToolbarHeight) + gtx.Dp(40) - int(10*(1-ap))
+	box := p.Area
+
+	if box.Empty() {
+		box = image.Rectangle{Max: size}
+	}
+
+	w := min(gtx.Dp(paletteWidth), box.Dx()-gtx.Dp(32))
+	x := box.Min.X + (box.Dx()-w)/2
+	y := box.Min.Y + box.Dy()/6 - int(float32(gtx.Dp(8))*(1-ap))
 	defer op.Offset(image.Pt(x, y)).Push(gtx.Ops).Pop()
 	defer paint.PushOpacity(gtx.Ops, ap).Pop()
 

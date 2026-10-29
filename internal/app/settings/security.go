@@ -8,10 +8,10 @@ import (
 	"gioui.org/layout"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const minMasterPassword = 10
@@ -91,7 +91,7 @@ func (s *security) update(a core.Host, gtx C) {
 	}
 
 	if s.forget.Clicked(gtx) {
-		s.report(v.ForgetPassphrases(), "Saved passphrases forgotten. Platty will ask for them when connecting.")
+		s.report(v.ForgetPassphrases(), "Saved passphrases forgotten. Boreal will ask for them when connecting.")
 	}
 
 	if s.lockNow.Clicked(gtx) {
@@ -131,14 +131,14 @@ func (d *Dialog) securityPage(a core.Host, gtx C, row func(string, layout.Widget
 		}
 	}
 
-	status := "Not set. The vault opens with your "+vault.OSOwner+" only."
+	status := "Not set. The vault opens with your " + vault.OSOwner + " only."
 
 	if has {
 		status = "Set."
 	}
 
 	children := []layout.FlexChild{
-		row("Storage", muted("Encrypted with XChaCha20-Poly1305 in %AppData%\\Platty. "+vaultSummary(a))),
+		row("Storage", muted("Encrypted with XChaCha20-Poly1305 in %AppData%\\Boreal."+vaultSummary(a))),
 		row("Master password", muted(status)),
 	}
 
@@ -241,8 +241,8 @@ func (d *Dialog) dataPage(a core.Host, row func(string, layout.Widget) layout.Fl
 	}
 
 	return []layout.FlexChild{
-		item(&s.export, icons.Upload, "Export", "Save hosts, keys, snippets and more to a .platty file encrypted with a password of your choice. Passwords are left out unless you include them."),
-		item(&s.imp, icons.Download, "Import", "Add the contents of a .platty file to this vault. Nothing is deleted, and host keys you already trust are kept."),
+		item(&s.export, icons.Upload, "Export", "Save hosts, keys, snippets and more to a .boreal file encrypted with a password of your choice. Passwords are left out unless you include them."),
+		item(&s.imp, icons.Download, "Import", "Add the contents of a .boreal or .platty file to this vault. Nothing is deleted, and host keys you already trust are kept."),
 		item(&s.sshConfig, icons.File, "SSH config", "Write your hosts in ~/.ssh/config format, without passwords or keys, to use them with other tools."),
 	}
 }

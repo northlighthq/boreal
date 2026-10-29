@@ -3,8 +3,8 @@ package app
 import (
 	gioapp "gioui.org/app"
 
-	"github.com/plattyssh/platty/internal/platform/dragdrop"
-	"github.com/plattyssh/platty/internal/platform/extkeys"
+	"github.com/northlighthq/boreal/internal/platform/dragdrop"
+	"github.com/northlighthq/boreal/internal/platform/extkeys"
 )
 
 func (a *App) attachView(ev gioapp.ViewEvent) {

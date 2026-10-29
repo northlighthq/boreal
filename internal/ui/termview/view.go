@@ -12,11 +12,11 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"github.com/plattyssh/glyphs"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/glyphs"
+	"github.com/northlighthq/vt"
 
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/theme"
 )
 
 const (

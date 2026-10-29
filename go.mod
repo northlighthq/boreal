@@ -1,4 +1,4 @@
-module github.com/plattyssh/platty
+module github.com/northlighthq/boreal
 
 go 1.26.5
 
@@ -25,14 +25,14 @@ require (
 )
 
 require (
-	github.com/plattyssh/glyphs v0.0.0
-	github.com/plattyssh/pty v0.0.0
-	github.com/plattyssh/vt v0.0.0
+	github.com/northlighthq/glyphs v0.0.0
+	github.com/northlighthq/pty v0.0.0
+	github.com/northlighthq/vt v0.0.0
 )
 
 // The libraries live in libs/ until they are published under github.com/PlattySSH.
 replace (
-	github.com/plattyssh/glyphs => ./libs/glyphs
-	github.com/plattyssh/pty => ./libs/pty
-	github.com/plattyssh/vt => ./libs/vt
+	github.com/northlighthq/glyphs => ./libs/glyphs
+	github.com/northlighthq/pty => ./libs/pty
+	github.com/northlighthq/vt => ./libs/vt
 )

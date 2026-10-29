@@ -15,9 +15,9 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 const (
@@ -262,7 +262,7 @@ func (c *chrome) tab(a *App, gtx C, i, x, w int, active bool) {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(func(gtx C) D { return c.tabIcon(a, gtx, t, fg) }),
 				layout.Rigid(func(gtx C) D {
-					if !a.settings.TabIcons && !c.tabBusy(t) {
+					if !a.settings.TabIcons && !c.tabBusy(t) && !a.waiting(t) {
 						return D{}
 					}
 
@@ -303,6 +303,12 @@ func (c *chrome) tabIcon(a *App, gtx C, t *Tab, fg color.NRGBA) D {
 	st, _ := t.active.sess.State()
 	ssh := t.active.sess.Kind == session.SSH
 
+	if a.waiting(t) {
+		pulse := 0.55 + 0.45*float32(math.Cos(float64(gtx.Now.UnixMilli()%1400)/1400*2*math.Pi))
+		gtx.Execute(op.InvalidateCmd{At: gtx.Now.Add(50 * time.Millisecond)})
+		return icons.Lock.Layout(gtx, 16, kit.Fade(th.Accent, pulse))
+	}
+
 	switch {
 	case ssh && st == session.Connecting:
 		spinner(gtx, px, fg, gtx.Now)
@@ -323,6 +329,16 @@ func (c *chrome) tabIcon(a *App, gtx C, t *Tab, fg color.NRGBA) D {
 	}
 
 	return icons.Terminal.Layout(gtx, 16, fg)
+}
+
+func (a *App) waiting(t *Tab) bool {
+	for _, p := range t.root.panes(nil) {
+		if p.asker != nil && a.prompts.find(p.asker) != nil {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c *chrome) tabBusy(t *Tab) bool {

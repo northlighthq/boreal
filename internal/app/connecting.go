@@ -6,15 +6,14 @@ import (
 	"strconv"
 	"time"
 
+	"gioui.org/font"
 	"gioui.org/layout"
 	"gioui.org/op"
-	"gioui.org/op/paint"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/sol"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 type connecting struct {
@@ -37,6 +36,13 @@ func easeOut(x float64) float32 {
 }
 
 func (a *App) paneOverlay(gtx C, p *Pane) {
+	if p.asker != nil {
+		if pr := a.prompts.find(p.asker); pr != nil {
+			a.promptInline(gtx, pr)
+			return
+		}
+	}
+
 	cv, f := &p.connecting, &p.failure
 	now := gtx.Now
 
@@ -83,33 +89,6 @@ func (a *App) paneOverlay(gtx C, p *Pane) {
 	}
 }
 
-func (a *App) stage(gtx C, opacity float32, scene, body layout.Widget) {
-	th := a.th()
-	size := gtx.Constraints.Max
-	if opacity < 1 {
-		defer paint.PushOpacity(gtx.Ops, max(opacity, 0.01)).Pop()
-	}
-
-	kit.Rect(gtx, image.Rectangle{Max: size}, th.Editor)
-
-	box := gtx.Dp(solPlaySize) * 2
-	top := max(size.Y/2-box/2-gtx.Dp(64), 0)
-
-	off := layoutAt(gtx, image.Pt((size.X-box)/2, top))
-	scene(gtx)
-	off.Pop()
-
-	bg := gtx
-	bg.Constraints = layout.Constraints{Min: image.Pt(size.X, 0), Max: image.Pt(size.X, size.Y-top-box)}
-	off = layoutAt(gtx, image.Pt(0, top+box))
-	layout.N.Layout(bg, func(gtx C) D {
-		gtx.Constraints.Min.X = 0
-		gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(460))
-		return body(gtx)
-	})
-	off.Pop()
-}
-
 func layoutAt(gtx C, at image.Point) op.TransformStack {
 	return op.Offset(at).Push(gtx.Ops)
 }
@@ -123,29 +102,17 @@ func (a *App) connectingView(gtx C, p *Pane, t float64, opacity float32) {
 		cv.cancelled = true
 	}
 
-	steps := p.sess.Steps()
-	step := "Starting…"
-
-	if len(steps) > 0 {
-		step = steps[len(steps)-1].Text
-	}
-
 	who := sshx.User(p.sess.Target().Host) + "@" + p.sess.Target().Host.Address
 
-	a.stage(gtx, opacity,
-		func(gtx C) D { return sol.Playing(gtx, th, solPlaySize, t) },
+	a.brandStage(gtx, opacity, true, "Connecting to "+who, th.Text,
+		func(gtx C) D { return a.stepList(gtx, p, true) },
 		func(gtx C) D {
-			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(kit.Gap(2)),
-				layout.Rigid(func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeLarge}, "Connecting to "+who)
-				}),
-				layout.Rigid(kit.Gap(6)),
-				layout.Rigid(func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted}, step+"  ·  "+strconv.Itoa(int(t))+" s")
-				}),
-				layout.Rigid(kit.Gap(18)),
+			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(func(gtx C) D { return k.Button(gtx, &cv.cancel, kit.Ghost, nil, "Cancel") }),
+				layout.Rigid(kit.Gap(10)),
+				layout.Rigid(func(gtx C) D {
+					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextFaint}, strconv.Itoa(int(t))+" s")
+				}),
 			)
 		})
 	gtx.Execute(op.InvalidateCmd{})
@@ -154,4 +121,32 @@ func (a *App) connectingView(gtx C, p *Pane, t float64, opacity float32) {
 func (p *Pane) isConnecting() bool {
 	st, _ := p.sess.State()
 	return p.sess.Kind == session.SSH && st == session.Connecting
+}
+
+func (a *App) promptInline(gtx C, pr *prompt) {
+	th := a.th()
+	k := a.kit
+	size := gtx.Constraints.Max
+	kit.Rect(gtx, image.Rectangle{Max: size}, th.Editor)
+
+	if pr.handle(gtx) {
+		return
+	}
+
+	o := pr.opts(gtx)
+	g := gtx
+	g.Constraints = layout.Exact(size)
+	layout.Center.Layout(g, func(gtx C) D {
+		w := min(gtx.Constraints.Max.X-gtx.Dp(48), gtx.Dp(o.Width))
+		gtx.Constraints = layout.Constraints{Min: image.Pt(w, 0), Max: image.Pt(w, gtx.Constraints.Max.Y)}
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Rigid(func(gtx C) D {
+				return k.Label(gtx, kit.TextStyle{Size: th.TextSizeLarge + 2, Weight: font.SemiBold}, o.Title)
+			}),
+			layout.Rigid(kit.Gap(14)),
+			layout.Rigid(o.Body),
+			layout.Rigid(kit.Gap(22)),
+			layout.Rigid(func(gtx C) D { return layout.E.Layout(gtx, o.Footer) }),
+		)
+	})
 }

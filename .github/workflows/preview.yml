@@ -33,18 +33,18 @@ jobs:
           echo "VERSION=0.1.1-dev.preview.${GITHUB_REF_NAME#preview-}" >> "$GITHUB_ENV"
 
       - name: Build
-        run: go build -trimpath -ldflags "-s -w -X github.com/plattyssh/platty/internal/version.Version=$VERSION" -o build/platty ./cmd/platty
+        run: go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/version.Version=$VERSION" -o build/boreal ./cmd/boreal
 
       - name: Package AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
         run: |
-          name="Platty-preview-$BUILD-linux-${{ matrix.arch }}.AppImage"
+          name="Boreal-preview-$BUILD-linux-${{ matrix.arch }}.AppImage"
           curl -fsSL -o linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${{ matrix.arch }}.AppImage"
           chmod +x linuxdeploy
-          mkdir -p AppDir/usr/share/doc/platty dist
-          cp LICENSE THIRD_PARTY_NOTICES.md AppDir/usr/share/doc/platty/
-          LDAI_OUTPUT="dist/$name" ./linuxdeploy --appdir AppDir -e build/platty -d packaging/linux/platty.desktop -i packaging/platty.png --output appimage
+          mkdir -p AppDir/usr/share/doc/boreal dist
+          cp LICENSE THIRD_PARTY_NOTICES.md AppDir/usr/share/doc/boreal/
+          LDAI_OUTPUT="dist/$name" ./linuxdeploy --appdir AppDir -e build/boreal -d packaging/linux/boreal.desktop -i packaging/boreal.png --output appimage
 
       - uses: actions/upload-artifact@v4
         with:
@@ -69,33 +69,33 @@ jobs:
 
       - name: Icon
         run: |
-          mkdir -p build/platty.iconset
+          mkdir -p build/boreal.iconset
           for s in 16 32 128 256; do
-            sips -z $s $s packaging/platty.png --out build/platty.iconset/icon_${s}x${s}.png >/dev/null
+            sips -z $s $s packaging/boreal.png --out build/boreal.iconset/icon_${s}x${s}.png >/dev/null
           done
           for s in 16 32 128; do
             d=$((s * 2))
-            sips -z $d $d packaging/platty.png --out build/platty.iconset/icon_${s}x${s}@2x.png >/dev/null
+            sips -z $d $d packaging/boreal.png --out build/boreal.iconset/icon_${s}x${s}@2x.png >/dev/null
           done
-          iconutil -c icns build/platty.iconset -o build/platty.icns
+          iconutil -c icns build/boreal.iconset -o build/boreal.icns
 
       - name: Build and package
         run: |
           mkdir -p dist
           for arch in arm64 amd64; do
             label=$([ "$arch" = arm64 ] && echo apple-silicon || echo intel)
-            app="build/$arch/Platty.app"
+            app="build/$arch/Boreal.app"
             mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
             CGO_ENABLED=1 GOARCH=$arch CC="clang -arch $([ "$arch" = amd64 ] && echo x86_64 || echo arm64)" \
-              go build -trimpath -ldflags "-s -w -X github.com/plattyssh/platty/internal/version.Version=$VERSION" -o "$app/Contents/MacOS/platty" ./cmd/platty
+              go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/version.Version=$VERSION" -o "$app/Contents/MacOS/boreal" ./cmd/boreal
             sed "s/VERSION/${VERSION%%-*}/g" packaging/macos/Info.plist > "$app/Contents/Info.plist"
-            cp build/platty.icns "$app/Contents/Resources/platty.icns"
+            cp build/boreal.icns "$app/Contents/Resources/boreal.icns"
             cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
             codesign --force --deep --sign - "$app"
             mkdir -p "build/dmg-$arch"
             cp -R "$app" "build/dmg-$arch/"
             ln -s /Applications "build/dmg-$arch/Applications"
-            hdiutil create -volname Platty -srcfolder "build/dmg-$arch" -ov -format UDZO "dist/Platty-preview-$BUILD-macos-$label.dmg"
+            hdiutil create -volname Boreal -srcfolder "build/dmg-$arch" -ov -format UDZO "dist/Boreal-preview-$BUILD-macos-$label.dmg"
           done
 
       - uses: actions/upload-artifact@v4
@@ -126,10 +126,10 @@ jobs:
         shell: bash
         run: |
           mkdir out
-          mv "dist/platty-$VERSION-windows-amd64.zip" "out/Platty-preview-$BUILD-windows-x64.zip"
-          mv "dist/platty-$VERSION-windows-arm64.zip" "out/Platty-preview-$BUILD-windows-arm64.zip"
-          mv "dist/platty-$VERSION-setup.exe" "out/Platty-preview-$BUILD-windows-x64-setup.exe"
-          mv "dist/platty-$VERSION-arm64-setup.exe" "out/Platty-preview-$BUILD-windows-arm64-setup.exe"
+          mv "dist/boreal-$VERSION-windows-amd64.zip" "out/Boreal-preview-$BUILD-windows-x64.zip"
+          mv "dist/boreal-$VERSION-windows-arm64.zip" "out/Boreal-preview-$BUILD-windows-arm64.zip"
+          mv "dist/boreal-$VERSION-setup.exe" "out/Boreal-preview-$BUILD-windows-x64-setup.exe"
+          mv "dist/boreal-$VERSION-arm64-setup.exe" "out/Boreal-preview-$BUILD-windows-arm64-setup.exe"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -146,27 +146,27 @@ jobs:
           merge-multiple: true
 
       - name: Checksums
-        run: cd dist && sha256sum Platty-* > checksums.txt
+        run: cd dist && sha256sum Boreal-* > checksums.txt
 
       - name: Release notes
         run: |
           BUILD=${GITHUB_REF_NAME#preview-}
           cat > notes.md <<NOTES
-          A test build of Platty for Windows, Linux and macOS, made from \`${GITHUB_SHA::7}\`. It is not a release: expect rough edges, and please report what you find in the issues. Preview builds don't update themselves; the stable versions are in the regular releases.
+          A test build of Boreal for Windows, Linux and macOS, made from \`${GITHUB_SHA::7}\`. It is not a release: expect rough edges, and please report what you find in the issues. Preview builds don't update themselves; the stable versions are in the regular releases.
 
           ### 🪟 Windows
-          Use the **x64** files on most PCs and **arm64** on Snapdragon and Surface Pro X. The setup replaces an installed Platty, the zip is portable. If SmartScreen stops it, choose *More info* and then *Run anyway*.
+          Use the **x64** files on most PCs and **arm64** on Snapdragon and Surface Pro X. The setup replaces an installed Boreal, the zip is portable. If SmartScreen stops it, choose *More info* and then *Run anyway*.
 
           ### 🐧 Linux
           Pick **x86_64** for most PCs and **aarch64** for ARM boards and laptops.
           \`\`\`sh
-          chmod +x Platty-preview-$BUILD-linux-x86_64.AppImage
-          ./Platty-preview-$BUILD-linux-x86_64.AppImage
+          chmod +x Boreal-preview-$BUILD-linux-x86_64.AppImage
+          ./Boreal-preview-$BUILD-linux-x86_64.AppImage
           \`\`\`
           It needs Wayland or X11 with OpenGL ES or Vulkan. If your system has no FUSE, add \`--appimage-extract-and-run\`.
 
           ### 🍎 macOS
-          Pick **apple-silicon** for M1 and newer, **intel** for older Macs. Requires macOS 12 or later. Open the \`.dmg\` and drag Platty to Applications. The first time, open it from System Settings › Privacy & Security › Open Anyway.
+          Pick **apple-silicon** for M1 and newer, **intel** for older Macs. Requires macOS 12 or later. Open the \`.dmg\` and drag Boreal to Applications. The first time, open it from System Settings › Privacy & Security › Open Anyway.
 
           ### What should work
           - SSH sessions, SFTP, port forwarding, the vault and the rest of the app
@@ -186,4 +186,4 @@ jobs:
         run: |
           BUILD=${GITHUB_REF_NAME#preview-}
           gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" \
-            --title "Platty preview $BUILD" --notes-file notes.md --prerelease --latest=false
+            --title "Boreal preview $BUILD" --notes-file notes.md --prerelease --latest=false

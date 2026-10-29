@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/plattyssh/platty/internal/config"
-	"github.com/plattyssh/platty/internal/secure"
+	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/secure"
 )
 
 const (

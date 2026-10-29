@@ -7,8 +7,8 @@
   "RT_MANIFEST": {
     "#1": {
       "0409": {
-        "identity": {"name": "Platty", "version": "0.1.0.0"},
-        "description": "Platty",
+        "identity": {"name": "Boreal", "version": "0.1.0.0"},
+        "description": "Boreal",
         "minimum-os": "win10",
         "execution-level": "as invoker",
         "dpi-awareness": "per monitor v2",
@@ -22,10 +22,10 @@
         "fixed": {"file_version": "0.1.0.0", "product_version": "0.1.0.0"},
         "info": {
           "0409": {
-            "FileDescription": "Platty",
-            "ProductName": "Platty",
+            "FileDescription": "Boreal",
+            "ProductName": "Boreal",
             "OriginalFilename": "platty.exe",
-            "CompanyName": "PlattySSH",
+            "CompanyName": "Northlight",
             "LegalCopyright": "© 2026 AlesixDev. MIT License.",
             "FileVersion": "0.1.0",
             "ProductVersion": "0.1.0"

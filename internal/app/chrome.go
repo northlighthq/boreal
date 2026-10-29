@@ -5,8 +5,6 @@ import (
 	"image/color"
 	"strconv"
 
-	"gioui.org/f32"
-	"gioui.org/font"
 	"gioui.org/io/pointer"
 	"gioui.org/io/system"
 	"gioui.org/layout"
@@ -16,13 +14,13 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/settings"
-	"github.com/plattyssh/platty/internal/platform/titlebar"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/metrics"
-	"github.com/plattyssh/platty/internal/ui/sol"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/settings"
+	"github.com/northlighthq/boreal/internal/platform/titlebar"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/mark"
+	"github.com/northlighthq/boreal/internal/ui/metrics"
 )
 
 const (
@@ -34,12 +32,13 @@ const (
 	cardMargin        = unit.Dp(8)
 	windowButtonWidth = unit.Dp(38)
 	navRowHeight      = unit.Dp(32)
+	activityWidth     = unit.Dp(52)
 )
 
 var closeHover = color.NRGBA{R: 0xc4, G: 0x2b, B: 0x1c, A: 0xff}
 
 type chrome struct {
-	logo       sol.Sol
+	tipOff     *kit.Row
 	sideToggle widget.Clickable
 	home       kit.Row
 	newTerm    kit.Row
@@ -70,26 +69,202 @@ func (c *chrome) shell(a *App, gtx C) D {
 	th := a.th()
 	kit.Fill(gtx, th.Window)
 
-	return layout.Flex{}.Layout(gtx,
-		layout.Rigid(func(gtx C) D { return c.sidebar(a, gtx) }),
+	left := 0
+	size := gtx.Constraints.Max
+	dims := layout.Flex{}.Layout(gtx,
+		layout.Rigid(func(gtx C) D {
+			d := c.activityBar(a, gtx)
+			left += d.Size.X
+			return d
+		}),
+		layout.Rigid(func(gtx C) D {
+			d := c.sidebar(a, gtx)
+			left += d.Size.X
+			return d
+		}),
 		layout.Flexed(1, func(gtx C) D { return c.main(a, gtx) }),
 	)
+	a.palette.Area = image.Rect(left, gtx.Dp(headerHeight), size.X, size.Y)
+	return dims
+}
+
+type activityItem struct {
+	index int
+	icon  *icons.Icon
+}
+
+func (t *tools) activity() []activityItem {
+	return []activityItem{
+		{t.indexOf(t.hosts), icons.LucideMonitor},
+		{t.indexOf(t.sftp), icons.LucideFolder},
+		{t.indexOf(t.snippets), icons.LucideCode},
+		{t.indexOf(t.keys), icons.LucideKey},
+		{t.indexOf(t.forwards), icons.LucideCable},
+		{t.indexOf(t.known), icons.LucideFingerprint},
+	}
+}
+
+func (c *chrome) activityBar(a *App, gtx C) D {
+	c.handleNav(a, gtx)
+
+	height := gtx.Constraints.Max.Y
+	width := gtx.Dp(activityWidth)
+	size := image.Pt(width, height)
+	gtx.Constraints = layout.Exact(size)
+
+	top := gtx.Dp(headerHeight)
+
+	if a.trafficLights() {
+		top += gtx.Dp(macLogoHeight)
+	}
+
+	moveArea(gtx, image.Pt(width, top))
+
+	layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(func(gtx C) D {
+			gtx.Constraints = layout.Exact(image.Pt(width, top))
+			box := gtx.Dp(36)
+			defer op.Offset(image.Pt((width-box)/2, top-gtx.Dp(tabHeight)/2-box/2)).Push(gtx.Ops).Pop()
+			c.homeButton(a, gtx)
+			return D{Size: image.Pt(width, top)}
+		}),
+		layout.Rigid(func(gtx C) D {
+			var items []layout.FlexChild
+
+			for _, it := range a.tools.activity() {
+				i := it.index
+				tw := a.tools.list[i]
+				active := a.tools.open[core.Left] == i && a.docked[core.Left] == nil
+				items = append(items, layout.Rigid(func(gtx C) D {
+					return c.activityButton(a, gtx, &a.tools.rows[i], it.icon, tw.Title(), active, false)
+				}))
+			}
+
+			return layout.Flex{Axis: layout.Vertical}.Layout(gtx, items...)
+		}),
+		layout.Flexed(1, func(gtx C) D { return D{Size: image.Pt(0, gtx.Constraints.Min.Y)} }),
+		layout.Rigid(func(gtx C) D {
+			label := upgradeLabel(a.Update())
+
+			if label == "" {
+				return D{}
+			}
+
+			return c.activityButton(a, gtx, &c.upgrade, icons.Download, label, false, true)
+		}),
+		layout.Rigid(func(gtx C) D {
+			return layout.Inset{Bottom: 8}.Layout(gtx, func(gtx C) D {
+				return c.activityButton(a, gtx, &c.settings, icons.LucideGear, "Settings", false, false)
+			})
+		}),
+	)
+
+	return D{Size: size}
+}
+
+func (c *chrome) homeButton(a *App, gtx C) D {
+	k := a.kit
+
+	if ev := c.home.Update(gtx); ev.Click {
+		a.ws.active = -1
+	}
+
+	box := gtx.Dp(36)
+	size := image.Pt(box, box)
+	g := gtx
+	g.Constraints = layout.Exact(size)
+	k.Row(g, &c.home, kit.RowOpts{Height: 36, Plain: true}, func(gtx C) D { return D{} })
+
+	px := gtx.Dp(20)
+	off := op.Offset(image.Pt((box-px)/2, (box-px)/2)).Push(gtx.Ops)
+	mark.Layout(gtx, 20)
+	off.Pop()
+
+	if c.home.Hovered() {
+		c.tooltip(a, gtx, size, "Home")
+	}
+
+	return D{Size: size}
+}
+
+func (c *chrome) activityButton(a *App, gtx C, r *kit.Row, ic *icons.Icon, label string, active, lit bool) D {
+	k := a.kit
+	th := a.th()
+	width := gtx.Dp(activityWidth)
+	height := gtx.Dp(44)
+	size := image.Pt(width, height)
+
+	hv := k.Hover(gtx, kit.Key(r, 9), r.Hovered())
+	on := k.Animated(gtx, kit.Key(r, 10), kit.B2F(active), kit.Fast)
+	fg := kit.Lerp(kit.Lerp(th.TextFaint, th.Text, hv), th.Text, on)
+
+	if lit {
+		fg = th.Accent
+	}
+
+	g := gtx
+	g.Constraints = layout.Exact(size)
+	k.Row(g, r, kit.RowOpts{Height: 44, Plain: true}, func(gtx C) D { return D{} })
+
+	if bg := kit.Lerp(kit.Fade(th.Hover, hv), th.Selection, on); bg.A > 0 {
+		box := gtx.Dp(36)
+		x, y := (width-box)/2, (height-box)/2
+		kit.RRect(gtx, image.Rect(x, y, x+box, y+box), gtx.Dp(th.Radius), bg)
+	}
+
+	px := gtx.Dp(20)
+	off := op.Offset(image.Pt((width-px)/2, (height-px)/2)).Push(gtx.Ops)
+	ic.Layout(gtx, 20, fg)
+	off.Pop()
+
+	if !r.Hovered() && c.tipOff == r {
+		c.tipOff = nil
+	}
+
+	if r.Hovered() && c.tipOff != r {
+		c.tooltip(a, gtx, size, label)
+	}
+
+	return D{Size: size}
+}
+
+func (c *chrome) tooltip(a *App, gtx C, anchor image.Point, label string) {
+	k := a.kit
+	th := a.th()
+	rec := op.Record(gtx.Ops)
+	g := gtx
+	g.Constraints = layout.Constraints{Max: image.Pt(gtx.Dp(260), gtx.Dp(40))}
+	macro := op.Record(g.Ops)
+	text := layout.Inset{Left: 9, Right: 9, Top: 5, Bottom: 5}.Layout(g, func(gtx C) D {
+		return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.Text}, label)
+	})
+	body := macro.Stop()
+	box := image.Rectangle{Max: text.Size}
+	off := op.Offset(image.Pt(anchor.X+gtx.Dp(2), (anchor.Y-text.Size.Y)/2)).Push(gtx.Ops)
+	kit.RRect(gtx, box, gtx.Dp(th.RadiusSmall), th.Popup)
+	kit.Border(gtx, box, gtx.Dp(th.RadiusSmall), 1, th.Border)
+	body.Add(gtx.Ops)
+	off.Pop()
+	op.Defer(gtx.Ops, rec.Stop())
 }
 
 func (c *chrome) sidebar(a *App, gtx C) D {
 	k := a.kit
 
 	a.ws.update(a, gtx)
-	c.handleNav(a, gtx)
 
 	if c.sideToggle.Clicked(gtx) {
 		a.tools.toggleSide(a, core.Left)
 	}
 
-	full := gtx.Dp(sidebarWidth)
+	full := gtx.Dp(a.tools.width[core.Left])
 
 	if a.docked[core.Left] != nil {
 		full = gtx.Dp(sidebarFormWidth)
+	}
+
+	if i := a.tools.open[core.Left]; i >= 0 {
+		a.tools.shown[core.Left] = i
 	}
 
 	target := float32(0)
@@ -100,11 +275,11 @@ func (c *chrome) sidebar(a *App, gtx C) D {
 
 	width := int(k.Animated(gtx, kit.Key(&c.sideToggle, 0), target, kit.Slow))
 
-	if target > 0 && width >= gtx.Dp(sidebarWidth) {
+	if target > 0 && width >= gtx.Dp(minPanelWidth) {
 		full = width
 	}
 
-	if width <= 0 {
+	if width <= 0 || a.tools.shown[core.Left] < 0 {
 		return D{}
 	}
 
@@ -117,50 +292,76 @@ func (c *chrome) sidebar(a *App, gtx C) D {
 	}
 
 	gtx.Constraints = layout.Exact(image.Pt(full, height))
+	tw := a.tools.list[a.tools.shown[core.Left]]
+
 	layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx C) D { return c.sidebarTop(a, gtx) }),
-		layout.Rigid(func(gtx C) D {
-			return layout.Inset{Left: 8, Right: 8}.Layout(gtx, func(gtx C) D {
-				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-					layout.Rigid(func(gtx C) D {
-						return layout.Inset{Left: 6, Right: 6, Bottom: 8}.Layout(gtx, func(gtx C) D { return c.searchBar(a, gtx) })
-					}),
-					layout.Rigid(func(gtx C) D {
-						return c.navRow(a, gtx, &c.home, icons.HomeOutline, "Home", a.ws.current() == nil, nil)
-					}),
-					layout.Rigid(func(gtx C) D { return c.toolRow(a, gtx, a.tools.indexOf(a.tools.sftp)) }),
-					layout.Rigid(func(gtx C) D { return c.newTermRow(a, gtx) }),
-				)
+		layout.Flexed(1, func(gtx C) D {
+			return layout.Inset{Right: cardMargin, Bottom: cardMargin}.Layout(gtx, func(gtx C) D {
+				return c.island(a, gtx, func(gtx C) D {
+					if a.docked[core.Left] != nil {
+						return layout.Inset{Left: 8, Right: 8, Top: 8}.Layout(gtx, func(gtx C) D {
+							a.layoutDocked(gtx, core.Left)
+							return D{Size: gtx.Constraints.Max}
+						})
+					}
+
+					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+						layout.Rigid(func(gtx C) D {
+							return layout.Inset{Left: 10, Right: 10, Top: 10}.Layout(gtx, func(gtx C) D { return c.searchBar(a, gtx) })
+						}),
+						layout.Flexed(1, func(gtx C) D {
+							if tw == core.Tool(a.tools.hosts) {
+								return a.tools.hosts.Sidebar(gtx)
+							}
+
+							return c.toolView(a, gtx, tw)
+						}),
+					)
+				})
 			})
 		}),
-		layout.Flexed(1, func(gtx C) D {
-			if a.docked[core.Left] != nil {
-				return layout.Inset{Left: 8, Right: 8, Top: 12}.Layout(gtx, func(gtx C) D {
-					a.layoutDocked(gtx, core.Left)
-					return D{Size: gtx.Constraints.Max}
-				})
-			}
-
-			return a.tools.hosts.Sidebar(gtx)
-		}),
-		layout.Rigid(func(gtx C) D {
-			if a.docked[core.Left] != nil {
-				return D{}
-			}
-
-			return c.sidebarTools(a, gtx)
-		}),
 	)
+
+	if a.docked[core.Left] == nil {
+		a.tools.resize(a, gtx, core.Left)
+		grab := gtx.Dp(resizeGrab)
+		edge := full - 1
+		area := clip.Rect(image.Rect(edge-grab/2, 0, edge+grab/2, height)).Push(gtx.Ops)
+		a.tools.drag[core.Left].Add(gtx.Ops)
+		pointer.CursorColResize.Add(gtx.Ops)
+		area.Pop()
+	}
 
 	return D{Size: image.Pt(width, height)}
 }
 
+func (c *chrome) toolView(a *App, gtx C, tw core.Tool) D {
+	k := a.kit
+	th := a.th()
+
+	return layout.Inset{Left: 8, Right: 8, Bottom: 8}.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Rigid(func(gtx C) D {
+				return layout.Inset{Left: 12, Right: 4, Top: 18, Bottom: 4}.Layout(gtx, func(gtx C) D {
+					gtx.Constraints.Min.Y = gtx.Dp(26)
+					return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+						layout.Flexed(1, func(gtx C) D {
+							return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextFaint}, tw.Title())
+						}),
+						layout.Rigid(func(gtx C) D { return tw.Actions(gtx) }),
+					)
+				})
+			}),
+			layout.Flexed(1, func(gtx C) D { return tw.Body(gtx) }),
+		)
+	})
+}
+
 func (c *chrome) sidebarTop(a *App, gtx C) D {
-	c.logo.Still = true
-	c.logo.Posed, c.logo.Tilt, c.logo.Look = true, 0.22, f32.Pt(1, -1)
 	th := a.th()
 	k := a.kit
-	height := sidebarTopHeight
+	height := headerHeight
 
 	if a.trafficLights() {
 		height += macLogoHeight
@@ -170,59 +371,36 @@ func (c *chrome) sidebarTop(a *App, gtx C) D {
 	gtx.Constraints = layout.Exact(size)
 	moveArea(gtx, size)
 
-	layout.Inset{Left: 14, Right: 10, Top: headerHeight - tabHeight}.Layout(gtx, func(gtx C) D {
-		gtx.Constraints.Min.Y = gtx.Dp(tabHeight)
+	layout.Inset{Left: 6, Right: 14, Top: height - tabHeight + (tabHeight-32)/2}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-			layout.Rigid(func(gtx C) D {
-				if a.trafficLights() {
-					return a.trafficLightsGap(gtx)
-				}
-
-				return c.brand(a, gtx)
-			}),
 			layout.Flexed(1, func(gtx C) D { return D{Size: image.Pt(gtx.Constraints.Min.X, 0)} }),
 			layout.Rigid(func(gtx C) D {
-				return k.IconButtonSized(gtx, &c.sideToggle, icons.SidebarLeft, false, 30, 18, th.TextFaint)
+				return k.IconButtonSized(gtx, &c.sideToggle, icons.SidebarLeft, false, 32, 18, th.TextFaint)
 			}),
 		)
 	})
 
-	if a.trafficLights() {
-		defer op.Offset(image.Pt(gtx.Dp(10), gtx.Dp(headerHeight+4))).Push(gtx.Ops).Pop()
-		c.brand(a, gtx)
-	}
-
 	return D{Size: size}
 }
 
-func (c *chrome) brand(a *App, gtx C) D {
+func (c *chrome) island(a *App, gtx C, w layout.Widget) D {
 	th := a.th()
+	size := gtx.Constraints.Max
+	r := image.Rectangle{Max: size}
+	radius := gtx.Dp(th.RadiusLarge)
 
-	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(func(gtx C) D { return c.logo.Layout(gtx, a.kit, 30) }),
-		layout.Rigid(kit.Gap(6)),
-		layout.Rigid(func(gtx C) D {
-			return a.kit.Label(gtx, kit.TextStyle{Size: 15, Weight: font.SemiBold, Color: th.Text}, "Platty")
-		}),
-	)
+	kit.RRect(gtx, r, radius, th.Editor)
+	content := clip.UniformRRect(r, radius).Push(gtx.Ops)
+	gtx.Constraints = layout.Exact(size)
+	w(gtx)
+	content.Pop()
+	kit.Border(gtx, r, radius, 1, th.Border)
+	return D{Size: size}
 }
 
 func (c *chrome) handleNav(a *App, gtx C) {
 	if c.search.Clicked(gtx) {
 		a.palette.Show()
-	}
-
-	if ev := c.home.Update(gtx); ev.Click {
-		a.ws.active = -1
-	}
-
-	if ev := c.newTerm.Update(gtx); ev.Click && !c.profiles.Hovered() {
-		a.NewLocalTab(a.DefaultProfile())
-	}
-
-	if c.profiles.Clicked(gtx) {
-		a.ws.menu.Width = 280
-		a.ws.menu.Open(a.ws.newTabMenu(a), image.Pt(gtx.Dp(8), gtx.Dp(navRowHeight)))
 	}
 
 	if ev := c.upgrade.Update(gtx); ev.Click {
@@ -235,19 +413,15 @@ func (c *chrome) handleNav(a *App, gtx C) {
 	}
 
 	if ev := c.settings.Update(gtx); ev.Click {
+		c.tipOff = &c.settings
 		a.Open(settings.New(a))
 	}
 
-	for i := 1; i < len(a.tools.list); i++ {
+	for i := range a.tools.list {
 		if ev := a.tools.rows[i].Update(gtx); ev.Click {
-			a.docked[core.Right] = nil
-
-			if a.tools.open[core.Right] == i {
-				a.tools.open[core.Right] = -1
-				a.ws.focusActive()
-			} else {
-				a.tools.open[core.Right] = i
-			}
+			c.tipOff = &a.tools.rows[i]
+			a.docked[core.Left] = nil
+			a.tools.toggleIndex(a, i)
 		}
 	}
 }
@@ -275,47 +449,6 @@ func (c *chrome) navRowStyled(a *App, gtx C, r *kit.Row, ic *icons.Icon, label s
 				return trailing(gtx)
 			}),
 		)
-	})
-}
-
-func (c *chrome) newTermRow(a *App, gtx C) D {
-	k := a.kit
-	th := a.th()
-
-	dims := c.navRow(a, gtx, &c.newTerm, icons.PlusOutline, "New terminal", false, func(gtx C) D {
-		return k.IconButtonSized(gtx, &c.profiles, icons.ExpandMore, a.ws.menu.IsOpen(), 24, 16, th.TextFaint)
-	})
-	k.Menu(gtx, &a.ws.menu)
-	return dims
-}
-
-func (c *chrome) sidebarTools(a *App, gtx C) D {
-	return layout.Inset{Left: 8, Right: 8, Top: 8, Bottom: 10}.Layout(gtx, func(gtx C) D {
-		children := make([]layout.FlexChild, 0, len(a.tools.list)+1)
-		children = append(children, layout.Rigid(func(gtx C) D {
-			return layout.Inset{Left: 12, Bottom: 4}.Layout(gtx, func(gtx C) D {
-				return a.kit.Label(gtx, kit.TextStyle{Size: a.th().TextSizeSmall, Color: a.th().TextFaint}, "Tools")
-			})
-		}))
-
-		for i := 1; i < len(a.tools.list); i++ {
-			if a.tools.list[i] == core.Tool(a.tools.sftp) {
-				continue
-			}
-
-			children = append(children, layout.Rigid(func(gtx C) D { return c.toolRow(a, gtx, i) }))
-		}
-
-		if label := upgradeLabel(a.Update()); label != "" {
-			children = append(children, layout.Rigid(func(gtx C) D {
-				return c.navRowStyled(a, gtx, &c.upgrade, icons.Download, label, false, true, nil)
-			}))
-		}
-
-		children = append(children, layout.Rigid(func(gtx C) D {
-			return c.navRow(a, gtx, &c.settings, icons.SlidersOutline, "Settings", false, nil)
-		}))
-		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
 	})
 }
 
@@ -366,8 +499,11 @@ func (c *chrome) header(a *App, gtx C) D {
 		children = append(children, icon(&c.splitR, icons.SplitRight, false), icon(&c.splitD, icons.SplitDown, false))
 	}
 
+	if a.docked[core.Right] != nil {
+		children = append(children, icon(&c.toolPanel, icons.SidebarRight, a.tools.open[core.Right] >= 0))
+	}
+
 	children = append(children,
-		icon(&c.toolPanel, icons.SidebarRight, a.tools.open[core.Right] >= 0),
 		layout.Rigid(func(gtx C) D {
 			if titlebar.Native {
 				return D{}
@@ -474,12 +610,6 @@ func (c *chrome) windowButton(a *App, gtx C, clk *widget.Clickable, ic *icons.Ic
 		layout.Center.Layout(gtx, func(gtx C) D { return ic.Layout(gtx, 16, fg) })
 		return D{Size: size}
 	})
-}
-
-func (c *chrome) toolRow(a *App, gtx C, i int) D {
-	tw := a.tools.list[i]
-	open := a.tools.open[core.Right] == i && a.docked[core.Right] == nil
-	return c.navRowStyled(a, gtx, &a.tools.rows[i], tw.Icon(), tw.Title(), false, open, nil)
 }
 
 func (a *App) trafficLights() bool {

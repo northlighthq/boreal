@@ -6,15 +6,15 @@ import (
 	"gioui.org/layout"
 	"gioui.org/x/explorer"
 
-	"github.com/plattyssh/platty/internal/config"
-	"github.com/plattyssh/platty/internal/platform/shell"
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/transfer"
-	"github.com/plattyssh/platty/internal/tunnel"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/toast"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/platform/shell"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/transfer"
+	"github.com/northlighthq/boreal/internal/tunnel"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/toast"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 type (
@@ -118,13 +118,13 @@ func (i UpdateInfo) Label() string {
 	case UpdateChecking:
 		return "Checking for updates…"
 	case UpdateCurrent:
-		return "Platty is up to date."
+		return "Boreal is up to date."
 	case UpdateAvailable:
 		return "Version " + i.Version + " is available."
 	case UpdateDownloading:
 		return "Downloading version " + i.Version + "… " + strconv.Itoa(int(i.Progress*100)) + "%"
 	case UpdateReady:
-		return "Version " + i.Version + " is ready. It installs when Platty closes."
+		return "Version " + i.Version + " is ready. It installs when Boreal closes."
 	case UpdateFailed:
 		return "Couldn't update. " + i.Err
 	}

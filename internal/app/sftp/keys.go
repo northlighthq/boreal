@@ -7,9 +7,9 @@ import (
 	"gioui.org/io/event"
 	"gioui.org/io/key"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/dialogs"
-	"github.com/plattyssh/platty/internal/sshx"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/dialogs"
+	"github.com/northlighthq/boreal/internal/sshx"
 )
 
 func (p *Panel) keys(a core.Host, gtx C, c *sftpConn, cwd string, entries []sshx.Entry) {

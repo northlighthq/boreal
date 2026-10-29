@@ -16,7 +16,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const (

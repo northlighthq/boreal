@@ -19,16 +19,16 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/dialogs"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/dialogs"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const (
-	hostMime   = "application/x-platty-host"
-	folderMime = "application/x-platty-folder"
+	hostMime   = "application/x-boreal-host"
+	folderMime = "application/x-boreal-folder"
 )
 
 const folderIndent = 16

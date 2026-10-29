@@ -2,10 +2,10 @@
 
 A VT terminal emulator for Go with no GUI attached: an escape sequence parser, screen and scrollback state, reflow on resize, text search and input encoding.
 
-It powers the terminal in [Platty](https://github.com/PlattySSH/platty).
+It powers the terminal in [Boreal](https://github.com/northlighthq/boreal).
 
 ```sh
-go get github.com/plattyssh/vt
+go get github.com/northlighthq/vt
 ```
 
 ```go

@@ -11,7 +11,7 @@ import (
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 )
 
 type selectMode uint8

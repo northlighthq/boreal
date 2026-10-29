@@ -9,17 +9,17 @@ import (
 	"gioui.org/layout"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 
-	"github.com/plattyssh/platty/internal/config"
-	"github.com/plattyssh/platty/internal/platform/shell"
-	"github.com/plattyssh/platty/internal/privacy"
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/termview"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/platform/shell"
+	"github.com/northlighthq/boreal/internal/privacy"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/termview"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const maxJumpDepth = 5
@@ -75,7 +75,7 @@ func (a *App) newPane(s *session.Session) *Pane {
 	p.view = termview.New(s, a.kit, a.glyphs, a.termSettings())
 	p.view.OnOpenURL = func(link string) {
 		if !openURL(link) {
-			a.toasts.Error("Link not opened", "Platty only opens http and https links.")
+			a.toasts.Error("Link not opened", "Boreal only opens http and https links.")
 		}
 	}
 	p.view.OnAction = func(action string) { a.paneAction(p, action) }
@@ -136,13 +136,14 @@ func (a *App) NewLocalTab(pr shell.Profile) {
 
 func (a *App) newSSHPane(h vault.Host) *Pane {
 	go a.vault.TouchHost(h.ID)
+	asker := new(int)
 
 	s := session.New(session.Options{
 		Kind:        session.SSH,
 		OnClipboard: a.serverCopy(h.Title()),
 		Target:      a.target(h, 0),
 		Vault:       a.vault,
-		Hooks:       a.hooks(),
+		Hooks:       a.hooksFor(asker),
 		Redact: func(s string) string {
 			if r := a.redactor(); r != nil {
 				return r(s)
@@ -159,6 +160,7 @@ func (a *App) newSSHPane(h vault.Host) *Pane {
 	})
 
 	p := a.newPane(s)
+	p.asker = asker
 	p.icon = icons.Server
 	p.color = a.th().TextMuted
 	p.origin = origin{HostID: h.ID}
@@ -196,16 +198,20 @@ func (a *App) target(h vault.Host, depth int) sshx.Target {
 }
 
 func (a *App) hooks() sshx.Hooks {
+	return a.hooksFor(nil)
+}
+
+func (a *App) hooksFor(owner *int) sshx.Hooks {
 	return sshx.Hooks{
 		ConfirmHostKey: func(info sshx.HostKeyInfo) bool {
-			r := a.ask(&prompt{kind: promptHostKey, hostKey: info})
+			r := a.ask(&prompt{kind: promptHostKey, hostKey: info, owner: owner})
 			return r.ok
 		},
 		AskPassword: func(msg string) (string, bool) {
-			r := a.ask(&prompt{kind: promptSecret, message: msg})
+			r := a.ask(&prompt{kind: promptSecret, message: msg, owner: owner})
 			return r.text, r.ok
 		},
-		KeyPassphrase: a.keyPassphrase,
+		KeyPassphrase: func(k vault.Key) (string, bool) { return a.keyPassphrase(k, owner) },
 	}
 }
 
@@ -229,6 +235,7 @@ type prompt struct {
 	keep    widget.Bool
 	hostKey sshx.HostKeyInfo
 	reply   chan promptReply
+	owner   *int
 
 	dlg     kit.Dialog
 	editor  widget.Editor
@@ -249,14 +256,20 @@ func (q *promptQueue) push(p *prompt) {
 }
 
 func (q *promptQueue) peek() *prompt {
+	return q.find(nil)
+}
+
+func (q *promptQueue) find(owner *int) *prompt {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	if len(q.items) == 0 {
-		return nil
+	for _, it := range q.items {
+		if it.owner == owner {
+			return it
+		}
 	}
 
-	return q.items[0]
+	return nil
 }
 
 func (q *promptQueue) pop(p *prompt) {
@@ -290,9 +303,15 @@ func (p *prompt) answer(a *App, r promptReply) bool {
 }
 
 func (p *prompt) Layout(gtx C) bool {
+	if p.handle(gtx) {
+		return true
+	}
+
+	return p.a.kit.Dialog(gtx, &p.dlg, p.opts(gtx)) && p.answer(p.a, promptReply{})
+}
+
+func (p *prompt) handle(gtx C) bool {
 	a := p.a
-	k := a.kit
-	th := a.th()
 
 	if p.ok.Clicked(gtx) {
 		return p.answer(a, promptReply{ok: true, text: p.editor.Text(), remember: p.keep.Value})
@@ -319,6 +338,13 @@ func (p *prompt) Layout(gtx C) bool {
 		p.focused = true
 	}
 
+	return false
+}
+
+func (p *prompt) opts(gtx C) kit.DialogOpts {
+	a := p.a
+	k := a.kit
+	th := a.th()
 	opts := kit.DialogOpts{Width: 460}
 
 	switch p.kind {
@@ -407,11 +433,7 @@ func (p *prompt) Layout(gtx C) bool {
 		)
 	}
 
-	if k.Dialog(gtx, &p.dlg, opts) {
-		return p.answer(a, promptReply{})
-	}
-
-	return false
+	return opts
 }
 
 func (a *App) redactor() func(string) string {

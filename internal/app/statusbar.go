@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/ui/metrics"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/ui/metrics"
 )
 
 const statsEvery = 3 * time.Second

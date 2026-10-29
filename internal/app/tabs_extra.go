@@ -9,10 +9,10 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/op/clip"
 
-	"github.com/plattyssh/platty/internal/platform/shell"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/platform/shell"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const (

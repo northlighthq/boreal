@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const (

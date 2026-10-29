@@ -11,11 +11,11 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/fonts"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/theme"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/fonts"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 func (d *Intro) welcome(gtx C) D {
@@ -204,7 +204,7 @@ func (d *Intro) security(gtx C) D {
 		}),
 		layout.Rigid(kit.Gap(12)),
 		layout.Rigid(func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, "If you forget the master password and turn the "+vault.OSName+" option off, Platty can't open the vault again.")
+			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, "If you forget the master password and turn the "+vault.OSName+" option off, Boreal can't open the vault again.")
 		}),
 	)
 

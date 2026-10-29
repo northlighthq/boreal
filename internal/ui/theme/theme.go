@@ -4,10 +4,11 @@ import (
 	"image/color"
 
 	"gioui.org/unit"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 )
 
 const (
+	Northlight = "northlight"
 	Carbon     = "carbon"
 	Graphite   = "graphite"
 	Midnight   = "midnight"
@@ -22,9 +23,9 @@ const (
 	Dawn       = "dawn"
 )
 
-var Names = []string{Carbon, Graphite, Midnight, Paper, Catppuccin, RosePine, Nord, Everforest, Gruvbox, TokyoNight, Latte, Dawn}
+var Names = []string{Northlight, Carbon, Graphite, Midnight, Paper, Catppuccin, RosePine, Nord, Everforest, Gruvbox, TokyoNight, Latte, Dawn}
 
-var Labels = []string{"Carbon", "Graphite", "Midnight", "Paper", "Catppuccin", "Rosé Pine", "Nord", "Everforest", "Gruvbox", "Tokyo Night", "Latte", "Rosé Pine Dawn"}
+var Labels = []string{"Northlight", "Carbon", "Graphite", "Midnight", "Paper", "Catppuccin", "Rosé Pine", "Nord", "Everforest", "Gruvbox", "Tokyo Night", "Latte", "Rosé Pine Dawn"}
 
 type Metrics struct {
 	ToolbarHeight unit.Dp
@@ -147,6 +148,13 @@ var ansiLight = [16]uint32{
 }
 
 var specs = map[string]spec{
+	Northlight: {
+		name: Northlight, dark: true,
+		canvas: 0x0a0b0d, surface: 0x15171b, raised: 0x24272d, popup: 0x1b1e23,
+		text: 0xf3f4f6, muted: 0x9a9fa8, faint: 0x60656e,
+		danger: 0xe0625a, accent: 0x3bd39a, success: 0x3bd39a, warning: 0xf2c45c,
+		ansi: ansiDark,
+	},
 	Carbon: {
 		name: Carbon, dark: true,
 		canvas: 0x0e0d0c, surface: 0x171615, raised: 0x25231f, popup: 0x1d1c1a,

@@ -11,7 +11,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 
-	"github.com/plattyssh/platty/internal/ui/shape"
+	"github.com/northlighthq/boreal/internal/ui/shape"
 )
 
 type Icon struct {

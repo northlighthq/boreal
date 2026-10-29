@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/vt"
 )
 
 var highlightRe = regexp.MustCompile(strings.Join([]string{

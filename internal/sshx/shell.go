@@ -40,7 +40,7 @@ func OpenShell(c *Client, cols, rows int, forwardAgent bool) (*Shell, error) {
 	}
 
 	sess.Setenv("COLORTERM", "truecolor")
-	sess.Setenv("TERM_PROGRAM", "Platty")
+	sess.Setenv("TERM_PROGRAM", "Boreal")
 
 	stdin, err := sess.StdinPipe()
 

@@ -4,12 +4,23 @@ var (
 	Terminal = tabler("terminal-2")
 	Prompt   = tabler("terminal")
 
-	FolderOutline    = tabler("folder")
-	FolderFilled     = tablerFilled("folder")
-	FolderOpen       = tabler("folder-open")
-	NewFolderOutline = tabler("folder-plus")
-	Folder           = FolderOutline
-	NewFolder        = NewFolderOutline
+	LucideServer      = lucide("server")
+	LucideMonitor     = lucide("monitor")
+	LucideLaptop      = lucide("laptop")
+	LucideRocket      = lucide("rocket")
+	LucideUnplug      = lucide("unplug")
+	LucideFolder      = lucide("folder-open")
+	LucideCode        = lucide("square-code")
+	LucideKey         = lucide("key-round")
+	LucideCable       = lucide("cable")
+	LucideFingerprint = lucide("fingerprint")
+	LucideGear        = lucide("settings")
+	FolderOutline     = tabler("folder")
+	FolderFilled      = tablerFilled("folder")
+	FolderOpen        = tabler("folder-open")
+	NewFolderOutline  = tabler("folder-plus")
+	Folder            = FolderOutline
+	NewFolder         = NewFolderOutline
 
 	PlusOutline = tabler("plus")
 	Add         = PlusOutline

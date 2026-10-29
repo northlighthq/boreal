@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 func GenerateEd25519(label, passphrase string) (vault.Key, error) {

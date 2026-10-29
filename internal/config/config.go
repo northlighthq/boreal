@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	appDir       = "Platty"
+	appDir       = "Boreal"
+	legacyDir    = "Platty"
 	settingsFile = "settings.json"
 )
 
@@ -63,7 +64,7 @@ var renamedThemes = map[string]string{"ember": "gruvbox", "tide": "tokyonight", 
 
 func Defaults() Settings {
 	return Settings{
-		Theme:         "mono",
+		Theme:         "northlight",
 		FontSize:      13,
 		LineHeight:    1.2,
 		CursorStyle:   CursorBlock,
@@ -97,6 +98,10 @@ func Dir() (string, error) {
 	}
 
 	dir := filepath.Join(base, appDir)
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.Rename(filepath.Join(base, legacyDir), dir)
+	}
 
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err

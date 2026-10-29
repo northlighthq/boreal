@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plattyssh/pty"
-	"github.com/plattyssh/vt"
+	"github.com/northlighthq/pty"
+	"github.com/northlighthq/vt"
 
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 const (
@@ -316,7 +316,7 @@ func (s *Session) connect() {
 			Command: s.opts.Command,
 			Cols:    cols,
 			Rows:    rows,
-			Env:     []string{"TERM=xterm-256color", "COLORTERM=truecolor", "TERM_PROGRAM=Platty"},
+			Env:     []string{"TERM=xterm-256color", "COLORTERM=truecolor", "TERM_PROGRAM=Boreal"},
 		})
 	case SSH:
 		client, t, err = s.dialSSH(cols, rows)
@@ -406,7 +406,7 @@ func (s *Session) readLoop(gen int, t Transport) {
 
 		if n > 0 {
 			if _, werr := s.term.Write(buf[:n]); werr != nil {
-				s.print("\r\n" + styleError + "Platty reset this terminal after an internal error." + styleReset + "\r\n")
+				s.print("\r\n" + styleError + "Boreal reset this terminal after an internal error." + styleReset + "\r\n")
 			}
 
 			s.writeLog(buf[:n])

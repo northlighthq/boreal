@@ -7,7 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"github.com/plattyssh/platty/internal/platform/keyring"
+	"github.com/northlighthq/boreal/internal/platform/keyring"
 )
 
 var keyringRef = []byte("keyring:")
@@ -17,7 +17,7 @@ func protect(plain []byte) ([]byte, error) {
 	rand.Read(id)
 	name := hex.EncodeToString(id)
 
-	if err := keyring.Set(name, "Platty vault key", plain); err != nil {
+	if err := keyring.Set(name, "Boreal vault key", plain); err != nil {
 		return bytes.Clone(plain), nil
 	}
 

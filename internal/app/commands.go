@@ -1,17 +1,17 @@
 package app
 
 import (
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/hosts"
-	"github.com/plattyssh/platty/internal/app/keychain"
-	"github.com/plattyssh/platty/internal/app/onboarding"
-	"github.com/plattyssh/platty/internal/app/palette"
-	"github.com/plattyssh/platty/internal/app/settings"
-	"github.com/plattyssh/platty/internal/app/snippets"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/theme"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/hosts"
+	"github.com/northlighthq/boreal/internal/app/keychain"
+	"github.com/northlighthq/boreal/internal/app/onboarding"
+	"github.com/northlighthq/boreal/internal/app/palette"
+	"github.com/northlighthq/boreal/internal/app/settings"
+	"github.com/northlighthq/boreal/internal/app/snippets"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 func (a *App) paletteEntries() []palette.Entry {
@@ -53,7 +53,7 @@ func (a *App) paletteEntries() []palette.Entry {
 		}},
 		{"Open SFTP", "Alt+6", icons.Folder, func() { a.tools.show(a, a.tools.sftp) }},
 		{"Settings", "Ctrl+Alt+S", icons.Settings, func() { a.Open(settings.New(a)) }},
-		{"Lock Platty", "Ctrl+Shift+L", icons.Lock, a.LockVault},
+		{"Lock Boreal", "Ctrl+Shift+L", icons.Lock, a.LockVault},
 		{"Show the introduction", "", icons.Info, func() { a.Open(onboarding.New(a)) }},
 		{"Export data…", "", icons.Upload, a.ExportData},
 		{"Import data…", "", icons.Download, a.ImportData},

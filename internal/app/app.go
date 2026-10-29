@@ -19,26 +19,26 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/x/explorer"
-	"github.com/plattyssh/glyphs"
+	"github.com/northlighthq/glyphs"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/dialogs"
-	"github.com/plattyssh/platty/internal/app/hosts"
-	"github.com/plattyssh/platty/internal/app/onboarding"
-	"github.com/plattyssh/platty/internal/app/palette"
-	"github.com/plattyssh/platty/internal/app/settings"
-	"github.com/plattyssh/platty/internal/app/snippets"
-	"github.com/plattyssh/platty/internal/app/welcome"
-	"github.com/plattyssh/platty/internal/config"
-	"github.com/plattyssh/platty/internal/fonts"
-	"github.com/plattyssh/platty/internal/platform/shell"
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/transfer"
-	"github.com/plattyssh/platty/internal/tunnel"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/theme"
-	"github.com/plattyssh/platty/internal/ui/toast"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/dialogs"
+	"github.com/northlighthq/boreal/internal/app/hosts"
+	"github.com/northlighthq/boreal/internal/app/onboarding"
+	"github.com/northlighthq/boreal/internal/app/palette"
+	"github.com/northlighthq/boreal/internal/app/settings"
+	"github.com/northlighthq/boreal/internal/app/snippets"
+	"github.com/northlighthq/boreal/internal/app/welcome"
+	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/fonts"
+	"github.com/northlighthq/boreal/internal/platform/shell"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/transfer"
+	"github.com/northlighthq/boreal/internal/tunnel"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/theme"
+	"github.com/northlighthq/boreal/internal/ui/toast"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 type (
@@ -47,7 +47,7 @@ type (
 )
 
 const (
-	appName      = "Platty"
+	appName      = "Boreal"
 	windowWidth  = 1280
 	windowHeight = 800
 	minWidth     = 640
@@ -130,7 +130,6 @@ func Run() error {
 	a.started = time.Now()
 	a.welcome = welcome.New(a)
 	a.palette = palette.New(a.kit, a.paletteEntries, a.paletteQuick, a.ws.focusActive)
-	a.welcome.Art.OnRun(a.runTyped)
 
 	if !a.settings.Onboarded {
 		a.Open(onboarding.New(a))
@@ -201,7 +200,7 @@ func (a *App) confirmClose() bool {
 	}
 
 	msg := fmt.Sprintf("There are %d SSH sessions and %d active tunnels. All of them will be closed.", ssh, tunnels)
-	a.Open(dialogs.NewConfirm(a.kit, "Quit Platty?", msg, "Quit", func() {
+	a.Open(dialogs.NewConfirm(a.kit, "Quit Boreal?", msg, "Quit", func() {
 		a.closing = true
 		a.win.Perform(system.ActionClose)
 	}))

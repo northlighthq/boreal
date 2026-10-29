@@ -3,7 +3,7 @@ package termview
 import (
 	"sync"
 
-	"github.com/plattyssh/glyphs"
+	"github.com/northlighthq/glyphs"
 )
 
 type cacheKey struct {

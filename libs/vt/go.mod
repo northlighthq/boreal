@@ -1,4 +1,4 @@
-module github.com/plattyssh/vt
+module github.com/northlighthq/vt
 
 go 1.26.5
 

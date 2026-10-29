@@ -13,11 +13,11 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/welcome"
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/termview"
+	"github.com/northlighthq/boreal/internal/app/welcome"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/termview"
 )
 
 const (
@@ -40,6 +40,7 @@ type Pane struct {
 	view       *termview.View
 	color      color.NRGBA
 	icon       *icons.Icon
+	asker      *int
 }
 
 type node struct {

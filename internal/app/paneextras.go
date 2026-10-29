@@ -12,11 +12,11 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/op"
 
-	"github.com/plattyssh/platty/internal/app/dialogs"
-	"github.com/plattyssh/platty/internal/config"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/termview"
+	"github.com/northlighthq/boreal/internal/app/dialogs"
+	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/termview"
 )
 
 const (

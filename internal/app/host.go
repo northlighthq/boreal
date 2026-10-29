@@ -8,17 +8,17 @@ import (
 
 	"gioui.org/x/explorer"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/config"
-	"github.com/plattyssh/platty/internal/platform/dragdrop"
-	"github.com/plattyssh/platty/internal/platform/shell"
-	"github.com/plattyssh/platty/internal/session"
-	"github.com/plattyssh/platty/internal/sshx"
-	"github.com/plattyssh/platty/internal/transfer"
-	"github.com/plattyssh/platty/internal/tunnel"
-	"github.com/plattyssh/platty/internal/ui/kit"
-	"github.com/plattyssh/platty/internal/ui/toast"
-	"github.com/plattyssh/platty/internal/vault"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/platform/dragdrop"
+	"github.com/northlighthq/boreal/internal/platform/shell"
+	"github.com/northlighthq/boreal/internal/session"
+	"github.com/northlighthq/boreal/internal/sshx"
+	"github.com/northlighthq/boreal/internal/transfer"
+	"github.com/northlighthq/boreal/internal/tunnel"
+	"github.com/northlighthq/boreal/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/ui/toast"
+	"github.com/northlighthq/boreal/internal/vault"
 )
 
 var _ core.Host = (*App)(nil)

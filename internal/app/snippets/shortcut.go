@@ -12,7 +12,7 @@ var (
 	errNoKey      = errors.New("Add a key, like Ctrl+Alt+F or F23.")
 	errBadKey     = errors.New("Use a letter, a digit or a function key from F1 to F24.")
 	errNeedMod    = errors.New("Letters and digits need Alt or Cmd, so they don't steal terminal keys.")
-	errReserved   = errors.New("Platty or the terminal already uses this shortcut.")
+	errReserved   = errors.New("Boreal or the terminal already uses this shortcut.")
 	errBadTrigger = errors.New("A trigger needs at least 2 characters and no spaces, like ;;firewall.")
 )
 

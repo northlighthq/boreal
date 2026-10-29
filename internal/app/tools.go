@@ -12,15 +12,15 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/plattyssh/platty/internal/app/core"
-	"github.com/plattyssh/platty/internal/app/forwards"
-	"github.com/plattyssh/platty/internal/app/hosts"
-	"github.com/plattyssh/platty/internal/app/keychain"
-	"github.com/plattyssh/platty/internal/app/knownhosts"
-	"github.com/plattyssh/platty/internal/app/sftp"
-	"github.com/plattyssh/platty/internal/app/snippets"
-	"github.com/plattyssh/platty/internal/ui/icons"
-	"github.com/plattyssh/platty/internal/ui/kit"
+	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/app/forwards"
+	"github.com/northlighthq/boreal/internal/app/hosts"
+	"github.com/northlighthq/boreal/internal/app/keychain"
+	"github.com/northlighthq/boreal/internal/app/knownhosts"
+	"github.com/northlighthq/boreal/internal/app/sftp"
+	"github.com/northlighthq/boreal/internal/app/snippets"
+	"github.com/northlighthq/boreal/internal/ui/icons"
+	"github.com/northlighthq/boreal/internal/ui/kit"
 )
 
 const (
@@ -84,7 +84,7 @@ func (t *tools) toggleIndex(a *App, i int) {
 		return
 	}
 
-	s := t.list[i].Side()
+	s := core.Left
 
 	if t.open[s] == i {
 		t.open[s] = -1
@@ -99,7 +99,7 @@ func (t *tools) toggleIndex(a *App, i int) {
 func (t *tools) show(a *App, w core.Tool) {
 	for i, x := range t.list {
 		if x == w {
-			t.open[w.Side()] = i
+			t.open[core.Left] = i
 		}
 	}
 
@@ -119,6 +119,10 @@ func (t *tools) toggleSide(a *App, s core.Side) {
 		t.open[s] = -1
 		t.saveOpen(a)
 		a.ws.focusActive()
+		return
+	}
+
+	if s == core.Right && a.docked[core.Right] == nil {
 		return
 	}
 
@@ -146,6 +150,11 @@ func (t *tools) panel(a *App, gtx C, s core.Side) D {
 		t.open[s] = -1
 		t.saveOpen(a)
 		a.ws.focusActive()
+	}
+
+	if s == core.Right && a.docked[core.Right] == nil {
+		t.open[s] = -1
+		return D{}
 	}
 
 	if i := t.open[s]; i >= 0 {
