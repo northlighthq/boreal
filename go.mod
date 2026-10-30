@@ -30,7 +30,7 @@ require (
 	github.com/northlighthq/vt v0.0.0
 )
 
-// The libraries live in libs/ until they are published under github.com/PlattySSH.
+// The libraries live in libs/ until they are published under github.com/northlighthq.
 replace (
 	github.com/northlighthq/glyphs => ./libs/glyphs
 	github.com/northlighthq/pty => ./libs/pty
