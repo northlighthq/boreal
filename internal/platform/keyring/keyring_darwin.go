@@ -70,7 +70,7 @@ import (
 )
 
 const (
-	service      = "Platty"
+	service      = "Boreal"
 	itemNotFound = -25300
 )
 

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Repo    = "https://github.com/northlighthq/platty"
+	Repo    = "https://github.com/northlighthq/boreal"
 	Website = "https://northlighthq.github.io/plattyssh.github.io/"
 )
 

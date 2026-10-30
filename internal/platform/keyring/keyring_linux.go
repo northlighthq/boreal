@@ -58,7 +58,7 @@ func (c *client) close() {
 }
 
 func attributes(id string) map[string]string {
-	return map[string]string{"application": "platty", "id": id}
+	return map[string]string{"application": "boreal", "id": id}
 }
 
 func (c *client) prompt(path dbus.ObjectPath) error {
