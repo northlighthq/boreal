@@ -146,8 +146,6 @@ func (w *workspace) addTab(p *Pane) {
 	p.view.Focus()
 }
 
-// addGrid opens a tab with the panes split evenly, alternating side by side
-// and stacked splits.
 func (w *workspace) addGrid(panes []*Pane) {
 	w.addTab(panes[0])
 	w.tabs[len(w.tabs)-1].root = grid(panes, true)
