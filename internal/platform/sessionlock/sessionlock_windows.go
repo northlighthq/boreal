@@ -1,4 +1,3 @@
-// Package sessionlock tells whether the user's desktop session is locked.
 package sessionlock
 
 import (
@@ -13,8 +12,7 @@ const (
 	wtsSessionInfoEx = 25
 	sessionLocked    = 0
 
-	// flagsOffset is where SessionFlags sits in WTSINFOEXW: the Level field,
-	// padding to align the union, then SessionId and SessionState.
+	// Level, padding, SessionId, SessionState
 	flagsOffset = 16
 	infoSize    = flagsOffset + 4
 )
@@ -25,7 +23,6 @@ var (
 	procWTSFreeMemory    = wtsapi.NewProc("WTSFreeMemory")
 )
 
-// Locked reports whether Windows shows the lock screen for this session.
 func Locked() bool {
 	var buf *byte
 	var size uint32

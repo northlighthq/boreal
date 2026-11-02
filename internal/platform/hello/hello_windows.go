@@ -51,8 +51,6 @@ var (
 	iidInterop   = windows.GUID{Data1: 0x39e050c3, Data2: 0x4e74, Data3: 0x441a, Data4: [8]byte{0x8d, 0xc0, 0xb8, 0x11, 0x04, 0xdf, 0x94, 0x9c}}
 	iidAsyncInfo = windows.GUID{Data1: 0x00000036, Data2: 0x0000, Data3: 0x0000, Data4: [8]byte{0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
 
-	// winrtNamespace is the namespace WinRT uses to derive the IID of a
-	// generic interface.
 	winrtNamespace = [16]byte{0x11, 0xf4, 0x7a, 0xd5, 0x7b, 0x73, 0x42, 0xc0, 0xab, 0xae, 0x87, 0x8b, 0x1e, 0x16, 0xad, 0xee}
 
 	iidAsyncResult    = parameterizedIID("pinterface(" + asyncOpIID + ";" + resultEnum + ")")
@@ -61,7 +59,6 @@ var (
 	errTimeout = errors.New("Windows Hello didn't answer in time")
 )
 
-// Available reports whether Windows Hello is set up for this user.
 func Available() bool {
 	status, err := run(func() (int32, error) {
 		statics, err := factory(&iidStatics)
@@ -85,8 +82,6 @@ func Available() bool {
 	return err == nil && status == statusVerified
 }
 
-// Verify shows the Windows Hello prompt over the window and returns nil once
-// the user is verified.
 func Verify(hwnd uintptr, message string) error {
 	status, err := run(func() (int32, error) {
 		interop, err := factory(&iidInterop)
@@ -129,7 +124,6 @@ func Verify(hwnd uintptr, message string) error {
 	}
 }
 
-// run calls fn on a locked thread with the Windows Runtime initialised.
 func run(fn func() (int32, error)) (int32, error) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
@@ -166,8 +160,6 @@ func factory(iid *windows.GUID) (*object, error) {
 	return f, nil
 }
 
-// wait polls the async operation until it finishes and returns its enum
-// result. A zero timeout waits for as long as the user needs.
 func wait(op *object, iid *windows.GUID, timeout time.Duration) (int32, error) {
 	var info *object
 
@@ -218,7 +210,6 @@ func wait(op *object, iid *windows.GUID, timeout time.Duration) (int32, error) {
 	return result, nil
 }
 
-// object is a COM interface pointer: its first word is the method table.
 type object struct {
 	vtbl *[16]uintptr
 }
@@ -255,8 +246,6 @@ func hstring(s string) (uintptr, error) {
 	return h, nil
 }
 
-// parameterizedIID derives the IID of a generic WinRT interface from its
-// signature: a version 5 UUID in the WinRT namespace.
 func parameterizedIID(signature string) windows.GUID {
 	h := sha1.New()
 	h.Write(winrtNamespace[:])

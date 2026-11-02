@@ -1,5 +1,3 @@
-// Package hello asks Windows Hello (PIN, face or fingerprint) to confirm
-// that the user is present.
 package hello
 
 import "errors"
