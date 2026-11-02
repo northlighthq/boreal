@@ -26,6 +26,7 @@ type security struct {
 	lockNow, forget        widget.Clickable
 	osUnlock               widget.Bool
 	readKnown, writeKnown  widget.Bool
+	lockOnSystem           widget.Bool
 	lockAfter              kit.Select
 	message                string
 	failed                 bool
@@ -193,10 +194,22 @@ func (d *Dialog) securityPage(a core.Host, gtx C, row func(string, layout.Widget
 					layout.Rigid(muted("Open the vault on this PC without typing the password")),
 				)
 			})),
+		)
+	}
+
+	if a.CanLock() {
+		children = append(children,
 			row("Lock automatically", func(gtx C) D {
 				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(220))
 				return k.Select(gtx, &s.lockAfter, lockAfterLabels)
 			}),
+			row("", left(func(gtx C) D {
+				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &s.lockOnSystem) }),
+					layout.Rigid(kit.Gap(12)),
+					layout.Rigid(muted("Also lock when "+vault.OSName+" locks the session")),
+				)
+			})),
 			row("", left(func(gtx C) D {
 				return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock now  ·  Ctrl+Shift+L")
 			})),

@@ -13,6 +13,7 @@ import (
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/app/core"
+	"github.com/northlighthq/boreal/internal/platform/hello"
 	"github.com/northlighthq/boreal/internal/ui/icons"
 	"github.com/northlighthq/boreal/internal/ui/kit"
 	"github.com/northlighthq/boreal/internal/vault"
@@ -21,6 +22,7 @@ import (
 type lockScreen struct {
 	password widget.Editor
 	unlock   widget.Clickable
+	hello    widget.Clickable
 	focused  bool
 	busy     bool
 	err      string
@@ -28,12 +30,16 @@ type lockScreen struct {
 }
 
 func (a *App) LockVault() {
-	if !a.vault.HasPassword() {
-		a.toasts.Info("No master password", "Set one in Settings → Security to lock Boreal.")
+	if !a.CanLock() {
+		a.toasts.Info("No master password", "Set one in Settings → Security, or set up Windows Hello, to lock Boreal.")
 		return
 	}
 
-	a.vault.Lock()
+	if err := a.vault.Lock(); err != nil {
+		a.toasts.Error("Couldn't lock Boreal", err.Error())
+		return
+	}
+
 	a.passes.clear()
 	a.palette.Close()
 	a.modal = nil
@@ -43,7 +49,7 @@ func (a *App) LockVault() {
 }
 
 func (a *App) idleLock(gtx C) {
-	if a.settings.LockAfter <= 0 || !a.vault.HasPassword() {
+	if a.settings.LockAfter <= 0 || !a.CanLock() {
 		return
 	}
 
@@ -89,6 +95,8 @@ func (a *App) lockLayout(gtx C) {
 			l.err = ""
 		case errors.Is(err, vault.ErrWrongPassword):
 			l.err = "That isn't the master password."
+		case errors.Is(err, hello.ErrCanceled):
+			l.err = ""
 		default:
 			l.err = err.Error()
 		}
@@ -120,6 +128,12 @@ func (a *App) lockLayout(gtx C) {
 		}()
 	}
 
+	hasPassword, canHello := a.vault.HasPassword(), a.canHello()
+
+	if canHello && l.hello.Clicked(gtx) {
+		a.unlockWithHello()
+	}
+
 	if !l.focused {
 		gtx.Execute(key.FocusCmd{Tag: &l.password})
 		l.focused = true
@@ -133,7 +147,22 @@ func (a *App) lockLayout(gtx C) {
 		gtx.Constraints.Min = image.Point{}
 		gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(340))
 
-		return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+		hint := "Enter your master password to open the vault."
+
+		switch {
+		case hasPassword && canHello:
+			hint = "Enter your master password or use Windows Hello to open the vault."
+		case canHello:
+			hint = "Use Windows Hello to open the vault."
+		}
+
+		label := "Unlock"
+
+		if l.busy {
+			label = "Unlocking…"
+		}
+
+		children := []layout.FlexChild{
 			layout.Rigid(func(gtx C) D { return lockBadge(gtx, th) }),
 			layout.Rigid(kit.Gap(18)),
 			layout.Rigid(func(gtx C) D {
@@ -141,33 +170,56 @@ func (a *App) lockLayout(gtx C) {
 			}),
 			layout.Rigid(kit.Gap(6)),
 			layout.Rigid(func(gtx C) D {
-				return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Align: text.Middle, MaxLines: 2}, "Enter your master password to open the vault.")
+				return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Align: text.Middle, MaxLines: 2}, hint)
 			}),
 			layout.Rigid(kit.Gap(20)),
-			layout.Rigid(func(gtx C) D {
+		}
+
+		if hasPassword {
+			children = append(children, layout.Rigid(func(gtx C) D {
 				gtx.Constraints.Min.X = gtx.Constraints.Max.X
 				return k.Field(gtx, &l.password, kit.FieldOpts{Icon: icons.Lock, Hint: "Master password", Invalid: l.err != ""})
-			}),
+			}))
+		}
+
+		children = append(children,
 			layout.Rigid(func(gtx C) D {
 				if l.err == "" {
 					return D{}
 				}
 
 				return layout.Inset{Top: 8}.Layout(gtx, func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.Danger}, l.err)
+					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.Danger, MaxLines: 2}, l.err)
 				})
 			}),
 			layout.Rigid(kit.Gap(16)),
-			layout.Rigid(func(gtx C) D {
-				label := "Unlock"
-
-				if l.busy {
-					label = "Unlocking…"
-				}
-
-				return k.Button(gtx, &l.unlock, kit.Primary, nil, label)
-			}),
 		)
+
+		buttons := []layout.FlexChild{}
+
+		if hasPassword {
+			buttons = append(buttons, layout.Rigid(func(gtx C) D { return k.Button(gtx, &l.unlock, kit.Primary, nil, label) }))
+		}
+
+		if canHello {
+			if len(buttons) > 0 {
+				buttons = append(buttons, layout.Rigid(kit.Gap(8)))
+			}
+
+			style := kit.Secondary
+
+			if !hasPassword {
+				style = kit.Primary
+			}
+
+			buttons = append(buttons, layout.Rigid(func(gtx C) D { return k.Button(gtx, &l.hello, style, icons.Fingerprint, "Windows Hello") }))
+		}
+
+		children = append(children, layout.Rigid(func(gtx C) D {
+			return layout.Flex{Alignment: layout.Middle}.Layout(gtx, buttons...)
+		}))
+
+		return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx, children...)
 	})
 }
 

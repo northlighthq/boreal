@@ -278,6 +278,27 @@ func (v *Vault) Unlock(password string) error {
 	return v.save()
 }
 
+func (v *Vault) UnlockOS() error {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
+	if !v.locked {
+		return nil
+	}
+
+	if v.env.OS == nil {
+		return ErrNeedUnlock
+	}
+
+	key, err := unprotect(v.env.OS)
+
+	if err != nil {
+		return ErrNeedUnlock
+	}
+
+	return v.unlockWith(key)
+}
+
 func (v *Vault) passwordKey(password string) ([]byte, error) {
 	kek, err := v.env.Password.KDF.Key(password)
 
@@ -312,7 +333,7 @@ func (v *Vault) Lock() error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
-	if v.env.Password == nil {
+	if v.env.Password == nil && v.env.OS == nil {
 		return ErrNoPassword
 	}
 

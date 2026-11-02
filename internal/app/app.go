@@ -83,6 +83,7 @@ type App struct {
 	prompts     promptQueue
 	passes      passphrases
 	lock        lockScreen
+	autoLock    autoLock
 	started     time.Time
 	restored    bool
 	drops       chan []string
@@ -145,6 +146,7 @@ func Run() error {
 	)
 
 	a.startUpdates()
+	a.startAutoLock()
 	return a.loop()
 }
 
@@ -273,6 +275,7 @@ func (a *App) frame(gtx C) {
 	}
 
 	a.layoutModal(gtx)
+	a.systemLock()
 	a.idleLock(gtx)
 	a.kit.TrackPointer(gtx)
 
