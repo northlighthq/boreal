@@ -86,6 +86,7 @@ type Host interface {
 	NewLocalTab(p shell.Profile)
 	ImportSSHConfig()
 	RunSnippet(s vault.Snippet, execute bool)
+	RunSnippetOn(s vault.Snippet, hostIDs []string)
 	ActiveSession() *session.Session
 
 	Update() UpdateInfo
