@@ -54,6 +54,9 @@ type Settings struct {
 	TermScheme    string  `json:"terminalScheme"`
 	TabStyle      string  `json:"tabStyle"`
 	TabIcons      bool    `json:"tabIcons"`
+
+	SystemKnownHosts bool `json:"systemKnownHosts"`
+	WriteKnownHosts  bool `json:"writeKnownHosts"`
 }
 
 const designVersion = 3
@@ -64,29 +67,31 @@ var renamedThemes = map[string]string{"ember": "gruvbox", "tide": "tokyonight", 
 
 func Defaults() Settings {
 	return Settings{
-		Theme:         "northlight",
-		FontSize:      13,
-		LineHeight:    1.2,
-		CursorStyle:   CursorBlock,
-		CursorBlink:   true,
-		Scrollback:    10_000,
-		CopyOnSelect:  false,
-		ConfirmClose:  true,
-		KeepAlive:     30,
-		LockAfter:     15,
-		RestoreTabs:   true,
-		Clipboard:     ClipboardAsk,
-		AutoUpdate:    true,
-		Ligatures:     true,
-		Highlight:     true,
-		BroadcastSkip: "prod, production",
-		SidebarWidth:  280,
-		SidebarOpen:   "hosts",
-		Density:       "normal",
-		Corners:       "normal",
-		TabStyle:      "classic",
-		TabIcons:      true,
-		DesignVersion: designVersion,
+		Theme:        "northlight",
+		FontSize:     13,
+		LineHeight:   1.2,
+		CursorStyle:  CursorBlock,
+		CursorBlink:  true,
+		Scrollback:   10_000,
+		CopyOnSelect: false,
+		ConfirmClose: true,
+		KeepAlive:    30,
+		LockAfter:    15,
+		RestoreTabs:  true,
+
+		SystemKnownHosts: true,
+		Clipboard:        ClipboardAsk,
+		AutoUpdate:       true,
+		Ligatures:        true,
+		Highlight:        true,
+		BroadcastSkip:    "prod, production",
+		SidebarWidth:     280,
+		SidebarOpen:      "hosts",
+		Density:          "normal",
+		Corners:          "normal",
+		TabStyle:         "classic",
+		TabIcons:         true,
+		DesignVersion:    designVersion,
 	}
 }
 

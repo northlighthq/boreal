@@ -40,6 +40,7 @@ type Hooks struct {
 	AskPassword    func(prompt string) (string, bool)
 	KeyPassphrase  func(k vault.Key) (string, bool)
 	Progress       func(msg string)
+	KnownHosts     SystemHosts
 }
 
 type Target struct {
@@ -299,21 +300,43 @@ func hostKeyCallback(v *vault.Vault, hooks Hooks) ssh.HostKeyCallback {
 	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 		fp := ssh.FingerprintSHA256(key)
 		encoded := base64.StdEncoding.EncodeToString(key.Marshal())
+		verdict, systemKey := systemUnknown, ssh.PublicKey(nil)
+
+		if hooks.KnownHosts.Read {
+			verdict, systemKey = checkSystem(hostname, remote, key)
+		}
+
+		if verdict == systemRevoked {
+			return ErrHostKeyRevoked
+		}
+
 		known, ok := v.KnownHost(hostname)
 
 		if ok && known.Key == encoded {
 			return nil
 		}
 
+		if verdict == systemTrusted && !ok {
+			return nil
+		}
+
 		info := HostKeyInfo{Host: hostname, KeyType: key.Type(), Fingerprint: fp}
 
-		if ok {
+		switch {
+		case ok:
 			info.Changed = true
 			info.OldFingerprint = known.Fingerprint
+		case verdict == systemChanged:
+			info.Changed = true
+			info.OldFingerprint = ssh.FingerprintSHA256(systemKey)
 		}
 
 		if hooks.ConfirmHostKey == nil || !hooks.ConfirmHostKey(info) {
 			return ErrHostKeyRejected
+		}
+
+		if hooks.KnownHosts.Write && verdict != systemTrusted {
+			addToKnownHosts(hostname, key)
 		}
 
 		return v.TrustHost(vault.KnownHost{Host: hostname, KeyType: key.Type(), Key: encoded, Fingerprint: fp})
