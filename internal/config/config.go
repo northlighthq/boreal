@@ -57,6 +57,7 @@ type Settings struct {
 
 	SystemKnownHosts bool `json:"systemKnownHosts"`
 	WriteKnownHosts  bool `json:"writeKnownHosts"`
+	LockOnSystemLock bool `json:"lockOnSystemLock"`
 }
 
 const designVersion = 3
@@ -80,6 +81,7 @@ func Defaults() Settings {
 		RestoreTabs:  true,
 
 		SystemKnownHosts: true,
+		LockOnSystemLock: true,
 		Clipboard:        ClipboardAsk,
 		AutoUpdate:       true,
 		Ligatures:        true,

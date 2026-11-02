@@ -15,6 +15,7 @@ func (a *App) attachView(ev gioapp.ViewEvent) {
 	}
 
 	hwnd := e.HWND
+	a.view = hwnd
 	go a.win.Run(func() {
 		dragdrop.Enable(hwnd, a.dropFiles, a.dragHover)
 		extkeys.Enable(hwnd, a.extKey)

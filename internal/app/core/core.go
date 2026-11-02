@@ -73,6 +73,7 @@ type Host interface {
 	AskKeyPassphrase(message string) (pass string, remember bool, ok bool)
 	RememberPassphrase(keyID, pass string)
 	LockVault()
+	CanLock() bool
 	ExportData()
 	ImportData()
 	ExportSSHConfig()
