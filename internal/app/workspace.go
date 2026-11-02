@@ -146,6 +146,25 @@ func (w *workspace) addTab(p *Pane) {
 	p.view.Focus()
 }
 
+func (w *workspace) addGrid(panes []*Pane) {
+	w.addTab(panes[0])
+	w.tabs[len(w.tabs)-1].root = grid(panes, true)
+}
+
+func grid(panes []*Pane, vertical bool) *node {
+	if len(panes) == 1 {
+		return &node{pane: panes[0]}
+	}
+
+	mid := (len(panes) + 1) / 2
+	return &node{
+		vertical: vertical,
+		ratio:    float32(mid) / float32(len(panes)),
+		a:        grid(panes[:mid], !vertical),
+		b:        grid(panes[mid:], !vertical),
+	}
+}
+
 func (w *workspace) focusActive() {
 	if p := w.activePane(); p != nil {
 		p.view.Focus()

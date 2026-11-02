@@ -90,24 +90,6 @@ func (a *App) QuickConnect(s string) bool {
 	return true
 }
 
-func (a *App) RunSnippet(s vault.Snippet, execute bool) {
-	p := a.ws.activePane()
-
-	if p == nil {
-		a.toasts.Info("No active terminal", "Open a session to run the snippet.")
-		return
-	}
-
-	cmd := snippetText(s)
-
-	if execute {
-		cmd = strings.TrimRight(cmd, "\r") + "\r"
-	}
-
-	p.view.SendText(cmd)
-	p.view.Focus()
-}
-
 func (a *App) splitWith(p *Pane, vertical bool) {
 	t := a.ws.current()
 	cur := t.active
@@ -128,19 +110,7 @@ func (a *App) runTyped(cmd string) {
 		return
 	}
 
-	p := a.ws.activePane()
-
-	go func() {
-		for range 50 {
-			if st, _ := p.sess.State(); st == session.Connected {
-				time.Sleep(400 * time.Millisecond)
-				p.sess.Send([]byte(cmd + "\r"))
-				return
-			}
-
-			time.Sleep(100 * time.Millisecond)
-		}
-	}()
+	a.sendWhenConnected(a.ws.activePane(), cmd+"\r")
 }
 
 var errRuleWithoutHost = errors.New("this rule's host no longer exists")

@@ -303,8 +303,15 @@ func (a *App) layoutModal(gtx C) {
 		return
 	}
 
-	if a.modal.Layout(gtx) {
-		a.leaving, a.leaveAt = a.modal, gtx.Now
+	m := a.modal
+
+	if !m.Layout(gtx) {
+		return
+	}
+
+	a.leaving, a.leaveAt = m, gtx.Now
+
+	if a.modal == m {
 		a.modal = nil
 		a.ws.focusActive()
 	}

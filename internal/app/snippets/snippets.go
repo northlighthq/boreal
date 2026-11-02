@@ -18,6 +18,7 @@ import (
 const (
 	snipMenuRun = iota
 	snipMenuPaste
+	snipMenuRunOn
 	snipMenuSep1
 	snipMenuEdit
 	snipMenuSep2
@@ -107,6 +108,7 @@ func (p *Panel) Body(gtx C) D {
 			p.menu.Open([]kit.MenuItem{
 				snipMenuRun:    {Label: "Run", Icon: icons.Play},
 				snipMenuPaste:  {Label: "Paste without running", Icon: icons.Paste},
+				snipMenuRunOn:  {Label: "Run on hosts…", Icon: icons.Server},
 				snipMenuSep1:   kit.Separator(),
 				snipMenuEdit:   {Label: "Edit…", Icon: icons.Edit},
 				snipMenuSep2:   kit.Separator(),
@@ -167,6 +169,8 @@ func (p *Panel) handleMenu(a core.Host) {
 		a.RunSnippet(s, true)
 	case snipMenuPaste:
 		a.RunSnippet(s, false)
+	case snipMenuRunOn:
+		a.Open(NewHostPicker(a, s))
 	case snipMenuEdit:
 		a.OpenIn(p, NewEditor(a, s))
 	case snipMenuDelete:
@@ -193,7 +197,7 @@ func NewEditor(a core.Host, s vault.Snippet) *dialogs.Form {
 
 	f := dialogs.NewForm(a.Kit(), title, "Save", dialogs.NewField("Name", "Restart nginx", s.Label), cmd, shortcut, trigger)
 	f.Width = 520
-	f.Subtitle = "Run it from the snippets panel, its shortcut, or by typing its trigger in a terminal."
+	f.Subtitle = "Run it from the snippets panel, its shortcut, or by typing its trigger in a terminal. Use {{host}}, {{user}}, {{port}} and {{label}} for the host's details, and {{ask:Question}} to be asked when it runs."
 	f.OnOK = func(v []string) bool {
 		s.Label = strings.TrimSpace(v[0])
 		s.Command = strings.TrimSpace(v[1])

@@ -2,11 +2,11 @@ package app
 
 import (
 	"slices"
-	"strings"
 
 	"gioui.org/io/event"
 
 	"github.com/northlighthq/boreal/internal/app/snippets"
+	"github.com/northlighthq/boreal/internal/placeholder"
 	"github.com/northlighthq/boreal/internal/vault"
 )
 
@@ -67,17 +67,20 @@ func (a *App) runSnippetKey(name string) bool {
 	return ok
 }
 
-func (a *App) expandTrigger(word string) (string, bool) {
+func (a *App) expandTrigger(p *Pane, word string) (string, bool) {
 	s, ok := a.snippetKeys().triggers[word]
 
 	if !ok {
 		return "", false
 	}
 
-	return snippetText(s), true
-}
+	if len(placeholder.Asks(s.Command)) == 0 {
+		return terminalText(placeholder.Fill(s.Command, a.paneValues(p), nil)), true
+	}
 
-func snippetText(s vault.Snippet) string {
-	cmd := strings.ReplaceAll(s.Command, "\r\n", "\n")
-	return strings.ReplaceAll(cmd, "\n", "\r")
+	a.withAnswers(s, func(answers map[string]string) {
+		p.view.SendText(terminalText(placeholder.Fill(s.Command, a.paneValues(p), answers)))
+		p.view.Focus()
+	})
+	return "", true
 }
