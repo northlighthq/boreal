@@ -166,8 +166,6 @@ func (v *Vault) unlockWith(key []byte) error {
 	return nil
 }
 
-// upgrade rewrites a legacy vault in the current format. It is best effort:
-// when the file can't be written the vault keeps working in the old format.
 func (v *Vault) upgrade() {
 	if v.env.Format != legacyFormat {
 		return
