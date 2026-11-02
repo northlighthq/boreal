@@ -11,17 +11,26 @@ const (
 	OSName  = "Windows"
 )
 
-var entropy = []byte("platty-vault-v1")
+var (
+	entropy       = []byte("boreal-vault-v3")
+	legacyEntropy = []byte("platty-vault-v1")
+)
 
 func protect(plain []byte) ([]byte, error) {
-	return dpapi(plain, true)
+	return dpapi(plain, entropy, true)
 }
 
 func unprotect(enc []byte) ([]byte, error) {
-	return dpapi(enc, false)
+	plain, err := dpapi(enc, entropy, false)
+
+	if err == nil {
+		return plain, nil
+	}
+
+	return dpapi(enc, legacyEntropy, false)
 }
 
-func dpapi(in []byte, encrypt bool) ([]byte, error) {
+func dpapi(in, entropy []byte, encrypt bool) ([]byte, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}

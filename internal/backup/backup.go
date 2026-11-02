@@ -16,8 +16,9 @@ const (
 	LegacyExtension = ".platty"
 	MinPassword     = 12
 
-	fileFormat  = "platty-export"
-	fileVersion = 1
+	fileFormat   = "boreal-export"
+	fileVersion  = 3
+	legacyFormat = "platty-export"
 
 	kdfTime   = 4
 	kdfMemory = 128 * 1024
@@ -29,7 +30,8 @@ var (
 	ErrWrongPassword = errors.New("wrong password, or the file is damaged")
 	ErrShortPassword = errors.New("the password must be at least 12 characters long")
 
-	aad = []byte("platty-export-v1")
+	aad       = []byte("boreal-export-v3")
+	legacyAAD = []byte("platty-export-v1")
 )
 
 type Selection struct {
@@ -47,6 +49,14 @@ type file struct {
 	Created time.Time  `json:"created"`
 	KDF     secure.KDF `json:"kdf"`
 	Data    []byte     `json:"data"`
+}
+
+func (f file) aad() []byte {
+	if f.Format == legacyFormat {
+		return legacyAAD
+	}
+
+	return aad
 }
 
 func Filter(d vault.Data, s Selection) vault.Data {
@@ -129,11 +139,11 @@ func Export(d vault.Data, s Selection, password string) ([]byte, error) {
 func Import(raw []byte, password string) (vault.Data, error) {
 	var f file
 
-	if json.Unmarshal(raw, &f) != nil || f.Format != fileFormat {
+	if json.Unmarshal(raw, &f) != nil || (f.Format != fileFormat && f.Format != legacyFormat) {
 		return vault.Data{}, ErrNotExport
 	}
 
-	if f.Version > fileVersion {
+	if f.Format == fileFormat && f.Version > fileVersion {
 		return vault.Data{}, ErrNewerVersion
 	}
 
@@ -145,7 +155,7 @@ func Import(raw []byte, password string) (vault.Data, error) {
 
 	defer secure.Wipe(key)
 
-	plain, err := secure.Open(key, f.Data, aad)
+	plain, err := secure.Open(key, f.Data, f.aad())
 
 	if err != nil {
 		return vault.Data{}, ErrWrongPassword
