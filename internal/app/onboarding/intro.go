@@ -129,8 +129,8 @@ func New(h core.Host) *Intro {
 	}
 
 	if home, err := os.UserHomeDir(); err == nil {
-		entries, _ := sshconfig.Parse(filepath.Join(home, ".ssh", "config"))
-		d.sshHosts = len(entries)
+		res, _ := sshconfig.Parse(filepath.Join(home, ".ssh", "config"))
+		d.sshHosts = len(res.Entries)
 	}
 
 	return d

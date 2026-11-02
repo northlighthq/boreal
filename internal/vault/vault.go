@@ -47,6 +47,8 @@ type Host struct {
 	Notes          string    `json:"notes,omitempty"`
 	StartupCommand string    `json:"startupCommand,omitempty"`
 	ForwardAgent   bool      `json:"forwardAgent,omitempty"`
+	ProxyCommand   string    `json:"proxyCommand,omitempty"`
+	IdentitiesOnly bool      `json:"identitiesOnly,omitempty"`
 	Created        time.Time `json:"created"`
 	LastUsed       time.Time `json:"lastUsed,omitzero"`
 }
