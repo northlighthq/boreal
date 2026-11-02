@@ -25,6 +25,7 @@ type security struct {
 	setPassword, remove    widget.Clickable
 	lockNow, forget        widget.Clickable
 	osUnlock               widget.Bool
+	readKnown, writeKnown  widget.Bool
 	lockAfter              kit.Select
 	message                string
 	failed                 bool
@@ -201,6 +202,23 @@ func (d *Dialog) securityPage(a core.Host, gtx C, row func(string, layout.Widget
 			})),
 		)
 	}
+
+	children = append(children,
+		row("OpenSSH known_hosts", left(func(gtx C) D {
+			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &s.readKnown) }),
+				layout.Rigid(kit.Gap(12)),
+				layout.Rigid(muted("Trust servers already in ~/.ssh/known_hosts and respect its @revoked lines")),
+			)
+		})),
+		row("", left(func(gtx C) D {
+			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &s.writeKnown) }),
+				layout.Rigid(kit.Gap(12)),
+				layout.Rigid(muted("Add the server keys you accept to ~/.ssh/known_hosts too")),
+			)
+		})),
+	)
 
 	if n := v.SavedPassphrases(); n > 0 {
 		children = append(children, row("Key passphrases", left(func(gtx C) D {

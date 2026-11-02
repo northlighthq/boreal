@@ -212,6 +212,7 @@ func (a *App) hooksFor(owner *int) sshx.Hooks {
 			return r.text, r.ok
 		},
 		KeyPassphrase: func(k vault.Key) (string, bool) { return a.keyPassphrase(k, owner) },
+		KnownHosts:    sshx.SystemHosts{Read: a.settings.SystemKnownHosts, Write: a.settings.WriteKnownHosts},
 	}
 }
 

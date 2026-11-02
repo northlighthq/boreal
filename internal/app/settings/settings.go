@@ -155,6 +155,8 @@ func New(a core.Host) *Dialog {
 	}
 
 	d.sec.init(s.LockAfter)
+	d.sec.readKnown.Value = s.SystemKnownHosts
+	d.sec.writeKnown.Value = s.WriteKnownHosts
 	d.list.Axis = layout.Vertical
 	return d
 }
@@ -206,6 +208,8 @@ func (d *Dialog) collect(a core.Host) config.Settings {
 	s.AutoUpdate = d.autoUpdate.Value
 	s.BroadcastSkip = strings.TrimSpace(d.skipTags.Text())
 	s.LockAfter = lockAfterMinutes[d.sec.lockAfter.Value]
+	s.SystemKnownHosts = d.sec.readKnown.Value
+	s.WriteKnownHosts = d.sec.writeKnown.Value
 	return s
 }
 
