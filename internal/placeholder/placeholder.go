@@ -1,5 +1,3 @@
-// Package placeholder fills the {{...}} placeholders of a snippet: values
-// from the host it runs on, and {{ask:Question}} answers asked when it runs.
 package placeholder
 
 import (
@@ -19,7 +17,6 @@ const (
 	nameLabel = "label"
 )
 
-// Values are the host details a snippet can use.
 type Values struct {
 	Host  string
 	User  string
@@ -82,7 +79,6 @@ func known(name string) bool {
 	return false
 }
 
-// Asks lists the questions of a snippet in the order they first appear.
 func Asks(cmd string) []string {
 	var out []string
 	seen := map[string]struct{}{}
@@ -103,7 +99,6 @@ func Asks(cmd string) []string {
 	return out
 }
 
-// UsesHost reports whether the snippet has placeholders filled from the host.
 func UsesHost(cmd string) bool {
 	for _, t := range scan(cmd) {
 		if t.name != "" {
@@ -114,7 +109,6 @@ func UsesHost(cmd string) bool {
 	return false
 }
 
-// Fill replaces the placeholders. Questions without an answer become empty.
 func Fill(cmd string, v Values, answers map[string]string) string {
 	tokens := scan(cmd)
 

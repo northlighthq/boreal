@@ -16,7 +16,6 @@ import (
 
 const pickerListHeight = 320
 
-// HostPicker chooses the hosts a snippet runs on, each in its own pane.
 type HostPicker struct {
 	h       core.Host
 	snippet vault.Snippet

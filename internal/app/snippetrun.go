@@ -41,8 +41,6 @@ func (a *App) RunSnippet(s vault.Snippet, execute bool) {
 	})
 }
 
-// RunSnippetOn opens a tab with one pane per host and runs the snippet in
-// each of them once it connects.
 func (a *App) RunSnippetOn(s vault.Snippet, hostIDs []string) {
 	var hosts []vault.Host
 
@@ -74,8 +72,6 @@ func (a *App) RunSnippetOn(s vault.Snippet, hostIDs []string) {
 	})
 }
 
-// withAnswers asks the snippet's {{ask:...}} questions, if it has any, and
-// then calls run with the answers.
 func (a *App) withAnswers(s vault.Snippet, run func(map[string]string)) {
 	asks := placeholder.Asks(s.Command)
 
@@ -142,8 +138,6 @@ func hostValues(h vault.Host) placeholder.Values {
 	return placeholder.Values{Host: h.Address, User: sshx.User(h), Port: strconv.Itoa(port), Label: h.Title()}
 }
 
-// sendWhenConnected types cmd into the pane once its session is connected
-// and the shell had a moment to show its prompt.
 func (a *App) sendWhenConnected(p *Pane, cmd string) {
 	go func() {
 		deadline := time.Now().Add(connectWait)

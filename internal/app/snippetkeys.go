@@ -67,8 +67,6 @@ func (a *App) runSnippetKey(name string) bool {
 	return ok
 }
 
-// expandTrigger turns a typed trigger into its snippet. Snippets with
-// questions erase the trigger and are typed once they are answered.
 func (a *App) expandTrigger(p *Pane, word string) (string, bool) {
 	s, ok := a.snippetKeys().triggers[word]
 
