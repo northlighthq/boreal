@@ -26,13 +26,21 @@ func SSHConfig(hosts []vault.Host) []byte {
 	entries := make([]sshconfig.Entry, 0, len(hosts))
 
 	for _, h := range hosts {
-		entries = append(entries, sshconfig.Entry{
-			Alias:    aliases[h.ID],
-			HostName: h.Address,
-			User:     h.Username,
-			Port:     h.Port,
-			Jump:     aliases[h.JumpID],
-		})
+		e := sshconfig.Entry{
+			Alias:          aliases[h.ID],
+			HostName:       h.Address,
+			User:           h.Username,
+			Port:           h.Port,
+			IdentitiesOnly: h.IdentitiesOnly,
+			ForwardAgent:   h.ForwardAgent,
+			ProxyCommand:   h.ProxyCommand,
+		}
+
+		if j, ok := aliases[h.JumpID]; ok {
+			e.Jump = []string{j}
+		}
+
+		entries = append(entries, e)
 	}
 
 	return []byte(sshconfig.Format(entries))
