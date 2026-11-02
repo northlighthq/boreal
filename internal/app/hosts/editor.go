@@ -21,8 +21,8 @@ type Editor struct {
 	host vault.Host
 	dlg  kit.Dialog
 
-	label, address, port, user, password, group, tags, startup widget.Editor
-	forward                                                    widget.Bool
+	label, address, port, user, password, group, tags, startup, proxy widget.Editor
+	forward, keyOnly                                                  widget.Bool
 
 	auth     kit.Segmented
 	key      kit.Select
@@ -46,7 +46,7 @@ var authMethods = []string{vault.AuthPassword, vault.AuthKey, vault.AuthAgent}
 
 func NewEditor(a core.Host, h vault.Host) *Editor {
 	e := &Editor{h: a, host: h}
-	dialogs.SingleLine(&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup)
+	dialogs.SingleLine(&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy)
 	e.port.Filter = "0123456789"
 	e.password.Mask = '•'
 
@@ -64,6 +64,8 @@ func NewEditor(a core.Host, h vault.Host) *Editor {
 	e.tags.SetText(strings.Join(h.Tags, ", "))
 	e.startup.SetText(h.StartupCommand)
 	e.forward.Value = h.ForwardAgent
+	e.proxy.SetText(h.ProxyCommand)
+	e.keyOnly.Value = h.IdentitiesOnly
 
 	e.auth.Value = 2
 
@@ -102,7 +104,7 @@ func NewEditor(a core.Host, h vault.Host) *Editor {
 		}
 	}
 
-	e.expanded = h.Group != "" || len(h.Tags) > 0 || h.JumpID != "" || h.StartupCommand != "" || h.ForwardAgent
+	e.expanded = h.Group != "" || len(h.Tags) > 0 || h.JumpID != "" || h.StartupCommand != "" || h.ForwardAgent || h.ProxyCommand != ""
 	e.list.Axis = layout.Vertical
 	return e
 }
@@ -129,6 +131,13 @@ func (e *Editor) collect() (vault.Host, bool) {
 	h.JumpID = e.jumpIDs[e.jump.Value]
 	h.StartupCommand = strings.TrimSpace(e.startup.Text())
 	h.ForwardAgent = e.forward.Value
+	h.ProxyCommand = ""
+
+	if h.JumpID == "" {
+		h.ProxyCommand = strings.TrimSpace(e.proxy.Text())
+	}
+
+	h.IdentitiesOnly = h.Auth == vault.AuthKey && e.keyOnly.Value
 	h.Group = vault.CleanFolder(e.group.Text())
 	h.Tags = nil
 
@@ -198,7 +207,7 @@ func (e *Editor) Layout(gtx C) bool {
 		}
 	}
 
-	for _, ed := range []*widget.Editor{&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup} {
+	for _, ed := range []*widget.Editor{&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy} {
 		for {
 			ev, ok := ed.Update(gtx)
 
@@ -347,7 +356,11 @@ func (e *Editor) Layout(gtx C) bool {
 			}
 
 			if !e.keyMissing {
-				return k.Select(gtx, &e.key, keyNames)
+				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+					layout.Rigid(func(gtx C) D { return k.Select(gtx, &e.key, keyNames) }),
+					layout.Rigid(kit.Gap(8)),
+					layout.Rigid(func(gtx C) D { return k.Checkbox(gtx, &e.keyOnly, "Only offer this key, not the ones in the agent") }),
+				)
 			}
 
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -398,6 +411,13 @@ func (e *Editor) Layout(gtx C) bool {
 			),
 			card("Advanced",
 				field("Jump host", func(gtx C) D { return k.Select(gtx, &e.jump, jumpNames) }),
+				field("Proxy command", func(gtx C) D {
+					if e.jump.Value != 0 {
+						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 2}, "Not used while a jump host is set.")
+					}
+
+					return k.Field(gtx, &e.proxy, kit.FieldOpts{Hint: "e.g. cloudflared access ssh --hostname %h", Mono: true})
+				}),
 				field("Run on connect", func(gtx C) D {
 					return k.Field(gtx, &e.startup, kit.FieldOpts{Hint: "e.g. tmux attach", Mono: true})
 				}),
