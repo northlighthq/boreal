@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	fileFormat  = "platty-vault"
-	fileVersion = 2
+	fileFormat   = "boreal-vault"
+	fileVersion  = 3
+	legacyFormat = "platty-vault"
 
 	vaultKDFTime   = 3
 	vaultKDFMemory = 64 * 1024
@@ -24,9 +25,12 @@ var (
 	ErrWrongPassword = errors.New("vault: wrong password")
 	ErrNoPassword    = errors.New("vault: no master password set")
 	ErrNeedUnlock    = errors.New("vault: it can't be unlocked automatically on this PC")
+	ErrNewerVersion  = errors.New("vault: it was saved by a newer version of Boreal")
 
-	dataAAD = []byte("platty-vault-v2")
-	keyAAD  = []byte("platty-vault-key")
+	dataAAD       = []byte("boreal-vault-v3")
+	keyAAD        = []byte("boreal-vault-key-v3")
+	legacyDataAAD = []byte("platty-vault-v2")
+	legacyKeyAAD  = []byte("platty-vault-key")
 )
 
 type envelope struct {
@@ -38,8 +42,25 @@ type envelope struct {
 }
 
 type wrapped struct {
-	KDF secure.KDF `json:"kdf"`
-	Key []byte     `json:"key"`
+	KDF     secure.KDF `json:"kdf"`
+	Key     []byte     `json:"key"`
+	Version int        `json:"version,omitempty"`
+}
+
+func (e envelope) dataAAD() []byte {
+	if e.Format == legacyFormat {
+		return legacyDataAAD
+	}
+
+	return dataAAD
+}
+
+func (w *wrapped) aad() []byte {
+	if w.Version < fileVersion {
+		return legacyKeyAAD
+	}
+
+	return keyAAD
 }
 
 func OpenAt(path string) (*Vault, error) {
@@ -56,8 +77,12 @@ func OpenAt(path string) (*Vault, error) {
 
 	var env envelope
 
-	if !bytes.HasPrefix(bytes.TrimSpace(raw), []byte("{")) || json.Unmarshal(raw, &env) != nil || env.Format != fileFormat {
+	if !bytes.HasPrefix(bytes.TrimSpace(raw), []byte("{")) || json.Unmarshal(raw, &env) != nil || (env.Format != fileFormat && env.Format != legacyFormat) {
 		return v, v.migrate(raw)
+	}
+
+	if env.Format == fileFormat && env.Version > fileVersion {
+		return nil, ErrNewerVersion
 	}
 
 	v.env = env
@@ -117,7 +142,7 @@ func (v *Vault) unlockWith(key []byte) error {
 	var d Data
 
 	if len(v.env.Data) > 0 {
-		plain, err := secure.Open(key, v.env.Data, dataAAD)
+		plain, err := secure.Open(key, v.env.Data, v.env.dataAAD())
 
 		if err != nil {
 			return err
@@ -137,7 +162,41 @@ func (v *Vault) unlockWith(key []byte) error {
 
 	v.key, v.data, v.locked = key, d, false
 	v.rev++
+	v.upgrade()
 	return nil
+}
+
+func (v *Vault) upgrade() {
+	if v.env.Format != legacyFormat {
+		return
+	}
+
+	prev := v.env
+	v.env.Format, v.env.Version = fileFormat, fileVersion
+
+	if prev.OS != nil {
+		osKey, err := protect(v.key)
+
+		if err != nil {
+			v.env = prev
+			return
+		}
+
+		v.env.OS = osKey
+	}
+
+	if err := v.save(); err != nil {
+		if prev.OS != nil {
+			forget(v.env.OS)
+		}
+
+		v.env = prev
+		return
+	}
+
+	if prev.OS != nil {
+		forget(prev.OS)
+	}
 }
 
 func (v *Vault) save() error {
@@ -151,7 +210,7 @@ func (v *Vault) save() error {
 		return err
 	}
 
-	sealed, err := secure.Seal(v.key, plain, dataAAD)
+	sealed, err := secure.Seal(v.key, plain, v.env.dataAAD())
 	secure.Wipe(plain)
 
 	if err != nil {
@@ -201,13 +260,22 @@ func (v *Vault) Unlock(password string) error {
 		return ErrNoPassword
 	}
 
+	legacy := v.env.Password.Version < fileVersion
 	key, err := v.passwordKey(password)
 
 	if err != nil {
 		return err
 	}
 
-	return v.unlockWith(key)
+	if err := v.unlockWith(key); err != nil {
+		return err
+	}
+
+	if !legacy {
+		return nil
+	}
+
+	return v.save()
 }
 
 func (v *Vault) passwordKey(password string) ([]byte, error) {
@@ -219,12 +287,24 @@ func (v *Vault) passwordKey(password string) ([]byte, error) {
 
 	defer secure.Wipe(kek)
 
-	key, err := secure.Open(kek, v.env.Password.Key, keyAAD)
+	w := v.env.Password
+	key, err := secure.Open(kek, w.Key, w.aad())
 
 	if err != nil {
 		return nil, ErrWrongPassword
 	}
 
+	if w.Version >= fileVersion {
+		return key, nil
+	}
+
+	sealed, err := secure.Seal(kek, key, keyAAD)
+
+	if err != nil {
+		return key, nil
+	}
+
+	v.env.Password = &wrapped{KDF: w.KDF, Key: sealed, Version: fileVersion}
 	return key, nil
 }
 
@@ -295,7 +375,7 @@ func (v *Vault) SetPassword(current, next string) error {
 		return err
 	}
 
-	v.env.Password = &wrapped{KDF: kdf, Key: sealed}
+	v.env.Password = &wrapped{KDF: kdf, Key: sealed, Version: fileVersion}
 	v.rev++
 	return v.save()
 }
