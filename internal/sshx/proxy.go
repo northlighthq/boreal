@@ -17,8 +17,6 @@ type pipeAddr string
 func (a pipeAddr) Network() string { return "pipe" }
 func (a pipeAddr) String() string  { return string(a) }
 
-// cmdConn is the standard input and output of a ProxyCommand used as the
-// connection to the server.
 type cmdConn struct {
 	io.Reader
 	io.WriteCloser
@@ -73,8 +71,6 @@ func proxyConn(h vault.Host) (net.Conn, error) {
 	return &cmdConn{Reader: stdout, WriteCloser: stdin, cmd: cmd}, nil
 }
 
-// ProxyCommandLine fills in the %h, %p, %r and %n tokens of the host's proxy
-// command, as OpenSSH does.
 func ProxyCommandLine(h vault.Host) string {
 	vars := map[byte]string{
 		'h': h.Address,
