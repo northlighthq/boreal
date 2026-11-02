@@ -79,3 +79,31 @@ jobs:
 
       - name: Build for Intel
         run: CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -o bin/boreal-amd64 ./cmd/boreal
+
+  fuzz:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Tests
+        run: |
+          go test ./internal/backup ./internal/sshx ./internal/vault
+          (cd libs/vt && go test ./...)
+
+      - name: Fuzz the VT emulator
+        working-directory: libs/vt
+        run: go test -run '^$' -fuzz '^FuzzTerminal$' -fuzztime 30s .
+
+      - name: Fuzz the metrics parser
+        run: go test ./internal/sshx -run '^$' -fuzz '^FuzzParseStats$' -fuzztime 30s
+
+      - name: Fuzz backup files
+        run: go test ./internal/backup -run '^$' -fuzz '^FuzzParse$' -fuzztime 20s
+
+      - name: Fuzz backup import
+        run: go test ./internal/backup -run '^$' -fuzz '^FuzzDecodeAndMerge$' -fuzztime 30s
