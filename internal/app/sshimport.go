@@ -161,8 +161,6 @@ func (imp *sshImport) certificate(k *vault.Key, path string) {
 	k.Certificate = text
 }
 
-// chain links the ProxyJump hops of an entry: the target jumps through the
-// last hop, which jumps through the one before it, and so on.
 func (imp *sshImport) chain(e sshconfig.Entry) {
 	if len(e.Jump) == 0 {
 		return
@@ -212,8 +210,6 @@ func (imp *sshImport) link(id, jumpID string) bool {
 	return err == nil
 }
 
-// hop finds the host for a ProxyJump hop, either an alias from the config or
-// [user@]host[:port], and adds a host for it when there is none yet.
 func (imp *sshImport) hop(spec string) string {
 	if id, ok := imp.byLabel[spec]; ok {
 		return id

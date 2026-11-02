@@ -44,7 +44,6 @@ var supported = map[string]struct{}{
 	keyProxyCommand:   {},
 }
 
-// directiveNames keeps the usual spelling of the directives for the report.
 var directiveNames = map[string]string{
 	"addkeystoagent":           "AddKeysToAgent",
 	"canonicalizehostname":     "CanonicalizeHostname",
@@ -395,8 +394,6 @@ func all(conds []cond, s *state) bool {
 	return true
 }
 
-// split reads one config line into its lowercase keyword and arguments,
-// following ssh_config: "Key value", "Key=value" and double-quoted arguments.
 func split(line string) (string, []string) {
 	line = strings.TrimSpace(line)
 
@@ -447,8 +444,6 @@ func fields(s string) []string {
 	return out
 }
 
-// matchList follows OpenSSH: a negated pattern that matches rejects the
-// value, otherwise at least one plain pattern has to match.
 func matchList(value string, patterns []string) bool {
 	value = strings.ToLower(value)
 	matched := false
@@ -472,7 +467,6 @@ func matchList(value string, patterns []string) bool {
 	return matched
 }
 
-// glob matches * and ? in linear time by going back only to the last star.
 func glob(pattern, s string) bool {
 	p, i := 0, 0
 	star, mark := -1, 0
@@ -516,7 +510,6 @@ func tokens(alias, host, remoteUser string, port int) map[byte]string {
 	}
 }
 
-// expand replaces the %x tokens of ssh_config.
 func expand(s string, vars map[byte]string) string {
 	if s == "" {
 		return s
