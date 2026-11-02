@@ -98,6 +98,9 @@ func Dial(ctx context.Context, t Target, v *vault.Vault, hooks Hooks, keepAlive 
 
 		progress(fmt.Sprintf("Opening tunnel to %s…", addr))
 		conn, err = jump.Dial("tcp", addr)
+	} else if t.Host.ProxyCommand != "" {
+		progress(fmt.Sprintf("Starting the proxy command for %s…", addr))
+		conn, err = proxyConn(t.Host)
 	} else {
 		progress(fmt.Sprintf("Connecting to %s…", addr))
 		d := net.Dialer{Timeout: dialTimeout}
@@ -222,9 +225,13 @@ func authMethods(t Target, hooks Hooks) ([]ssh.AuthMethod, func()) {
 		}
 	}
 
-	if ag, closeFn, err := dialAgent(); err == nil {
-		methods = append(methods, ssh.PublicKeysCallback(ag.Signers))
-		cleanup = closeFn
+	onlyKey := t.Host.IdentitiesOnly && t.Host.Auth == vault.AuthKey && t.Key != nil
+
+	if !onlyKey {
+		if ag, closeFn, err := dialAgent(); err == nil {
+			methods = append(methods, ssh.PublicKeysCallback(ag.Signers))
+			cleanup = closeFn
+		}
 	}
 
 	if hooks.AskPassword != nil {
