@@ -137,14 +137,10 @@ func Export(d vault.Data, s Selection, password string) ([]byte, error) {
 }
 
 func Import(raw []byte, password string) (vault.Data, error) {
-	var f file
+	f, err := parse(raw)
 
-	if json.Unmarshal(raw, &f) != nil || (f.Format != fileFormat && f.Format != legacyFormat) {
-		return vault.Data{}, ErrNotExport
-	}
-
-	if f.Format == fileFormat && f.Version > fileVersion {
-		return vault.Data{}, ErrNewerVersion
+	if err != nil {
+		return vault.Data{}, err
 	}
 
 	key, err := f.KDF.Key(password)
@@ -163,6 +159,24 @@ func Import(raw []byte, password string) (vault.Data, error) {
 
 	defer secure.Wipe(plain)
 
+	return decode(plain)
+}
+
+func parse(raw []byte) (file, error) {
+	var f file
+
+	if json.Unmarshal(raw, &f) != nil || (f.Format != fileFormat && f.Format != legacyFormat) {
+		return file{}, ErrNotExport
+	}
+
+	if f.Format == fileFormat && f.Version > fileVersion {
+		return file{}, ErrNewerVersion
+	}
+
+	return f, nil
+}
+
+func decode(plain []byte) (vault.Data, error) {
 	var d vault.Data
 
 	if err := json.Unmarshal(plain, &d); err != nil {
