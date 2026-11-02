@@ -210,8 +210,6 @@ func (v *Vault) Unlock(password string) error {
 	return v.unlockWith(key)
 }
 
-// UnlockOS opens the vault with the key kept by the operating system. The
-// caller is expected to have confirmed the user first, with Windows Hello.
 func (v *Vault) UnlockOS() error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
