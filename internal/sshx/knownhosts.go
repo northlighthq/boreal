@@ -13,8 +13,6 @@ import (
 
 var ErrHostKeyRevoked = errors.New("this server key is marked as revoked in known_hosts")
 
-// SystemHosts says whether the OpenSSH known_hosts files are read when
-// checking a server key and whether keys you accept are added to yours.
 type SystemHosts struct {
 	Read  bool
 	Write bool
@@ -29,7 +27,6 @@ const (
 	systemRevoked
 )
 
-// UserKnownHostsFile is ~/.ssh/known_hosts.
 func UserKnownHostsFile() string {
 	home, err := os.UserHomeDir()
 
@@ -64,9 +61,6 @@ func knownHostsFiles() []string {
 	return files
 }
 
-// checkSystem looks the server key up in the OpenSSH known_hosts files,
-// including hashed names, @cert-authority and @revoked lines. When the files
-// list other keys for the host, it returns the first of them.
 func checkSystem(hostname string, remote net.Addr, key ssh.PublicKey) (systemVerdict, ssh.PublicKey) {
 	files := knownHostsFiles()
 
@@ -105,8 +99,6 @@ func checkSystem(hostname string, remote net.Addr, key ssh.PublicKey) (systemVer
 	return systemUnknown, nil
 }
 
-// addToKnownHosts appends the key to ~/.ssh/known_hosts so OpenSSH trusts it
-// too.
 func addToKnownHosts(hostname string, key ssh.PublicKey) error {
 	path := UserKnownHostsFile()
 
