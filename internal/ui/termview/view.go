@@ -103,6 +103,7 @@ type View struct {
 	OnFocus   func()
 	Extras    func() []Extra
 	Expand    func(word string) (string, bool)
+	OnPaste   func(text string) bool
 	extras    []Extra
 	word      []rune
 
