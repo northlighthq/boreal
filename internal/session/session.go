@@ -365,7 +365,7 @@ func (s *Session) connect() {
 		}
 	}
 
-	if s.Kind == SSH && dir != "" {
+	if s.Kind == SSH && dir != "" && s.opts.Target.Host.Tmux == "" {
 		s.SendOnly([]byte(cdCommand(dir)))
 	}
 
