@@ -31,6 +31,7 @@ const (
 	sftpMenuDownload
 	sftpMenuCopyPath
 	sftpMenuRename
+	sftpMenuProps
 	sftpMenuSep
 	sftpMenuDelete
 )
@@ -355,6 +356,8 @@ func (p *Panel) handle(a core.Host, gtx C, c *sftpConn, cwd string) {
 			gtx.Execute(clipboard.WriteCmd{Type: "application/text", Data: io.NopCloser(strings.NewReader(full))})
 		case sftpMenuRename:
 			p.rename(a, c, cwd, e)
+		case sftpMenuProps:
+			p.properties(a, c, cwd, e)
 		case sftpMenuDelete:
 			p.remove(a, c, cwd, e)
 		}
@@ -402,6 +405,7 @@ func (p *Panel) entryRow(a core.Host, gtx C, c *sftpConn, cwd string, e sshx.Ent
 			sftpMenuDownload: {Label: "Download…", Icon: icons.Download},
 			sftpMenuCopyPath: {Label: "Copy path", Icon: icons.Copy},
 			sftpMenuRename:   {Label: "Rename", Icon: icons.Edit, Shortcut: "F2"},
+			sftpMenuProps:    {Label: "Properties", Icon: icons.Settings, Shortcut: "Alt+Enter"},
 			sftpMenuSep:      kit.Separator(),
 			sftpMenuDelete:   {Label: "Delete", Icon: icons.Delete, Danger: true, Shortcut: "Del"},
 		}, ev.At.Add(image.Pt(-gtx.Dp(120), gtx.Dp(4))))
