@@ -48,6 +48,19 @@ func GenerateEd25519(label, passphrase string) (vault.Key, error) {
 }
 
 func ImportKey(label string, pemData []byte, passphrase string) (vault.Key, error) {
+	if sk, err := parseSK(pemData); !errors.Is(err, ErrNotSK) {
+		if err != nil {
+			return vault.Key{}, err
+		}
+
+		return vault.Key{
+			Label:   label,
+			Type:    sk.pub.Type(),
+			Private: string(pemData),
+			Public:  strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sk.pub))) + " " + label,
+		}, nil
+	}
+
 	var signer ssh.Signer
 	var err error
 
@@ -77,6 +90,16 @@ func IsPassphraseMissing(err error) bool {
 }
 
 func ParseKey(k vault.Key, hooks Hooks) (ssh.Signer, error) {
+	if IsSK(k.Type) {
+		sk, err := parseSK([]byte(k.Private))
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &skSigner{key: sk, notify: hooks.Progress}, nil
+	}
+
 	if k.Passphrase != "" {
 		return ssh.ParsePrivateKeyWithPassphrase([]byte(k.Private), []byte(k.Passphrase))
 	}

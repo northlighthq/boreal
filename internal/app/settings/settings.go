@@ -452,7 +452,7 @@ func (d *Dialog) content(a core.Host, gtx C) D {
 			}),
 		}
 	case 2:
-		agent := "Not detected (enable the “OpenSSH Authentication Agent” service)"
+		agent := "Not detected (start the “OpenSSH Authentication Agent” service or Pageant)"
 
 		if sshx.AgentAvailable() {
 			agent = "Available"
