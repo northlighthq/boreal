@@ -3,10 +3,17 @@ package sshx
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+
+	"github.com/northlighthq/boreal/internal/vault"
 )
+
+const tmuxFallback = `exec "${SHELL:-sh}" -l`
+
+var tmuxName = strings.NewReplacer(".", "_", ":", "_")
 
 type Shell struct {
 	sess   *ssh.Session
@@ -14,14 +21,14 @@ type Shell struct {
 	stdout io.Reader
 }
 
-func OpenShell(c *Client, cols, rows int, forwardAgent bool) (*Shell, error) {
+func OpenShell(c *Client, cols, rows int, h vault.Host) (*Shell, error) {
 	sess, err := c.NewSession()
 
 	if err != nil {
 		return nil, err
 	}
 
-	if forwardAgent {
+	if h.ForwardAgent {
 		if err := c.forwardAgent(sess); err != nil {
 			sess.Close()
 			return nil, err
@@ -58,12 +65,37 @@ func OpenShell(c *Client, cols, rows int, forwardAgent bool) (*Shell, error) {
 
 	sess.Stderr = io.Discard
 
-	if err := sess.Shell(); err != nil {
+	if err := start(sess, h); err != nil {
 		sess.Close()
 		return nil, err
 	}
 
 	return &Shell{sess: sess, stdin: stdin, stdout: stdout}, nil
+}
+
+func start(sess *ssh.Session, h vault.Host) error {
+	if h.Tmux == "" {
+		return sess.Shell()
+	}
+
+	return sess.Start(TmuxCommand(h.Tmux, h.StartupCommand))
+}
+
+func TmuxCommand(name, startup string) string {
+	name = tmuxName.Replace(name)
+	target := shellQuote("=" + name)
+	create := "tmux new-session -d -s " + shellQuote(name)
+
+	if startup = strings.TrimSpace(startup); startup != "" {
+		create += " && tmux send-keys -t " + shellQuote("="+name+":") + " " + shellQuote(startup) + " Enter"
+	}
+
+	script := "if command -v tmux >/dev/null 2>&1; then tmux has-session -t " + target + " 2>/dev/null || { " + create + "; }; exec tmux attach-session -t " + target + "; else " + tmuxFallback + "; fi"
+	return "exec sh -c " + shellQuote(script)
+}
+
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 func (s *Shell) Read(p []byte) (int, error) {
