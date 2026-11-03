@@ -13,57 +13,72 @@ func (t *Terminal) reflow(cols, rows int, cur *cursor) {
 		}
 	}
 
-	var phys []line
+	sbLen := t.sb.len()
+	phys := make([]line, 0, sbLen+last+1)
 
-	for i := 0; i < t.sb.len(); i++ {
+	for i := range sbLen {
 		phys = append(phys, *t.sb.at(i))
 	}
 
 	curPhys := len(phys) + cur.y
 	phys = append(phys, b.lines[:last+1]...)
 
-	type logical struct {
-		cells []Cell
-	}
-	var logicals []logical
+	logicals := make([][]Cell, 0, len(phys))
 	curLogical, curOffset := -1, 0
 	var acc []Cell
+	start := 0
 
 	for i, l := range phys {
-		if i == curPhys {
-			curLogical = len(logicals)
-			curOffset = len(acc) + cur.x
-		}
-
 		cells := l.cells
 
 		if len(cells) > oldCols {
 			cells = cells[:oldCols]
 		}
 
-		acc = append(acc, cells...)
+		if i == curPhys {
+			curLogical = len(logicals)
+			curOffset = cur.x
 
-		if !l.wrapped || i == len(phys)-1 {
-			keep := -1
+			for _, p := range phys[start:i] {
+				curOffset += min(len(p.cells), oldCols)
+			}
+		}
 
-			if curLogical == len(logicals) {
-				keep = curOffset
+		if l.wrapped && i != len(phys)-1 {
+			continue
+		}
+
+		keep := -1
+
+		if curLogical == len(logicals) {
+			keep = curOffset
+		}
+
+		if start == i {
+			logicals = append(logicals, trimBlankView(cells, keep))
+		} else {
+			acc = acc[:0]
+
+			for _, p := range phys[start:i] {
+				acc = append(acc, p.cells[:min(len(p.cells), oldCols)]...)
 			}
 
-			logicals = append(logicals, logical{cells: trimBlank(acc, keep)})
-			acc = nil
+			acc = append(acc, cells...)
+			logicals = append(logicals, trimBlank(acc, keep))
 		}
+
+		start = i + 1
 	}
 
-	var out []line
+	out := make([]line, 0, len(logicals))
 	curLine, curX := 0, 0
 
-	for li, lg := range logicals {
-		cells := lg.cells
+	for li, cells := range logicals {
+		first := len(out)
 		var widths []int
 
 		if len(cells) == 0 {
-			out = append(out, newLine(cols, DefaultColor))
+			out = append(out, line{})
 			widths = append(widths, 0)
 		}
 
@@ -74,19 +89,25 @@ func (t *Terminal) reflow(cols, rows int, cur *cursor) {
 				n--
 			}
 
-			l := newLine(cols, DefaultColor)
-			copy(l.cells, cells[:n])
+			l := line{cells: cells[:n:n]}
 			cells = cells[n:]
 			l.wrapped = len(cells) > 0
+
+			if l.wrapped && n < cols {
+				l = padLine(l, cols)
+			}
+
 			out = append(out, l)
-			widths = append(widths, n)
+
+			if li == curLogical {
+				widths = append(widths, n)
+			}
 		}
 
 		if li != curLogical {
 			continue
 		}
 
-		first := len(out) - len(widths)
 		curLine, curX = first, curOffset
 
 		for i, w := range widths {
@@ -106,7 +127,7 @@ func (t *Terminal) reflow(cols, rows int, cur *cursor) {
 			curX -= cols
 
 			if curLine >= len(out) {
-				out = append(out, newLine(cols, DefaultColor))
+				out = append(out, line{})
 			}
 		}
 	}
@@ -115,18 +136,20 @@ func (t *Terminal) reflow(cols, rows int, cur *cursor) {
 	startRow = min(startRow, curLine)
 
 	t.sb.clear()
+	t.sb.lines = make([]line, 0, min(startRow, t.sb.max))
 
 	for _, l := range out[:startRow] {
-		t.sb.push(l)
+		t.sb.adopt(l)
 	}
 
 	screen := make([]line, rows)
 
 	for i := range screen {
+		screen[i] = newLine(cols, DefaultColor)
+
 		if startRow+i < len(out) {
-			screen[i] = out[startRow+i]
-		} else {
-			screen[i] = newLine(cols, DefaultColor)
+			copy(screen[i].cells, out[startRow+i].cells)
+			screen[i].wrapped = out[startRow+i].wrapped
 		}
 	}
 
@@ -135,6 +158,13 @@ func (t *Terminal) reflow(cols, rows int, cur *cursor) {
 	cur.y = min(curLine-startRow, rows-1)
 	cur.x = min(curX, cols-1)
 	cur.pendingWrap = false
+}
+
+func padLine(l line, cols int) line {
+	padded := newLine(cols, DefaultColor)
+	copy(padded.cells, l.cells)
+	padded.wrapped = l.wrapped
+	return padded
 }
 
 func lineEmpty(l line) bool {
@@ -148,6 +178,13 @@ func lineEmpty(l line) bool {
 }
 
 func trimBlank(cells []Cell, keep int) []Cell {
+	view := trimBlankView(cells, keep)
+	out := make([]Cell, len(view))
+	copy(out, view)
+	return out
+}
+
+func trimBlankView(cells []Cell, keep int) []Cell {
 	n := len(cells)
 
 	for n > 0 && cells[n-1].Rune == 0 && cells[n-1].Bg == DefaultColor && cells[n-1].Style() == 0 {
@@ -158,7 +195,5 @@ func trimBlank(cells []Cell, keep int) []Cell {
 		n = max(n, min(keep, len(cells)))
 	}
 
-	out := make([]Cell, n)
-	copy(out, cells[:n])
-	return out
+	return cells[:n:n]
 }
