@@ -40,11 +40,18 @@ func (v *View) highlight(cells []vt.Cell) []vt.Cell {
 		return cells
 	}
 
+	end := len(cells)
+
+	for end > 0 && (cells[end-1].Rune == 0 || cells[end-1].Rune == ' ') {
+		end--
+	}
+
 	var sb strings.Builder
+	sb.Grow(end)
 	offs := v.hlOffs[:0]
 	any := false
 
-	for i, c := range cells {
+	for i, c := range cells[:end] {
 		r := c.Rune
 
 		if r == 0 {
@@ -62,7 +69,7 @@ func (v *View) highlight(cells []vt.Cell) []vt.Cell {
 		sb.WriteRune(r)
 	}
 
-	offs = append(offs, len(cells))
+	offs = append(offs, end)
 	v.hlOffs = offs
 
 	if !any {
