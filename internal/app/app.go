@@ -5,6 +5,7 @@ import (
 	"image"
 	"net/url"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -52,6 +53,7 @@ const (
 	windowHeight = 800
 	minWidth     = 640
 	minHeight    = 420
+	transferFile = "transfers.json"
 )
 
 type App struct {
@@ -127,6 +129,10 @@ func Run() error {
 	a.explorer = explorer.NewExplorer(a.win)
 	a.tunnels = a.newTunnels()
 	a.transfers = transfer.New(a.Invalidate)
+
+	if dir, err := config.Dir(); err == nil {
+		a.transfers.Persist(filepath.Join(dir, transferFile))
+	}
 	a.tools.init(a)
 	a.started = time.Now()
 	a.welcome = welcome.New(a)

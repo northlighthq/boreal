@@ -36,6 +36,7 @@ const (
 )
 
 type sftpConn struct {
+	hostID  string
 	mu      sync.Mutex
 	client  *sshx.SFTP
 	owner   *sshx.Client
@@ -75,6 +76,7 @@ type Panel struct {
 	lastCwd                                     string
 	jobRows                                     map[int]*jobRow
 	clear                                       widget.Clickable
+	dismiss                                     []widget.Clickable
 	drags                                       map[string]*dragTrack
 }
 
@@ -110,7 +112,7 @@ func (p *Panel) conn(a core.Host) (*sftpConn, *session.Session) {
 		return c, s
 	}
 
-	c = &sftpConn{owner: client, loading: true}
+	c = &sftpConn{owner: client, loading: true, hostID: s.HostID}
 	p.conns[s.ID] = c
 	p.connsMu.Unlock()
 
@@ -134,6 +136,7 @@ func (p *Panel) conn(a core.Host) (*sftpConn, *session.Session) {
 			}
 
 			p.load(a, c, wd)
+			p.resumePending(a, c)
 		}
 
 		a.Invalidate()
