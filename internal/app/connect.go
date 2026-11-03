@@ -82,6 +82,7 @@ func (a *App) newPane(s *session.Session) *Pane {
 	p.view.OnFocus = func() { a.focusPane(p) }
 	p.view.Expand = func(word string) (string, bool) { return a.expandTrigger(p, word) }
 	p.view.Extras = func() []termview.Extra { return a.paneExtras(p) }
+	p.view.OnPaste = func(text string) bool { return a.guardPaste(p, text) }
 	return p
 }
 

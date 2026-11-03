@@ -135,15 +135,9 @@ func (a *App) toggleBroadcast(p *Pane) {
 }
 
 func (a *App) protected(p *Pane) bool {
-	h := p.origin.Host
+	h, ok := a.paneHost(p)
 
-	if h == nil && p.origin.HostID != "" {
-		if v, ok := a.vault.Host(p.origin.HostID); ok {
-			h = &v
-		}
-	}
-
-	if h == nil {
+	if !ok {
 		return false
 	}
 

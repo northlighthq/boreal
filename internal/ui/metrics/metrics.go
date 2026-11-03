@@ -27,6 +27,7 @@ type (
 const Height = unit.Dp(30)
 
 type Bar struct {
+	Lead  layout.Widget
 	Tail  layout.Widget
 	hover []widget.Clickable
 }
@@ -43,6 +44,10 @@ func (b *Bar) Layout(gtx C, k *kit.Kit, s sshx.Stats, hist History, have bool, e
 	muted := kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted}
 
 	var children []layout.FlexChild
+
+	if b.Lead != nil {
+		children = append(children, layout.Rigid(b.Lead), layout.Rigid(kit.Gap(12)))
+	}
 
 	switch {
 	case have:

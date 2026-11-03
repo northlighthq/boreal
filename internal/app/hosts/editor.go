@@ -21,8 +21,8 @@ type Editor struct {
 	host vault.Host
 	dlg  kit.Dialog
 
-	label, address, port, user, password, group, tags, startup, proxy widget.Editor
-	forward, keyOnly                                                  widget.Bool
+	label, address, port, user, password, group, tags, startup, proxy, tmux widget.Editor
+	forward, keyOnly                                                        widget.Bool
 
 	auth     kit.Segmented
 	key      kit.Select
@@ -46,7 +46,7 @@ var authMethods = []string{vault.AuthPassword, vault.AuthKey, vault.AuthAgent}
 
 func NewEditor(a core.Host, h vault.Host) *Editor {
 	e := &Editor{h: a, host: h}
-	dialogs.SingleLine(&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy)
+	dialogs.SingleLine(&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy, &e.tmux)
 	e.port.Filter = "0123456789"
 	e.password.Mask = '•'
 
@@ -65,6 +65,7 @@ func NewEditor(a core.Host, h vault.Host) *Editor {
 	e.startup.SetText(h.StartupCommand)
 	e.forward.Value = h.ForwardAgent
 	e.proxy.SetText(h.ProxyCommand)
+	e.tmux.SetText(h.Tmux)
 	e.keyOnly.Value = h.IdentitiesOnly
 
 	e.auth.Value = 2
@@ -104,7 +105,7 @@ func NewEditor(a core.Host, h vault.Host) *Editor {
 		}
 	}
 
-	e.expanded = h.Group != "" || len(h.Tags) > 0 || h.JumpID != "" || h.StartupCommand != "" || h.ForwardAgent || h.ProxyCommand != ""
+	e.expanded = h.Group != "" || len(h.Tags) > 0 || h.JumpID != "" || h.StartupCommand != "" || h.ForwardAgent || h.ProxyCommand != "" || h.Tmux != ""
 	e.list.Axis = layout.Vertical
 	return e
 }
@@ -131,6 +132,7 @@ func (e *Editor) collect() (vault.Host, bool) {
 	h.JumpID = e.jumpIDs[e.jump.Value]
 	h.StartupCommand = strings.TrimSpace(e.startup.Text())
 	h.ForwardAgent = e.forward.Value
+	h.Tmux = strings.TrimSpace(e.tmux.Text())
 	h.ProxyCommand = ""
 
 	if h.JumpID == "" {
@@ -207,7 +209,7 @@ func (e *Editor) Layout(gtx C) bool {
 		}
 	}
 
-	for _, ed := range []*widget.Editor{&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy} {
+	for _, ed := range []*widget.Editor{&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy, &e.tmux} {
 		for {
 			ev, ok := ed.Update(gtx)
 
@@ -418,8 +420,17 @@ func (e *Editor) Layout(gtx C) bool {
 
 					return k.Field(gtx, &e.proxy, kit.FieldOpts{Hint: "e.g. cloudflared access ssh --hostname %h", Mono: true})
 				}),
+				field("tmux session", func(gtx C) D {
+					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+						layout.Rigid(func(gtx C) D { return k.Field(gtx, &e.tmux, kit.FieldOpts{Hint: "e.g. main", Mono: true}) }),
+						layout.Rigid(kit.Gap(4)),
+						layout.Rigid(func(gtx C) D {
+							return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, "Attaches to this tmux session, or creates it, so a reconnect brings back where you were. Run on connect only runs when the session is created. Leave empty for a plain shell.")
+						}),
+					)
+				}),
 				field("Run on connect", func(gtx C) D {
-					return k.Field(gtx, &e.startup, kit.FieldOpts{Hint: "e.g. tmux attach", Mono: true})
+					return k.Field(gtx, &e.startup, kit.FieldOpts{Hint: "e.g. cd /srv/app", Mono: true})
 				}),
 				field("", func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,

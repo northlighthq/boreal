@@ -39,6 +39,10 @@ func (p *Panel) enqueue(a core.Host, c *sftpConn, j *transfer.Job, reload string
 		return
 	}
 
+	if j.HostID == "" {
+		j.HostID = c.hostID
+	}
+
 	a.Transfers().Add(client.Client, j, func(j *transfer.Job) {
 		switch j.State() {
 		case transfer.Done:
@@ -58,7 +62,7 @@ func (p *Panel) enqueue(a core.Host, c *sftpConn, j *transfer.Job, reload string
 				break
 			}
 
-			retry := &transfer.Job{Kind: j.Kind, Name: j.Name, Local: j.Local, Remote: j.Remote}
+			retry := &transfer.Job{Kind: j.Kind, Name: j.Name, Local: j.Local, Remote: j.Remote, Resume: true}
 			a.Toasts().ErrorAction("Transfer failed: "+j.Name, j.Err().Error(), "Retry", func() {
 				p.enqueue(a, c, retry, reload, after)
 				a.Invalidate()
@@ -143,7 +147,27 @@ func (p *Panel) downloadFile(a core.Host, c *sftpConn, src string) {
 		return
 	}
 
+	if f, ok := w.(*os.File); ok {
+		f.Close()
+		p.enqueue(a, c, &transfer.Job{Kind: transfer.Download, Name: name, Remote: src, Local: f.Name()}, "", nil)
+		return
+	}
+
 	p.enqueue(a, c, &transfer.Job{Kind: transfer.Download, Name: name, Remote: src, Writer: w}, "", nil)
+}
+
+func (p *Panel) resumePending(a core.Host, c *sftpConn) {
+	saved := a.Transfers().TakePending(c.hostID)
+
+	if len(saved) == 0 {
+		return
+	}
+
+	for _, s := range saved {
+		p.enqueue(a, c, s.Job(), "", nil)
+	}
+
+	a.Toasts().Info("Resuming transfers", fmt.Sprintf("%d interrupted transfers continue where they stopped.", len(saved)))
 }
 
 func (p *Panel) downloadFolder(a core.Host, c *sftpConn, src string) {
@@ -251,8 +275,9 @@ func (p *Panel) transfers(a core.Host, gtx C) D {
 	th := k.Th
 	q := a.Transfers()
 	jobs := q.Jobs()
+	pending := q.Pending()
 
-	if len(jobs) == 0 {
+	if len(jobs) == 0 && len(pending) == 0 {
 		return D{}
 	}
 
@@ -307,6 +332,19 @@ func (p *Panel) transfers(a core.Host, gtx C) D {
 		}
 
 		rows = append(rows, layout.Rigid(func(gtx C) D { return p.jobRow(a, gtx, j, r) }))
+	}
+
+	if len(p.dismiss) < len(pending) {
+		p.dismiss = make([]widget.Clickable, len(pending))
+	}
+
+	for i, s := range pending {
+		if p.dismiss[i].Clicked(gtx) {
+			q.Dismiss(s)
+			continue
+		}
+
+		rows = append(rows, layout.Rigid(func(gtx C) D { return p.pendingRow(a, gtx, s, &p.dismiss[i]) }))
 	}
 
 	return layout.Inset{Left: 8, Right: 8, Top: 8, Bottom: 4}.Layout(gtx, func(gtx C) D {
@@ -373,6 +411,39 @@ func (p *Panel) jobRow(a core.Host, gtx C, j *transfer.Job, r *jobRow) D {
 
 				return k.IconButtonSized(gtx, &r.cancel, icons.Close, false, 24, 14, th.TextMuted)
 			}),
+		)
+	})
+}
+
+func (p *Panel) pendingRow(a core.Host, gtx C, s transfer.Saved, dismiss *widget.Clickable) D {
+	k := a.Kit()
+	th := k.Th
+	ic := icons.Upload
+
+	if s.Kind == transfer.Download {
+		ic = icons.Download
+	}
+
+	host := "its host"
+
+	if h, ok := a.Vault().Host(s.HostID); ok {
+		host = h.Title()
+	}
+
+	return layout.Inset{Left: 4, Right: 4, Bottom: 8}.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+			layout.Rigid(func(gtx C) D { return ic.Layout(gtx, 16, th.TextFaint) }),
+			layout.Rigid(kit.Gap(10)),
+			layout.Flexed(1, func(gtx C) D {
+				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+					layout.Rigid(func(gtx C) D { return k.Label(gtx, kit.TextStyle{Weight: font.Medium, MaxLines: 1}, s.Name) }),
+					layout.Rigid(kit.Gap(4)),
+					layout.Rigid(func(gtx C) D {
+						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall - 1, Color: th.TextMuted, MaxLines: 2}, "Interrupted · resumes when you open SFTP on "+host)
+					}),
+				)
+			}),
+			layout.Rigid(func(gtx C) D { return k.IconButtonSized(gtx, dismiss, icons.Close, false, 24, 14, th.TextMuted) }),
 		)
 	})
 }

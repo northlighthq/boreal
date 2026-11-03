@@ -407,8 +407,16 @@ func (v *View) paste(e transfer.DataEvent) {
 		return
 	}
 
+	if v.OnPaste != nil && v.OnPaste(string(data)) {
+		return
+	}
+
+	v.Paste(string(data))
+}
+
+func (v *View) Paste(text string) {
 	v.word = v.word[:0]
-	v.send(input.EncodePaste(string(data), v.modes))
+	v.send(input.EncodePaste(text, v.modes))
 }
 
 func (v *View) send(p []byte) {

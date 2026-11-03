@@ -45,6 +45,8 @@ type Job struct {
 	Name   string
 	Local  string
 	Remote string
+	HostID string
+	Resume bool
 	Writer io.WriteCloser
 
 	client *sftp.Client
@@ -85,6 +87,8 @@ type Queue struct {
 	next    int
 	slots   chan struct{}
 	changed func()
+	store   string
+	pending []Saved
 }
 
 func New(changed func()) *Queue {
@@ -125,6 +129,7 @@ func (q *Queue) Add(client *sftp.Client, j *Job, onDone func(*Job)) *Job {
 	q.mu.Unlock()
 
 	go q.run(j)
+	q.save()
 	q.changed()
 	return j
 }
@@ -140,15 +145,30 @@ func (q *Queue) Cancel(id int) {
 func (q *Queue) ClearFinished() {
 	q.mu.Lock()
 	live := q.jobs[:0]
+	var stale []Saved
+	busy := map[Saved]struct{}{}
 
 	for _, j := range q.jobs {
 		if !j.Finished() {
 			live = append(live, j)
+			busy[j.saved()] = struct{}{}
+			continue
+		}
+
+		if j.State() == Failed && resumable(j) {
+			stale = append(stale, j.saved())
+		}
+	}
+
+	for _, s := range stale {
+		if _, ok := busy[s]; !ok {
+			s.discard()
 		}
 	}
 
 	q.jobs = live
 	q.mu.Unlock()
+	q.save()
 	q.changed()
 }
 
@@ -157,6 +177,7 @@ func (q *Queue) run(j *Job) {
 	case q.slots <- struct{}{}:
 	case <-j.ctx.Done():
 		j.finish(Cancelled, ErrCancelled)
+		q.save()
 		q.changed()
 		return
 	}
@@ -201,6 +222,7 @@ func (q *Queue) run(j *Job) {
 		j.finish(Failed, err)
 	}
 
+	q.save()
 	q.changed()
 }
 
@@ -289,12 +311,25 @@ func (j *Job) uploadFile(src, dst string) error {
 
 	defer in.Close()
 
-	out, err := j.client.Create(dst)
+	offset, out, err := j.openRemote(in, dst)
 
 	if err != nil {
 		return err
 	}
 
+	if fi, err := in.Stat(); err == nil && offset == fi.Size() {
+		out.Close()
+		j.done.Add(offset)
+		j.files.Add(1)
+		return nil
+	}
+
+	if _, err := in.Seek(offset, io.SeekStart); err != nil {
+		out.Close()
+		return err
+	}
+
+	j.done.Add(offset)
 	err = j.copy(out, in)
 
 	if cerr := out.Close(); err == nil {
@@ -306,6 +341,25 @@ func (j *Job) uploadFile(src, dst string) error {
 	}
 
 	return err
+}
+
+func (j *Job) openRemote(in *os.File, dst string) (int64, *sftp.File, error) {
+	if j.Resume {
+		if offset := remoteResume(j.client, in, dst); offset > 0 {
+			out, err := j.client.OpenFile(dst, os.O_WRONLY)
+
+			if err == nil {
+				if _, err = out.Seek(offset, io.SeekStart); err == nil {
+					return offset, out, nil
+				}
+
+				out.Close()
+			}
+		}
+	}
+
+	out, err := j.client.Create(dst)
+	return 0, out, err
 }
 
 func (j *Job) download() error {
@@ -323,7 +377,7 @@ func (j *Job) download() error {
 			return j.downloadTo(j.Remote, j.Writer)
 		}
 
-		return j.downloadFile(j.Remote, j.Local)
+		return j.downloadFile(j.Remote, j.Local, info.Size())
 	}
 
 	var size int64
@@ -361,7 +415,11 @@ func (j *Job) download() error {
 			continue
 		}
 
-		if err := j.downloadFile(walk.Path(), dst); err != nil {
+		if j.complete(dst, walk.Stat().Size()) {
+			continue
+		}
+
+		if err := j.downloadFile(walk.Path(), dst, walk.Stat().Size()); err != nil {
 			return err
 		}
 	}
@@ -369,28 +427,75 @@ func (j *Job) download() error {
 	return nil
 }
 
-func (j *Job) downloadFile(src, dst string) error {
+func (j *Job) complete(dst string, size int64) bool {
+	if !j.Resume {
+		return false
+	}
+
+	fi, err := os.Stat(dst)
+
+	if err != nil || fi.Size() != size {
+		return false
+	}
+
+	j.done.Add(size)
+	j.files.Add(1)
+	return true
+}
+
+func (j *Job) downloadFile(src, dst string, size int64) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
 
-	out, err := os.Create(dst)
+	part := dst + PartSuffix
+	in, err := j.client.Open(src)
 
 	if err != nil {
 		return err
 	}
 
-	err = j.downloadTo(src, out)
+	defer in.Close()
+
+	offset := localResume(part, in, size)
+	flags := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
+
+	if offset > 0 {
+		flags = os.O_WRONLY | os.O_APPEND
+	}
+
+	out, err := os.OpenFile(part, flags, 0o644)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := in.Seek(offset, io.SeekStart); err != nil {
+		out.Close()
+		return err
+	}
+
+	j.done.Add(offset)
+	err = j.copy(out, in)
 
 	if cerr := out.Close(); err == nil {
 		err = cerr
 	}
 
-	if err != nil {
-		os.Remove(dst)
+	if err == nil {
+		err = os.Rename(part, dst)
 	}
 
-	return err
+	if err != nil {
+		if j.ctx.Err() != nil {
+			os.Remove(part)
+		}
+
+		return err
+	}
+
+	j.files.Add(1)
+	return nil
 }
 
 func (j *Job) downloadTo(src string, w io.Writer) error {
