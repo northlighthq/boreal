@@ -31,6 +31,10 @@ type Handler interface {
 	OSC(data []byte)
 }
 
+type ASCIIPrinter interface {
+	PrintASCII(s []byte)
+}
+
 type Params struct {
 	vals [maxParams]int
 	sub  [maxParams]bool
@@ -67,6 +71,7 @@ func (p *Params) reset() {
 
 type Parser struct {
 	h     Handler
+	ascii ASCIIPrinter
 	state parserState
 
 	params   Params
@@ -81,19 +86,33 @@ type Parser struct {
 }
 
 func New(h Handler) *Parser {
-	return &Parser{h: h}
+	ps := &Parser{h: h}
+	ps.ascii, _ = h.(ASCIIPrinter)
+	return ps
 }
 
 func (ps *Parser) Feed(p []byte) {
 	for i := 0; i < len(p); i++ {
 		b := p[i]
 
-		if ps.state == stateGround && ps.utf8Need == 0 && b >= 0x20 && b < 0x7f {
+		if ps.state != stateGround || ps.utf8Need != 0 || b < 0x20 || b >= 0x7f {
+			ps.step(b)
+			continue
+		}
+
+		if ps.ascii == nil {
 			ps.h.Print(rune(b))
 			continue
 		}
 
-		ps.step(b)
+		end := i + 1
+
+		for end < len(p) && p[end] >= 0x20 && p[end] < 0x7f {
+			end++
+		}
+
+		ps.ascii.PrintASCII(p[i:end])
+		i = end - 1
 	}
 }
 

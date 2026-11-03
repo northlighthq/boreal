@@ -22,6 +22,7 @@ const (
 	cursorLineHeight = 2
 	scrollbarWidth   = 4
 	faintAlpha       = 0x99
+	inkSlack         = 2
 )
 
 type filler func(r image.Rectangle, c color.NRGBA)
@@ -30,8 +31,27 @@ type rowEntry struct {
 	cells []vt.Cell
 	hash  uint64
 	img   *image.RGBA
+	pix   []byte
 	op    paint.ImageOp
 	valid bool
+}
+
+func (e *rowEntry) canvas(w, h int) {
+	if w <= 0 {
+		e.img = nil
+		return
+	}
+
+	need := w * h * 4
+
+	if cap(e.pix) < need {
+		e.pix = make([]byte, need)
+	} else {
+		e.pix = e.pix[:need]
+		clear(e.pix)
+	}
+
+	e.img = &image.RGBA{Pix: e.pix, Stride: w * 4, Rect: image.Rect(0, 0, w, h)}
 }
 
 type rowCache struct {
@@ -76,8 +96,12 @@ func (v *View) paintRows(gtx layout.Context, fresh bool) {
 	}
 
 	for y := range c.rows {
+		if c.rows[y].img == nil {
+			continue
+		}
+
 		off := op.Offset(image.Pt(0, y*rowSize.Y)).Push(gtx.Ops)
-		area := clip.Rect{Max: rowSize}.Push(gtx.Ops)
+		area := clip.Rect{Max: c.rows[y].img.Rect.Size()}.Push(gtx.Ops)
 		c.rows[y].op.Add(gtx.Ops)
 		paint.PaintOp{}.Add(gtx.Ops)
 		area.Pop()
@@ -146,30 +170,31 @@ func (v *View) updateRows() {
 		c.taken[next] = true
 		cells := f.Row(y)
 
-		if e.img == nil || e.img.Bounds().Size() != c.size {
-			e.img = image.NewRGBA(image.Rectangle{Max: c.size})
-		}
-
-		v.rasterRow(e.img, cells)
+		v.rasterRow(&e, cells)
 		e.cells = append(e.cells[:0], cells...)
 		e.hash = hashCells(cells)
-		e.op = paint.NewImageOp(e.img)
-		e.op.Filter = paint.FilterNearest
 		e.valid = true
+
+		if e.img != nil {
+			e.op = paint.NewImageOp(e.img)
+			e.op.Filter = paint.FilterNearest
+		}
+
 		c.rows[y] = e
 	}
 }
 
-func (v *View) rasterRow(img *image.RGBA, cells []vt.Cell) {
+func (v *View) rasterRow(e *rowEntry, cells []vt.Cell) {
 	cells = v.highlight(cells)
-	b := img.Bounds()
+	e.canvas(v.inkWidth(cells), v.m.h)
 
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		i := img.PixOffset(b.Min.X, y)
-		clear(img.Pix[i : i+b.Dx()*4])
+	if e.img != nil {
+		v.paintRow(e.img, cells)
 	}
+}
 
-	origin := b.Min
+func (v *View) paintRow(img *image.RGBA, cells []vt.Cell) {
+	origin := img.Rect.Min
 	fill := func(r image.Rectangle, c color.NRGBA) { fillImage(img, r.Add(origin), c) }
 
 	for x := 0; x < len(cells); {
@@ -213,6 +238,22 @@ func (v *View) rasterRow(img *image.RGBA, cells []vt.Cell) {
 	}
 
 	v.paintDecorations(fill, cells)
+}
+
+func (v *View) inkWidth(cells []vt.Cell) int {
+	last := -1
+
+	for i, c := range cells {
+		if (c.Rune != 0 && c.Rune != ' ') || c.Style() != 0 || c.Bg != vt.DefaultColor || c.Link != 0 {
+			last = i
+		}
+	}
+
+	if last < 0 {
+		return 0
+	}
+
+	return min(last+1+inkSlack, len(cells)) * v.m.w
 }
 
 func cellStyle(c vt.Cell) glyphs.Style {

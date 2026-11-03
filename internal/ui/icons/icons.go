@@ -3,6 +3,7 @@ package icons
 import (
 	"image"
 	"image/color"
+	"sync"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -15,19 +16,60 @@ import (
 )
 
 type Icon struct {
-	draw func(ops *op.Ops, size float32, c color.NRGBA)
+	draw  func(ops *op.Ops, size float32, c color.NRGBA)
+	shape func(ops *op.Ops, size float32) clip.PathSpec
+
+	mu     sync.Mutex
+	shapes map[int]shapeCache
+}
+
+type shapeCache struct {
+	ops  *op.Ops
+	call op.CallOp
 }
 
 func custom(fn func(ops *op.Ops, size float32, c color.NRGBA)) *Icon {
 	return &Icon{draw: fn}
 }
 
+func outlined(fn func(ops *op.Ops, size float32) clip.PathSpec) *Icon {
+	return &Icon{shape: fn}
+}
+
 func (i *Icon) Layout(gtx layout.Context, size unit.Dp, c color.NRGBA) layout.Dimensions {
 	px := gtx.Dp(size)
 	gtx.Constraints = layout.Exact(image.Pt(px, px))
 
-	i.draw(gtx.Ops, float32(px), c)
+	if i.shape == nil {
+		i.draw(gtx.Ops, float32(px), c)
+		return layout.Dimensions{Size: image.Pt(px, px)}
+	}
+
+	paint.ColorOp{Color: c}.Add(gtx.Ops)
+	i.cached(px).Add(gtx.Ops)
 	return layout.Dimensions{Size: image.Pt(px, px)}
+}
+
+func (i *Icon) cached(px int) op.CallOp {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+
+	if sc, ok := i.shapes[px]; ok {
+		return sc.call
+	}
+
+	if i.shapes == nil {
+		i.shapes = map[int]shapeCache{}
+	}
+
+	ops := new(op.Ops)
+	m := op.Record(ops)
+	area := clip.Outline{Path: i.shape(ops, float32(px))}.Op().Push(ops)
+	paint.PaintOp{}.Add(ops)
+	area.Pop()
+	sc := shapeCache{ops: ops, call: m.Stop()}
+	i.shapes[px] = sc
+	return sc.call
 }
 
 var (

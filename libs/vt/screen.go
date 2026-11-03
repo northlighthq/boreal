@@ -83,6 +83,13 @@ func (s *scrollback) push(l line) (recycled line) {
 		return l
 	}
 
+	if s.size == len(s.lines) && len(s.lines) >= s.max {
+		s.dropped++
+		s.lines[s.start] = compactInto(s.lines[s.start].cells, l)
+		s.start = (s.start + 1) % len(s.lines)
+		return l
+	}
+
 	stored := compact(l)
 
 	if s.size < len(s.lines) {
@@ -104,6 +111,22 @@ func (s *scrollback) push(l line) (recycled line) {
 }
 
 func compact(l line) line {
+	return compactInto(nil, l)
+}
+
+func compactInto(buf []Cell, l line) line {
+	n := trimmedLen(l)
+
+	if cap(buf) < n {
+		buf = make([]Cell, n)
+	}
+
+	buf = buf[:n]
+	copy(buf, l.cells)
+	return line{cells: buf, wrapped: l.wrapped}
+}
+
+func trimmedLen(l line) int {
 	n := len(l.cells)
 
 	if !l.wrapped {
@@ -112,9 +135,33 @@ func compact(l line) line {
 		}
 	}
 
-	cells := make([]Cell, n)
-	copy(cells, l.cells)
-	return line{cells: cells, wrapped: l.wrapped}
+	return n
+}
+
+func (s *scrollback) adopt(l line) {
+	if s.max == 0 {
+		s.dropped++
+		return
+	}
+
+	n := trimmedLen(l)
+	l.cells = l.cells[:n:n]
+
+	if s.size < len(s.lines) {
+		s.lines[(s.start+s.size)%len(s.lines)] = l
+		s.size++
+		return
+	}
+
+	if len(s.lines) < s.max {
+		s.lines = append(s.lines, l)
+		s.size++
+		return
+	}
+
+	s.dropped++
+	s.lines[s.start] = l
+	s.start = (s.start + 1) % len(s.lines)
 }
 
 func emptyCell(c Cell) bool {

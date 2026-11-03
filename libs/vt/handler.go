@@ -109,6 +109,46 @@ func (t *Terminal) Print(r rune) {
 	}
 }
 
+func (t *Terminal) PrintASCII(s []byte) {
+	if t.cur.charsets[t.cur.gl] == charsetDECGraphics || t.modes.insert {
+		for _, b := range s {
+			t.Print(rune(b))
+		}
+
+		return
+	}
+
+	for len(s) > 0 {
+		x := t.cur.x
+
+		if t.cur.pendingWrap || x >= t.cols-1 {
+			t.Print(rune(s[0]))
+			s = s[1:]
+			continue
+		}
+
+		n := min(len(s), t.cols-1-x)
+		cells := t.screen.lines[t.cur.y].cells
+		t.clearWide(cells, x)
+
+		if cells[x+n-1].Width() == 2 && x+n < len(cells) {
+			cells[x+n] = blank(cells[x+n].Bg)
+		}
+
+		c := t.cur.pen
+		c.SetWidth(1)
+
+		for i, b := range s[:n] {
+			c.Rune = rune(b)
+			cells[x+i] = c
+		}
+
+		t.lastRune = rune(s[n-1])
+		t.cur.x += n
+		s = s[n:]
+	}
+}
+
 func (t *Terminal) clearWide(cells []Cell, x int) {
 	if x >= len(cells) {
 		return
