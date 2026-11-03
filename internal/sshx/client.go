@@ -281,6 +281,10 @@ func dialAgent() (agent.ExtendedAgent, func(), error) {
 		rw, err = net.Dial("unix", sock)
 	} else if runtime.GOOS == "windows" {
 		rw, err = os.OpenFile(windowsAgentPipe, os.O_RDWR, 0)
+
+		if err != nil {
+			rw, err = dialPageant()
+		}
 	} else {
 		err = errors.New("no agent")
 	}

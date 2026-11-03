@@ -16,6 +16,7 @@ import (
 	"github.com/northlighthq/boreal/internal/app/dialogs"
 	"github.com/northlighthq/boreal/internal/config"
 	"github.com/northlighthq/boreal/internal/fonts"
+	"github.com/northlighthq/boreal/internal/platform/urlhandler"
 	"github.com/northlighthq/boreal/internal/sshx"
 	"github.com/northlighthq/boreal/internal/ui/icons"
 	"github.com/northlighthq/boreal/internal/ui/kit"
@@ -87,6 +88,7 @@ type Dialog struct {
 	fontSize, lineHeight, scrollback, keepAlive         widget.Editor
 	blink, copySel, confirm, hideIPs, restore, ligs, hl widget.Bool
 	autoUpdate                                          widget.Bool
+	links                                               widget.Bool
 	skipTags                                            widget.Editor
 
 	ok, apply, cancel widget.Clickable
@@ -147,6 +149,7 @@ func New(a core.Host) *Dialog {
 	d.tabStyle.Value = index(tabStyles, s.TabStyle)
 	d.scheme.Value = max(0, index(theme.Schemes(), s.TermScheme))
 	d.autoUpdate.Value = s.AutoUpdate
+	d.links.Value = urlhandler.Registered()
 
 	for i, name := range fonts.TerminalFonts {
 		if name == s.TerminalFont {
@@ -231,6 +234,14 @@ func (d *Dialog) Layout(gtx C) bool {
 	a := d.h
 	d.sec.update(a, gtx)
 	k := a.Kit()
+
+	if d.links.Update(gtx) {
+		if err := urlhandler.Set(d.links.Value); err != nil {
+			a.Toasts().Error("Couldn't change the link handler", err.Error())
+		}
+
+		d.links.Value = urlhandler.Registered()
+	}
 
 	if d.ok.Clicked(gtx) {
 		d.commit(a)
@@ -441,7 +452,7 @@ func (d *Dialog) content(a core.Host, gtx C) D {
 			}),
 		}
 	case 2:
-		agent := "Not detected (enable the “OpenSSH Authentication Agent” service)"
+		agent := "Not detected (start the “OpenSSH Authentication Agent” service or Pageant)"
 
 		if sshx.AgentAvailable() {
 			agent = "Available"
@@ -452,6 +463,15 @@ func (d *Dialog) content(a core.Host, gtx C) D {
 			row("Keep-alive (seconds)", left(narrow(&d.keepAlive, "30"))),
 			row("Confirm on close", left(func(gtx C) D { return k.Toggle(gtx, &d.confirm) })),
 			row("SSH agent", left(func(gtx C) D { return k.Muted(gtx, agent) })),
+			row("Open ssh:// links", left(func(gtx C) D {
+				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &d.links) }),
+					layout.Rigid(kit.Gap(12)),
+					layout.Rigid(func(gtx C) D {
+						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, "ssh:// and sftp:// links open in Boreal. If another app keeps opening them, choose Boreal in Windows Settings › Default apps.")
+					}),
+				)
+			})),
 		}
 	case 3:
 		children = append([]layout.FlexChild{header}, d.securityPage(a, gtx, row, left)...)

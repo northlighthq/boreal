@@ -5,6 +5,7 @@ import (
 	"image"
 	"net/url"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -31,6 +32,7 @@ import (
 	"github.com/northlighthq/boreal/internal/app/welcome"
 	"github.com/northlighthq/boreal/internal/config"
 	"github.com/northlighthq/boreal/internal/fonts"
+	"github.com/northlighthq/boreal/internal/launch"
 	"github.com/northlighthq/boreal/internal/platform/shell"
 	"github.com/northlighthq/boreal/internal/session"
 	"github.com/northlighthq/boreal/internal/transfer"
@@ -52,6 +54,7 @@ const (
 	windowHeight = 800
 	minWidth     = 640
 	minHeight    = 420
+	transferFile = "transfers.json"
 )
 
 type App struct {
@@ -87,6 +90,8 @@ type App struct {
 	started     time.Time
 	restored    bool
 	drops       chan []string
+	launches    chan launch.Request
+	stopListen  func()
 	dragOver    atomic.Bool
 	extKeys     chan string
 	snipKeys    snippetKeys
@@ -105,7 +110,7 @@ type App struct {
 	mu         sync.Mutex
 }
 
-func Run() error {
+func Run(args []string) error {
 	v, err := vault.Open()
 
 	if err != nil {
@@ -120,6 +125,7 @@ func Run() error {
 		drops:    make(chan []string, 8),
 		extKeys:  make(chan string, 8),
 		clips:    make(chan serverClip, 4),
+		launches: make(chan launch.Request, 8),
 	}
 	a.syncLive()
 	a.shaper, a.face = fonts.Load()
@@ -128,6 +134,10 @@ func Run() error {
 	a.explorer = explorer.NewExplorer(a.win)
 	a.tunnels = a.newTunnels()
 	a.transfers = transfer.New(a.Invalidate)
+
+	if dir, err := config.Dir(); err == nil {
+		a.transfers.Persist(filepath.Join(dir, transferFile))
+	}
 	a.tools.init(a)
 	a.started = time.Now()
 	a.welcome = welcome.New(a)
@@ -148,6 +158,7 @@ func Run() error {
 
 	a.startUpdates()
 	a.startAutoLock()
+	a.startLaunches(args)
 	return a.loop()
 }
 
@@ -212,6 +223,10 @@ func (a *App) confirmClose() bool {
 }
 
 func (a *App) shutdown() {
+	if a.stopListen != nil {
+		a.stopListen()
+	}
+
 	a.saveTabs()
 	a.ws.closeAll()
 	a.tunnels.StopAll()
@@ -255,6 +270,7 @@ func (a *App) frame(gtx C) {
 	a.ws.reap(a)
 	a.applyServerCopies(gtx)
 	a.restoreTabs()
+	a.handleLaunches()
 
 	if rev := a.vault.Revision(); rev != a.vaultRev {
 		a.vaultRev = rev

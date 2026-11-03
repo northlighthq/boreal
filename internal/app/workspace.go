@@ -525,6 +525,7 @@ func (w *workspace) layoutNode(a *App, gtx C, t *Tab, n *node, origin image.Poin
 		dims := n.pane.view.Layout(gtx)
 
 		a.paneOverlay(gtx, n.pane)
+		a.protectedBorder(gtx, n.pane, size)
 
 		if t.root != n && t.active != n.pane {
 			kit.Rect(gtx, image.Rectangle{Max: size}, a.th().Dim)

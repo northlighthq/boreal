@@ -351,7 +351,7 @@ func (s *Session) connect() {
 	if s.Kind == SSH {
 		t.Resize(s.term.Size())
 
-		if cmd := strings.TrimSpace(s.opts.Target.Host.StartupCommand); cmd != "" {
+		if cmd := strings.TrimSpace(s.opts.Target.Host.StartupCommand); cmd != "" && s.opts.Target.Host.Tmux == "" {
 			s.SendOnly([]byte(cmd + ""))
 		}
 	}
@@ -392,7 +392,7 @@ func (s *Session) dialSSH(cols, rows int) (*sshx.Client, Transport, error) {
 	}
 
 	s.step("Opening shell…", false)
-	shell, err := sshx.OpenShell(client, cols, rows, s.opts.Target.Host.ForwardAgent)
+	shell, err := sshx.OpenShell(client, cols, rows, s.opts.Target.Host)
 
 	if err != nil {
 		client.Close()

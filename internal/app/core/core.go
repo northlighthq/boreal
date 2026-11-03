@@ -7,6 +7,7 @@ import (
 	"gioui.org/x/explorer"
 
 	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/platform/dragdrop"
 	"github.com/northlighthq/boreal/internal/platform/shell"
 	"github.com/northlighthq/boreal/internal/session"
 	"github.com/northlighthq/boreal/internal/transfer"
@@ -77,7 +78,7 @@ type Host interface {
 	ExportData()
 	ImportData()
 	ExportSSHConfig()
-	DragOut(paths []string)
+	DragOut(files []dragdrop.VirtualFile)
 	OpenURL(url string)
 
 	Connect(h vault.Host)

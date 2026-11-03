@@ -247,6 +247,12 @@ func (c *chrome) tab(a *App, gtx C, i, x, w int, active bool) {
 		kit.RRect(gtx, r, gtx.Dp(th.RadiusSmall), kit.Fade(th.Hover, hv*2))
 	}
 
+	if a.tabProtected(t) {
+		bar := gtx.Dp(2)
+		pad := gtx.Dp(8)
+		kit.RRect(gtx, image.Rect(pad, 0, w-pad, bar), bar/2, th.Danger)
+	}
+
 	title := t.title()
 
 	if n := len(t.root.panes(nil)); n > 1 {
