@@ -100,6 +100,7 @@ type App struct {
 	autoUpdate atomic.Bool
 	updates    updater
 	keepAlive  atomic.Int64
+	rate       trafficRate
 	vaultRev   uint64
 	mu         sync.Mutex
 }

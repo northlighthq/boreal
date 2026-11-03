@@ -27,6 +27,7 @@ type (
 const Height = unit.Dp(30)
 
 type Bar struct {
+	Tail  layout.Widget
 	hover []widget.Clickable
 }
 
@@ -58,6 +59,10 @@ func (b *Bar) Layout(gtx C, k *kit.Kit, s sshx.Stats, hist History, have bool, e
 		children = append(children, layout.Rigid(func(gtx C) D { return k.Label(gtx, muted, "No metrics (not a Linux server)") }))
 	default:
 		children = append(children, layout.Rigid(func(gtx C) D { return k.Label(gtx, muted, "Reading metrics…") }))
+	}
+
+	if b.Tail != nil {
+		children = append(children, layout.Flexed(1, func(gtx C) D { return D{Size: image.Pt(gtx.Constraints.Max.X, 0)} }), layout.Rigid(b.Tail))
 	}
 
 	gtx.Constraints = layout.Exact(size)

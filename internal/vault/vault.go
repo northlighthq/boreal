@@ -95,6 +95,8 @@ type Forward struct {
 	BindPort int    `json:"bindPort"`
 	DestHost string `json:"destHost,omitempty"`
 	DestPort int    `json:"destPort,omitempty"`
+	Profile  string `json:"profile,omitempty"`
+	OnStart  bool   `json:"startOnConnect,omitempty"`
 }
 
 type Snippet struct {

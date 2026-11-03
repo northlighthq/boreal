@@ -157,6 +157,7 @@ func (a *App) newSSHPane(h vault.Host) *Pane {
 		Scrollback: a.settings.Scrollback,
 		Title:      h.Title(),
 		OnChange:   a.Invalidate,
+		OnConnect:  func(c *sshx.Client) { a.autoTunnels(h.ID, c) },
 	})
 
 	p := a.newPane(s)

@@ -10,6 +10,7 @@ import (
 
 type State struct {
 	Starting bool
+	Shared   bool
 	Tunnel   *sshx.Tunnel
 	Client   *sshx.Client
 	Err      error
@@ -92,35 +93,50 @@ func (t *Manager) Active() int {
 }
 
 func (t *Manager) Start(r vault.Forward) {
-	t.mu.Lock()
-
-	if s, ok := t.m[r.ID]; ok && (s.Starting || s.Tunnel != nil) {
-		t.mu.Unlock()
-		return
+	if t.claim(r.ID) {
+		go t.open(r, nil)
 	}
-
-	t.m[r.ID] = &State{Starting: true}
-	t.mu.Unlock()
-	t.changed()
-
-	go t.open(r)
 }
 
-func (t *Manager) open(r vault.Forward) {
-	client, err := t.dial(context.Background(), r)
+func (t *Manager) StartOn(r vault.Forward, c *sshx.Client) {
+	if t.claim(r.ID) {
+		go t.open(r, c)
+	}
+}
+
+func (t *Manager) claim(id string) bool {
+	t.mu.Lock()
+
+	if s, ok := t.m[id]; ok && (s.Starting || s.Tunnel != nil) {
+		t.mu.Unlock()
+		return false
+	}
+
+	t.m[id] = &State{Starting: true}
+	t.mu.Unlock()
+	t.changed()
+	return true
+}
+
+func (t *Manager) open(r vault.Forward, shared *sshx.Client) {
+	client, err := shared, error(nil)
+
+	if client == nil {
+		client, err = t.dial(context.Background(), r)
+	}
 
 	var tun *sshx.Tunnel
 
 	if err == nil {
 		tun, err = sshx.StartForward(client, r)
 
-		if err != nil {
+		if err != nil && shared == nil {
 			client.Close()
 		}
 	}
 
 	t.mu.Lock()
-	t.m[r.ID] = &State{Tunnel: tun, Client: client, Err: err}
+	t.m[r.ID] = &State{Tunnel: tun, Client: client, Shared: shared != nil, Err: err}
 	t.mu.Unlock()
 
 	if err != nil {
@@ -129,12 +145,15 @@ func (t *Manager) open(r vault.Forward) {
 		return
 	}
 
-	t.success("Tunnel active", sshx.Describe(r))
-	go t.watch(r.ID, tun, client)
+	if shared == nil {
+		t.success("Tunnel active", sshx.Describe(r))
+	}
+
+	go t.watch(r.ID, tun, client, shared != nil)
 	t.changed()
 }
 
-func (t *Manager) watch(id string, tun *sshx.Tunnel, client *sshx.Client) {
+func (t *Manager) watch(id string, tun *sshx.Tunnel, client *sshx.Client, shared bool) {
 	done := make(chan struct{})
 
 	go func() {
@@ -158,8 +177,12 @@ func (t *Manager) watch(id string, tun *sshx.Tunnel, client *sshx.Client) {
 	delete(t.m, id)
 	t.mu.Unlock()
 	tun.Close()
-	client.Close()
-	t.info("Tunnel stopped", sshx.Describe(tun.Rule))
+
+	if !shared {
+		client.Close()
+		t.info("Tunnel stopped", sshx.Describe(tun.Rule))
+	}
+
 	t.changed()
 }
 
@@ -177,11 +200,30 @@ func (t *Manager) Stop(id string) {
 		s.Tunnel.Close()
 	}
 
-	if s.Client != nil {
+	if s.Client != nil && !s.Shared {
 		s.Client.Close()
 	}
 
 	t.changed()
+}
+
+func (t *Manager) Traffic(hostID string) (int, sshx.Traffic) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	var sum sshx.Traffic
+	n := 0
+
+	for _, s := range t.m {
+		if s.Tunnel == nil || (hostID != "" && s.Tunnel.Rule.HostID != hostID) {
+			continue
+		}
+
+		n++
+		sum.Add(s.Tunnel.Traffic())
+	}
+
+	return n, sum
 }
 
 func (t *Manager) StopAll() {

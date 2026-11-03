@@ -109,5 +109,6 @@ func (c *chrome) statusBar(a *App, gtx C) D {
 	a.watchStats(p)
 
 	s, hist, have, err := p.stats.get()
+	c.metrics.Tail = a.tunnelTail(gtx, p.sess.HostID)
 	return c.metrics.Layout(gtx, a.kit, s, hist, have, err)
 }

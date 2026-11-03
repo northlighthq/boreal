@@ -65,6 +65,7 @@ type Options struct {
 	OnChange   func()
 
 	OnClipboard func(text string)
+	OnConnect   func(c *sshx.Client)
 }
 
 type Session struct {
@@ -353,6 +354,10 @@ func (s *Session) connect() {
 		if cmd := strings.TrimSpace(s.opts.Target.Host.StartupCommand); cmd != "" {
 			s.SendOnly([]byte(cmd + ""))
 		}
+	}
+
+	if client != nil && s.opts.OnConnect != nil {
+		s.opts.OnConnect(client)
 	}
 
 	s.opts.OnChange()
