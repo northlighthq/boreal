@@ -78,15 +78,7 @@ func (a *App) QuickConnect(s string) bool {
 		return false
 	}
 
-	for _, saved := range a.vault.Snapshot().Hosts {
-		if saved.Address == h.Address && (h.Username == "" || saved.Username == h.Username) {
-			a.Connect(saved)
-			return true
-		}
-	}
-
-	h.Label = h.Address
-	a.ws.addTab(a.newSSHPane(h))
+	a.ws.addTab(a.newSSHPane(a.savedHost(h)))
 	return true
 }
 
