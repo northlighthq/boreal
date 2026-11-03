@@ -17,7 +17,13 @@ func (p *Panel) keys(a core.Host, gtx C, c *sftpConn, cwd string, entries []sshx
 	filters := make([]event.Filter, len(names))
 
 	for i, n := range names {
-		filters[i] = key.Filter{Focus: p, Name: n}
+		f := key.Filter{Focus: p, Name: n}
+
+		if n == key.NameReturn || n == key.NameEnter {
+			f.Optional = key.ModAlt
+		}
+
+		filters[i] = f
 	}
 
 	for {
@@ -77,6 +83,11 @@ func (p *Panel) keys(a core.Host, gtx C, c *sftpConn, cwd string, entries []sshx
 		case key.NameDeleteForward:
 			p.remove(a, c, cwd, en)
 		case key.NameReturn, key.NameEnter:
+			if e.Modifiers.Contain(key.ModAlt) {
+				p.properties(a, c, cwd, en)
+				continue
+			}
+
 			if en.IsDir {
 				p.load(a, c, path.Join(cwd, en.Name))
 			} else {
