@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -66,6 +68,7 @@ type Options struct {
 
 	OnClipboard func(text string)
 	OnConnect   func(c *sshx.Client)
+	Dir         string
 }
 
 type Session struct {
@@ -305,7 +308,12 @@ func (s *Session) connect() {
 	s.gen++
 	gen := s.gen
 	cols, rows := s.opts.Cols, s.opts.Rows
+	dir := s.opts.Dir
 	s.mu.Unlock()
+
+	if cwd := s.Dir(); cwd != "" {
+		dir = cwd
+	}
 
 	var t Transport
 	var client *sshx.Client
@@ -315,6 +323,7 @@ func (s *Session) connect() {
 	case Local:
 		t, err = pty.Start(pty.Options{
 			Command: s.opts.Command,
+			Dir:     localDir(dir),
 			Cols:    cols,
 			Rows:    rows,
 			Env:     []string{"TERM=xterm-256color", "COLORTERM=truecolor", "TERM_PROGRAM=Boreal"},
@@ -354,6 +363,10 @@ func (s *Session) connect() {
 		if cmd := strings.TrimSpace(s.opts.Target.Host.StartupCommand); cmd != "" && s.opts.Target.Host.Tmux == "" {
 			s.SendOnly([]byte(cmd + ""))
 		}
+	}
+
+	if s.Kind == SSH && dir != "" && s.opts.Target.Host.Tmux == "" {
+		s.SendOnly([]byte(cdCommand(dir)))
 	}
 
 	if client != nil && s.opts.OnConnect != nil {
@@ -510,6 +523,33 @@ func (s *Session) print(msg string) {
 
 	s.term.Write([]byte(msg))
 	s.opts.OnChange()
+}
+
+func (s *Session) Dir() string {
+	_, dir := s.term.Cwd()
+	return dir
+}
+
+func cdCommand(dir string) string {
+	return " cd -- '" + strings.ReplaceAll(dir, "'", `'"'"'`) + "'\r"
+}
+
+func localDir(dir string) string {
+	if dir == "" {
+		return ""
+	}
+
+	if len(dir) > 2 && dir[0] == '/' && dir[2] == ':' {
+		dir = dir[1:]
+	}
+
+	dir = filepath.FromSlash(dir)
+
+	if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+		return ""
+	}
+
+	return dir
 }
 
 func (s *Session) Describe() string {

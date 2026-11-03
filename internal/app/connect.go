@@ -116,9 +116,14 @@ func (a *App) focusPane(p *Pane) {
 }
 
 func (a *App) newLocalPane(pr shell.Profile) *Pane {
+	return a.newLocalPaneIn(pr, "")
+}
+
+func (a *App) newLocalPaneIn(pr shell.Profile, dir string) *Pane {
 	s := session.New(session.Options{
 		Kind:        session.Local,
 		Command:     pr.Command,
+		Dir:         dir,
 		Cols:        120,
 		Rows:        32,
 		Scrollback:  a.settings.Scrollback,
@@ -136,6 +141,10 @@ func (a *App) NewLocalTab(pr shell.Profile) {
 }
 
 func (a *App) newSSHPane(h vault.Host) *Pane {
+	return a.newSSHPaneIn(h, "")
+}
+
+func (a *App) newSSHPaneIn(h vault.Host, dir string) *Pane {
 	go a.vault.TouchHost(h.ID)
 	asker := new(int)
 
@@ -159,6 +168,7 @@ func (a *App) newSSHPane(h vault.Host) *Pane {
 		Title:      h.Title(),
 		OnChange:   a.Invalidate,
 		OnConnect:  func(c *sshx.Client) { a.autoTunnels(h.ID, c) },
+		Dir:        dir,
 	})
 
 	p := a.newPane(s)

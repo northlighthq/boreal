@@ -21,8 +21,9 @@ type DialFunc func(ctx context.Context, r vault.Forward) (*sshx.Client, error)
 type Notify func(title, message string)
 
 type Manager struct {
-	mu sync.Mutex
-	m  map[string]*State
+	mu      sync.Mutex
+	m       map[string]*State
+	dropped map[string]vault.Forward
 
 	dial    DialFunc
 	changed func()
@@ -36,6 +37,7 @@ func New(dial DialFunc) *Manager {
 
 	return &Manager{
 		m:       map[string]*State{},
+		dropped: map[string]vault.Forward{},
 		dial:    dial,
 		changed: func() {},
 		info:    noop,
@@ -180,6 +182,9 @@ func (t *Manager) watch(id string, tun *sshx.Tunnel, client *sshx.Client, shared
 
 	if !shared {
 		client.Close()
+		t.mu.Lock()
+		t.dropped[id] = tun.Rule
+		t.mu.Unlock()
 		t.info("Tunnel stopped", sshx.Describe(tun.Rule))
 	}
 
@@ -190,6 +195,7 @@ func (t *Manager) Stop(id string) {
 	t.mu.Lock()
 	s, ok := t.m[id]
 	delete(t.m, id)
+	delete(t.dropped, id)
 	t.mu.Unlock()
 
 	if !ok {
@@ -205,6 +211,37 @@ func (t *Manager) Stop(id string) {
 	}
 
 	t.changed()
+}
+
+func (t *Manager) TakeDropped(hostID string) []string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	var ids []string
+
+	for id, r := range t.dropped {
+		if r.HostID == hostID {
+			ids = append(ids, id)
+			delete(t.dropped, id)
+		}
+	}
+
+	return ids
+}
+
+func (t *Manager) Running() []string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	ids := make([]string, 0, len(t.m))
+
+	for id, s := range t.m {
+		if (s.Tunnel != nil || s.Starting) && !s.Shared {
+			ids = append(ids, id)
+		}
+	}
+
+	return ids
 }
 
 func (t *Manager) Traffic(hostID string) (int, sshx.Traffic) {

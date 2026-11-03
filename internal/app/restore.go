@@ -24,8 +24,9 @@ type savedTab struct {
 }
 
 type savedTabs struct {
-	Tabs   []savedTab `json:"tabs"`
-	Active int        `json:"active"`
+	Tabs    []savedTab `json:"tabs"`
+	Active  int        `json:"active"`
+	Tunnels []string   `json:"tunnels,omitempty"`
 }
 
 func sessionPath() (string, error) {
@@ -49,6 +50,7 @@ func saveNode(n *node) *savedNode {
 		}
 
 		o := n.pane.origin
+		o.Dir = n.pane.sess.Dir()
 		return &savedNode{Origin: &o}
 	}
 
@@ -97,6 +99,7 @@ func (a *App) saveTabsTo(path string) {
 		s.Tabs = append(s.Tabs, savedTab{Name: t.name, Root: root})
 	}
 
+	s.Tunnels = a.tunnels.Running()
 	raw, err := json.MarshalIndent(s, "", "  ")
 
 	if err == nil {
@@ -182,5 +185,25 @@ func (a *App) restoreTabsFrom(path string) {
 	if len(a.ws.tabs) > 0 {
 		a.ws.active = min(max(s.Active, 0), len(a.ws.tabs)-1)
 		a.ws.focusActive()
+	}
+
+	a.restoreTunnels(s.Tunnels)
+}
+
+func (a *App) restoreTunnels(ids []string) {
+	if len(ids) == 0 {
+		return
+	}
+
+	want := map[string]struct{}{}
+
+	for _, id := range ids {
+		want[id] = struct{}{}
+	}
+
+	for _, r := range a.vault.Snapshot().Forwards {
+		if _, ok := want[r.ID]; ok {
+			a.tunnels.Start(r)
+		}
 	}
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"slices"
 	"strconv"
 	"time"
 
@@ -28,9 +29,15 @@ func (a *App) autoTunnels(hostID string, c *sshx.Client) {
 		return
 	}
 
+	dropped := a.tunnels.TakeDropped(hostID)
+
 	for _, r := range a.vault.Snapshot().Forwards {
-		if r.HostID == hostID && r.OnStart {
+		switch {
+		case r.HostID != hostID:
+		case r.OnStart:
 			a.tunnels.StartOn(r, c)
+		case slices.Contains(dropped, r.ID):
+			a.tunnels.Start(r)
 		}
 	}
 }

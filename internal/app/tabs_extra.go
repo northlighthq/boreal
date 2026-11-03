@@ -31,6 +31,7 @@ type origin struct {
 	Title   string      `json:"title,omitempty"`
 	HostID  string      `json:"hostId,omitempty"`
 	Host    *vault.Host `json:"host,omitempty"`
+	Dir     string      `json:"dir,omitempty"`
 }
 
 func (o origin) empty() bool {
@@ -46,11 +47,11 @@ func (a *App) paneFrom(o origin) (*Pane, bool) {
 			return nil, false
 		}
 
-		return a.newSSHPane(h), true
+		return a.newSSHPaneIn(h, o.Dir), true
 	case o.Host != nil:
-		return a.newSSHPane(*o.Host), true
+		return a.newSSHPaneIn(*o.Host, o.Dir), true
 	case len(o.Command) > 0:
-		return a.newLocalPane(shell.Profile{ID: o.Profile, Name: o.Title, Command: o.Command}), true
+		return a.newLocalPaneIn(shell.Profile{ID: o.Profile, Name: o.Title, Command: o.Command}, o.Dir), true
 	}
 
 	return nil, false
