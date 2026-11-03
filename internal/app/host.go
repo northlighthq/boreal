@@ -165,9 +165,14 @@ func (a *App) handleDrop(paths []string) {
 
 func (a *App) Transfers() *transfer.Queue { return a.transfers }
 
-func (a *App) DragOut(paths []string) {
+func (a *App) DragOut(files []dragdrop.VirtualFile) {
 	a.win.Run(func() {
-		if err := dragdrop.DragOut(paths); err != nil {
+		err := dragdrop.DragVirtual(files)
+
+		switch {
+		case errors.Is(err, dragdrop.ErrReleased):
+			a.toasts.Info("Keep holding the mouse button", "Boreal was still listing the folder. Drag it again and hold until it moves.")
+		case err != nil:
 			a.toasts.Error("Couldn't drag the file out", err.Error())
 		}
 	})
