@@ -25,6 +25,20 @@ jobs:
             (cd "$dir" && go vet ./...)
           done
 
+      - name: Tests
+        shell: bash
+        run: |
+          go test ./...
+          for dir in libs/*/; do
+            (cd "$dir" && go test ./...)
+          done
+
+      - name: Benchmarks run once
+        shell: bash
+        run: |
+          go test ./internal/ui/termview -run '^$' -bench . -benchtime 1x
+          (cd libs/vt && go test -run '^$' -bench . -benchtime 1x)
+
       - name: Build
         run: go build -ldflags "-H windowsgui" -o bin/boreal.exe ./cmd/boreal
 
