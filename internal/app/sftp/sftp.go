@@ -64,6 +64,7 @@ type Panel struct {
 
 	connsMu sync.Mutex
 	conns   map[string]*sftpConn
+	wants   map[string]string
 
 	up, reload, mkdir, upload, download, follow widget.Clickable
 	path                                        widget.Editor
@@ -133,6 +134,10 @@ func (p *Panel) conn(a core.Host) (*sftpConn, *session.Session) {
 				wd = cwd
 			}
 
+			if dir := p.wanted(s.ID); dir != "" {
+				wd = dir
+			}
+
 			p.load(a, c, wd)
 		}
 
@@ -140,6 +145,26 @@ func (p *Panel) conn(a core.Host) (*sftpConn, *session.Session) {
 	}()
 
 	return c, s
+}
+
+func (p *Panel) Want(sessID, dir string) {
+	p.connsMu.Lock()
+	defer p.connsMu.Unlock()
+
+	if p.wants == nil {
+		p.wants = map[string]string{}
+	}
+
+	p.wants[sessID] = dir
+}
+
+func (p *Panel) wanted(sessID string) string {
+	p.connsMu.Lock()
+	defer p.connsMu.Unlock()
+
+	dir := p.wants[sessID]
+	delete(p.wants, sessID)
+	return dir
 }
 
 func (p *Panel) connFor(sessID string) *sftpConn {
