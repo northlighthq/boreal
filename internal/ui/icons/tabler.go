@@ -1,13 +1,11 @@
 package icons
 
 import (
-	"image/color"
 	"math"
 
 	"gioui.org/f32"
 	"gioui.org/op"
 	"gioui.org/op/clip"
-	"gioui.org/op/paint"
 )
 
 const tablerStroke = 1.75
@@ -41,8 +39,8 @@ func tablerIcon(key string, fill bool) *Icon {
 		segs = outline(segs, tablerStroke/2)
 	}
 
-	return custom(func(ops *op.Ops, s float32, c color.NRGBA) {
-		paint.FillShape(ops, c, clip.Outline{Path: build(ops, segs, s/24)}.Op())
+	return outlined(func(ops *op.Ops, s float32) clip.PathSpec {
+		return build(ops, segs, s/24)
 	})
 }
 
