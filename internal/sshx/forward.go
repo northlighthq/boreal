@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"sync/atomic"
 
 	"github.com/northlighthq/boreal/internal/vault"
 )
@@ -27,6 +28,25 @@ type Tunnel struct {
 	listener net.Listener
 	wg       sync.WaitGroup
 	closed   chan struct{}
+	conns    atomic.Int64
+	up       atomic.Int64
+	down     atomic.Int64
+}
+
+type Traffic struct {
+	Conns int
+	Up    int64
+	Down  int64
+}
+
+func (t *Traffic) Add(o Traffic) {
+	t.Conns += o.Conns
+	t.Up += o.Up
+	t.Down += o.Down
+}
+
+func (t *Tunnel) Traffic() Traffic {
+	return Traffic{Conns: int(t.conns.Load()), Up: t.up.Load(), Down: t.down.Load()}
 }
 
 func (t *Tunnel) Close() error {
@@ -115,20 +135,40 @@ func (t *Tunnel) accept(c *Client, dial func() (net.Conn, error)) {
 			}
 
 			defer out.Close()
-			pipe(in, out)
+			t.conns.Add(1)
+			defer t.conns.Add(-1)
+
+			sent, received := &t.up, &t.down
+
+			if t.Rule.Kind == vault.ForwardRemote {
+				sent, received = received, sent
+			}
+
+			pipe(in, out, sent, received)
 		}()
 	}
 }
 
-func pipe(a, b net.Conn) {
+func pipe(in, out net.Conn, sent, received *atomic.Int64) {
 	done := make(chan struct{}, 2)
-	cp := func(dst, src net.Conn) {
-		io.Copy(dst, src)
+	cp := func(dst, src net.Conn, n *atomic.Int64) {
+		io.Copy(dst, &counter{r: src, n: n})
 		done <- struct{}{}
 	}
-	go cp(a, b)
-	go cp(b, a)
+	go cp(out, in, sent)
+	go cp(in, out, received)
 	<-done
+}
+
+type counter struct {
+	r io.Reader
+	n *atomic.Int64
+}
+
+func (c *counter) Read(p []byte) (int, error) {
+	n, err := c.r.Read(p)
+	c.n.Add(int64(n))
+	return n, err
 }
 
 func socks5(conn net.Conn, c *Client) (net.Conn, error) {

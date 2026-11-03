@@ -2,6 +2,7 @@ package forwards
 
 import (
 	"image"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -33,9 +34,16 @@ type Panel struct {
 	list     kit.ScrollList
 	menu     kit.Menu
 	rows     map[string]*fwdRow
+	groups   map[string]*widget.Clickable
 	rules    []vault.Forward
+	items    []item
 	hosts    map[string]vault.Host
 	pick     vault.Forward
+}
+
+type item struct {
+	profile string
+	rule    *vault.Forward
 }
 
 type fwdRow struct {
@@ -52,11 +60,57 @@ func (p *Panel) Refresh() {
 	a := p.h
 	d := a.Vault().Snapshot()
 	p.rules = d.Forwards
+	p.items = group(p.rules)
 	p.hosts = map[string]vault.Host{}
 
 	for _, h := range d.Hosts {
 		p.hosts[h.ID] = h
 	}
+}
+
+func group(rules []vault.Forward) []item {
+	var out []item
+	byProfile := map[string][]int{}
+	var names []string
+
+	for i := range rules {
+		name := rules[i].Profile
+
+		if name == "" {
+			out = append(out, item{rule: &rules[i]})
+			continue
+		}
+
+		if _, ok := byProfile[name]; !ok {
+			names = append(names, name)
+		}
+
+		byProfile[name] = append(byProfile[name], i)
+	}
+
+	sort.Slice(names, func(i, j int) bool { return strings.ToLower(names[i]) < strings.ToLower(names[j]) })
+
+	for _, name := range names {
+		out = append(out, item{profile: name})
+
+		for _, i := range byProfile[name] {
+			out = append(out, item{rule: &rules[i]})
+		}
+	}
+
+	return out
+}
+
+func (p *Panel) profileRules(name string) []vault.Forward {
+	var out []vault.Forward
+
+	for _, r := range p.rules {
+		if r.Profile == name {
+			out = append(out, r)
+		}
+	}
+
+	return out
 }
 
 func (p *Panel) Actions(gtx C) D {
@@ -91,8 +145,12 @@ func (p *Panel) Body(gtx C) D {
 		)
 	}
 
-	dims := k.List(gtx, &p.list, len(p.rules), func(gtx C, i int) D {
-		r := p.rules[i]
+	dims := k.List(gtx, &p.list, len(p.items), func(gtx C, i int) D {
+		if p.items[i].rule == nil {
+			return p.profileHeader(gtx, p.items[i].profile)
+		}
+
+		r := *p.items[i].rule
 		fr := p.rows[r.ID]
 
 		if fr == nil {
@@ -163,6 +221,71 @@ func (p *Panel) Body(gtx C) D {
 	return dims
 }
 
+func (p *Panel) profileHeader(gtx C, name string) D {
+	a := p.h
+	k := a.Kit()
+	th := k.Th
+
+	if p.groups == nil {
+		p.groups = map[string]*widget.Clickable{}
+	}
+
+	btn := p.groups[name]
+
+	if btn == nil {
+		btn = &widget.Clickable{}
+		p.groups[name] = btn
+	}
+
+	rules := p.profileRules(name)
+	active, auto := 0, true
+
+	for _, r := range rules {
+		if st, ok := a.Tunnels().State(r.ID); ok && (st.Tunnel != nil || st.Starting) {
+			active++
+		}
+
+		auto = auto && r.OnStart
+	}
+
+	if btn.Clicked(gtx) {
+		for _, r := range rules {
+			if active > 0 {
+				a.Tunnels().Stop(r.ID)
+			} else {
+				a.Tunnels().Start(r)
+			}
+		}
+	}
+
+	detail := strconv.Itoa(active) + " of " + strconv.Itoa(len(rules)) + " active"
+
+	if auto {
+		detail += " · starts on connect"
+	}
+
+	label := "Start all"
+
+	if active > 0 {
+		label = "Stop all"
+	}
+
+	return layout.Inset{Top: 14, Bottom: 6, Left: 4, Right: 4}.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+			layout.Flexed(1, func(gtx C) D {
+				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+					layout.Rigid(func(gtx C) D { return k.Label(gtx, kit.TextStyle{Weight: font.SemiBold, MaxLines: 1}, name) }),
+					layout.Rigid(kit.Gap(2)),
+					layout.Rigid(func(gtx C) D {
+						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall - 1, Color: th.TextMuted, MaxLines: 1}, detail)
+					}),
+				)
+			}),
+			layout.Rigid(func(gtx C) D { return k.Button(gtx, btn, kit.Secondary, nil, label) }),
+		)
+	})
+}
+
 func (p *Panel) handleMenu(a core.Host) {
 	i, ok := p.menu.Chosen()
 
@@ -201,17 +324,21 @@ type Editor struct {
 	names   []string
 
 	label, bindAddr, bindPort, destHost, destPort widget.Editor
+	profile                                       widget.Editor
+	onStart                                       widget.Bool
 	save, cancel                                  widget.Clickable
 	invalid                                       bool
 }
 
 func NewEditor(a core.Host, r vault.Forward) *Editor {
 	e := &Editor{h: a, rule: r}
-	dialogs.SingleLine(&e.label, &e.bindAddr, &e.bindPort, &e.destHost, &e.destPort)
+	dialogs.SingleLine(&e.label, &e.bindAddr, &e.bindPort, &e.destHost, &e.destPort, &e.profile)
 	e.bindPort.Filter = "0123456789"
 	e.destPort.Filter = "0123456789"
 
 	e.label.SetText(r.Label)
+	e.profile.SetText(r.Profile)
+	e.onStart.Value = r.OnStart
 	e.bindAddr.SetText(r.BindAddr)
 
 	if r.BindPort > 0 {
@@ -255,6 +382,8 @@ func (e *Editor) submit(a core.Host) bool {
 	r.BindPort, _ = strconv.Atoi(e.bindPort.Text())
 	r.DestHost = strings.TrimSpace(e.destHost.Text())
 	r.DestPort, _ = strconv.Atoi(e.destPort.Text())
+	r.Profile = strings.TrimSpace(e.profile.Text())
+	r.OnStart = e.onStart.Value
 
 	if r.BindPort <= 0 || (r.Kind != vault.ForwardDynamic && (r.DestHost == "" || r.DestPort <= 0)) {
 		e.invalid = true
@@ -355,6 +484,15 @@ func (e *Editor) Layout(gtx C) bool {
 			)
 		}))
 	}
+
+	children = append(children,
+		row("Profile", func(gtx C) D {
+			return k.Field(gtx, &e.profile, kit.FieldOpts{Hint: "Staging databases"})
+		}),
+		row("", func(gtx C) D {
+			return k.Checkbox(gtx, &e.onStart, "Start when the host connects, through the same connection")
+		}),
+	)
 
 	return k.Dialog(gtx, &e.dlg, kit.DialogOpts{
 		Title:    title,
