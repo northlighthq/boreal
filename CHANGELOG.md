@@ -2,7 +2,7 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## 0.1.1-beta.5 (2026-11-04)
 
 ### Hosts
 - Hosts show the logo of their operating system, detected when you connect. Settings › Appearance switches back to the terminal icon and between color and monochrome.
