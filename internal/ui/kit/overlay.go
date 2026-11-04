@@ -431,6 +431,18 @@ func (k *Kit) Dialog(gtx C, d *Dialog, o DialogOpts) bool {
 		return closed
 	}
 
+	for {
+		ev, ok := gtx.Event(pointer.Filter{Target: d, Kinds: pointer.Press})
+
+		if !ok {
+			break
+		}
+
+		if e, ok := ev.(pointer.Event); ok && e.Buttons.Contain(pointer.ButtonPrimary) {
+			closed = true
+		}
+	}
+
 	size := gtx.Constraints.Max
 
 	if !d.appear.init {
