@@ -30,6 +30,11 @@ type (
 	W = layout.Widget
 )
 
+const (
+	minIconLuma = 0.45
+	maxIconLuma = 0.7
+)
+
 type Kit struct {
 	Th     *theme.Theme
 	Shaper *text.Shaper
@@ -206,6 +211,30 @@ func PadXY(x, y unit.Dp, w W) W {
 	return func(gtx C) D {
 		return layout.Inset{Left: x, Right: x, Top: y, Bottom: y}.Layout(gtx, w)
 	}
+}
+
+// IconTint keeps a brand color legible on the current theme. A zero tint means the
+// icon has no color of its own, so it takes fallback.
+func (k *Kit) IconTint(tint, fallback color.NRGBA) color.NRGBA {
+	if tint.A == 0 {
+		return fallback
+	}
+
+	l := luma(tint)
+
+	if k.Th.Dark && l < minIconLuma {
+		return Lerp(tint, k.Th.Text, (minIconLuma-l)/(1-l))
+	}
+
+	if !k.Th.Dark && l > maxIconLuma {
+		return Lerp(tint, k.Th.Text, (l-maxIconLuma)/l)
+	}
+
+	return tint
+}
+
+func luma(c color.NRGBA) float32 {
+	return (0.299*float32(c.R) + 0.587*float32(c.G) + 0.114*float32(c.B)) / 255
 }
 
 func (k *Kit) Avatar(gtx C, initials string, bg color.NRGBA, size unit.Dp) D {

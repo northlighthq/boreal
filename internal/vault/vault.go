@@ -50,6 +50,7 @@ type Host struct {
 	ProxyCommand   string    `json:"proxyCommand,omitempty"`
 	IdentitiesOnly bool      `json:"identitiesOnly,omitempty"`
 	Tmux           string    `json:"tmux,omitempty"`
+	OS             string    `json:"os,omitempty"`
 	Created        time.Time `json:"created"`
 	LastUsed       time.Time `json:"lastUsed,omitzero"`
 }
@@ -216,6 +217,20 @@ func (v *Vault) SaveHost(h Host) (Host, error) {
 		d.Hosts = upsert(d.Hosts, h, func(x Host) string { return x.ID })
 	})
 	return h, err
+}
+
+func (v *Vault) SetHostOS(id, os string) error {
+	if h, ok := v.Host(id); !ok || h.OS == os {
+		return nil
+	}
+
+	return v.update(func(d *Data) {
+		for i := range d.Hosts {
+			if d.Hosts[i].ID == id {
+				d.Hosts[i].OS = os
+			}
+		}
+	})
 }
 
 func (v *Vault) DeleteHost(id string) error {

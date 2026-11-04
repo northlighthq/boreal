@@ -20,7 +20,8 @@ func (a *App) paletteEntries() []palette.Entry {
 
 	for _, h := range d.Hosts {
 		h := h
-		out = append(out, palette.Entry{Section: "Hosts", Title: h.Title(), Detail: h.Target(), Icon: icons.Terminal, Run: func() { a.Connect(h) }})
+		ic, _ := core.HostIcon(a.settings, h.OS)
+		out = append(out, palette.Entry{Section: "Hosts", Title: h.Title(), Detail: h.Target(), Icon: ic, Run: func() { a.Connect(h) }})
 	}
 
 	for _, s := range d.Snippets {

@@ -427,6 +427,7 @@ func (p *Panel) hostRow(a core.Host, gtx C, h *vault.Host, depth int) D {
 
 	selected := p.selected == h.ID
 	indent := unit.Dp(depth*folderIndent + 22)
+	ic, tint := core.HostIcon(a.Settings(), h.OS)
 
 	if len(p.folders) == 0 {
 		indent = 0
@@ -437,7 +438,7 @@ func (p *Panel) hostRow(a core.Host, gtx C, h *vault.Host, depth int) D {
 		fg := kit.Lerp(kit.Lerp(th.TextMuted, th.Text, hv), th.Text, kit.B2F(selected))
 		return k.Row(gtx, r, kit.RowOpts{Selected: selected, Focused: true, Indent: indent}, func(gtx C) D {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return icons.Terminal.Layout(gtx, 16, kit.Lerp(th.TextMuted, fg, hv)) }),
+				layout.Rigid(func(gtx C) D { return ic.Layout(gtx, 16, k.IconTint(tint, kit.Lerp(th.TextMuted, fg, hv))) }),
 				layout.Rigid(kit.Gap(10)),
 				layout.Flexed(1, func(gtx C) D { return k.Label(gtx, kit.TextStyle{Color: fg}, h.Title()) }),
 				layout.Rigid(func(gtx C) D {
@@ -451,7 +452,7 @@ func (p *Panel) hostRow(a core.Host, gtx C, h *vault.Host, depth int) D {
 		})
 	}
 
-	dims := p.draggable(a, gtx, drag, row, h.Title(), icons.Terminal)
+	dims := p.draggable(a, gtx, drag, row, h.Title(), ic)
 
 	if p.menuHost.ID == h.ID {
 		k.Menu(gtx, &p.menu)

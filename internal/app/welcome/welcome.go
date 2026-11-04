@@ -165,12 +165,14 @@ func (w *Screen) recentRow(a core.Host, gtx C, h vault.Host) D {
 		a.Connect(h)
 	}
 
+	ic, tint := core.HostIcon(a.Settings(), h.OS)
+
 	return layout.Inset{Left: -12, Right: -12}.Layout(gtx, func(gtx C) D {
 		hv := k.Hover(gtx, kit.Key(r, 9), r.Hovered())
 		fg := kit.Lerp(th.TextMuted, th.Text, hv)
 		return k.Row(gtx, r, kit.RowOpts{Height: 30}, func(gtx C) D {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return icons.Terminal.Layout(gtx, 16, kit.Lerp(th.TextFaint, th.Text, hv)) }),
+				layout.Rigid(func(gtx C) D { return ic.Layout(gtx, 16, k.IconTint(tint, kit.Lerp(th.TextFaint, th.Text, hv))) }),
 				layout.Rigid(kit.Gap(10)),
 				layout.Rigid(func(gtx C) D { return k.Label(gtx, kit.TextStyle{Color: kit.Lerp(fg, th.Text, 0.6)}, h.Title()) }),
 				layout.Rigid(kit.Gap(10)),

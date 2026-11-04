@@ -181,6 +181,10 @@ func (e *Editor) submit(a core.Host, connect bool) bool {
 		return false
 	}
 
+	if cur, ok := a.Vault().Host(h.ID); ok {
+		h.OS = cur.OS
+	}
+
 	saved, err := a.Vault().SaveHost(h)
 
 	if err != nil {
