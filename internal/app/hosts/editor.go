@@ -239,14 +239,14 @@ func (e *Editor) Layout(gtx C) bool {
 		title = "Edit host"
 	}
 
-	keyNames := []string{"Choose a key…"}
+	keyNames := []kit.Option{{Label: "Choose a key…"}}
 	jumpNames := []string{"None (direct connection)"}
 	d := a.Vault().Snapshot()
 
 	for _, id := range e.keyIDs[1:] {
 		for _, kk := range d.Keys {
 			if kk.ID == id {
-				keyNames = append(keyNames, kk.Label+"  ·  "+strings.ToUpper(strings.TrimPrefix(kk.Type, "ssh-")))
+				keyNames = append(keyNames, kit.Option{Label: kk.Label + "  ·  " + strings.ToUpper(strings.TrimPrefix(kk.Type, "ssh-")), Icon: icons.Key})
 			}
 		}
 	}
@@ -260,7 +260,7 @@ func (e *Editor) Layout(gtx C) bool {
 	}
 
 	for len(keyNames) < len(e.keyIDs) {
-		keyNames = append(keyNames, "?")
+		keyNames = append(keyNames, kit.Option{Label: "?", Icon: icons.Key})
 	}
 
 	for len(jumpNames) < len(e.jumpIDs) {
@@ -359,14 +359,14 @@ func (e *Editor) Layout(gtx C) bool {
 
 			if !e.keyMissing {
 				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return k.Select(gtx, &e.key, keyNames) }),
+					layout.Rigid(func(gtx C) D { return k.SelectOptions(gtx, &e.key, keyNames) }),
 					layout.Rigid(kit.Gap(8)),
 					layout.Rigid(func(gtx C) D { return k.Checkbox(gtx, &e.keyOnly, "Only offer this key, not the ones in the agent") }),
 				)
 			}
 
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return k.Select(gtx, &e.key, keyNames) }),
+				layout.Rigid(func(gtx C) D { return k.SelectOptions(gtx, &e.key, keyNames) }),
 				layout.Rigid(kit.Gap(6)),
 				layout.Rigid(func(gtx C) D {
 					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.Danger}, "Choose the key to use.")

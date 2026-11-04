@@ -32,6 +32,7 @@ type MenuItem struct {
 	Shortcut string
 	Danger   bool
 	Disabled bool
+	Checked  bool
 }
 
 func Separator() MenuItem {
@@ -260,6 +261,10 @@ func (k *Kit) menuItem(gtx C, clk *widget.Clickable, it MenuItem, active bool) D
 						})
 					}),
 					layout.Rigid(func(gtx C) D {
+						if it.Checked {
+							return icons.Check.Layout(gtx, 16, th.TextMuted)
+						}
+
 						if it.Shortcut == "" {
 							return D{}
 						}
@@ -307,7 +312,22 @@ func (s *Select) Update(gtx C) bool {
 	return false
 }
 
+type Option struct {
+	Label string
+	Icon  *icons.Icon
+}
+
 func (k *Kit) Select(gtx C, s *Select, options []string) D {
+	opts := make([]Option, len(options))
+
+	for i, o := range options {
+		opts[i].Label = o
+	}
+
+	return k.SelectOptions(gtx, s, opts)
+}
+
+func (k *Kit) SelectOptions(gtx C, s *Select, options []Option) D {
 	th := k.Th
 	s.Update(gtx)
 
@@ -315,9 +335,9 @@ func (k *Kit) Select(gtx C, s *Select, options []string) D {
 		items := make([]MenuItem, len(options))
 
 		for i, o := range options {
-			items[i] = MenuItem{Label: o}
+			items[i] = MenuItem{Label: o.Label, Icon: o.Icon, Checked: i == s.Value && o.Icon != nil}
 
-			if i == s.Value {
+			if i == s.Value && o.Icon == nil {
 				items[i].Icon = icons.Check
 			}
 		}
@@ -325,10 +345,10 @@ func (k *Kit) Select(gtx C, s *Select, options []string) D {
 		s.menu.Open(items, image.Pt(0, gtx.Dp(th.FieldHeight)+gtx.Dp(2)))
 	}
 
-	label := ""
+	var current Option
 
 	if s.Value >= 0 && s.Value < len(options) {
-		label = options[s.Value]
+		current = options[s.Value]
 	}
 
 	dims := s.btn.Layout(gtx, func(gtx C) D {
@@ -354,10 +374,19 @@ func (k *Kit) Select(gtx C, s *Select, options []string) D {
 		gtx.Constraints = layout.Exact(size)
 		layout.Inset{Left: 8, Right: 4}.Layout(gtx, func(gtx C) D {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(func(gtx C) D {
+					if current.Icon == nil {
+						return D{}
+					}
+
+					return layout.Inset{Right: 8}.Layout(gtx, func(gtx C) D {
+						return current.Icon.Layout(gtx, 16, th.TextMuted)
+					})
+				}),
 				layout.Flexed(1, func(gtx C) D {
 					gtx.Constraints.Min.Y = h
 					return layout.W.Layout(gtx, func(gtx C) D {
-						return k.Label(gtx, TextStyle{}, label)
+						return k.Label(gtx, TextStyle{}, current.Label)
 					})
 				}),
 				layout.Rigid(func(gtx C) D {
