@@ -1,12 +1,14 @@
 package hosts
 
 import (
+	"image"
 	"strconv"
 	"strings"
 
 	"gioui.org/font"
 	"gioui.org/io/key"
 	"gioui.org/layout"
+	"gioui.org/unit"
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/app/core"
@@ -15,6 +17,8 @@ import (
 	"github.com/northlighthq/boreal/internal/ui/kit"
 	"github.com/northlighthq/boreal/internal/vault"
 )
+
+const folderMenuHeight = 280
 
 type Editor struct {
 	h    core.Host
@@ -32,6 +36,10 @@ type Editor struct {
 
 	keyIDs  []string
 	jumpIDs []string
+
+	folderBtn   widget.Clickable
+	folderMenu  kit.Menu
+	folderPaths []string
 
 	save, saveConnect widget.Clickable
 	invalid           bool
@@ -173,6 +181,10 @@ func (e *Editor) submit(a core.Host, connect bool) bool {
 		return false
 	}
 
+	if cur, ok := a.Vault().Host(h.ID); ok {
+		h.OS = cur.OS
+	}
+
 	saved, err := a.Vault().SaveHost(h)
 
 	if err != nil {
@@ -239,14 +251,14 @@ func (e *Editor) Layout(gtx C) bool {
 		title = "Edit host"
 	}
 
-	keyNames := []string{"Choose a key…"}
+	keyNames := []kit.Option{{Label: "Choose a key…"}}
 	jumpNames := []string{"None (direct connection)"}
 	d := a.Vault().Snapshot()
 
 	for _, id := range e.keyIDs[1:] {
 		for _, kk := range d.Keys {
 			if kk.ID == id {
-				keyNames = append(keyNames, kk.Label+"  ·  "+strings.ToUpper(strings.TrimPrefix(kk.Type, "ssh-")))
+				keyNames = append(keyNames, kit.Option{Label: kk.Label + "  ·  " + strings.ToUpper(strings.TrimPrefix(kk.Type, "ssh-")), Icon: icons.Key})
 			}
 		}
 	}
@@ -260,7 +272,7 @@ func (e *Editor) Layout(gtx C) bool {
 	}
 
 	for len(keyNames) < len(e.keyIDs) {
-		keyNames = append(keyNames, "?")
+		keyNames = append(keyNames, kit.Option{Label: "?", Icon: icons.Key})
 	}
 
 	for len(jumpNames) < len(e.jumpIDs) {
@@ -359,14 +371,14 @@ func (e *Editor) Layout(gtx C) bool {
 
 			if !e.keyMissing {
 				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return k.Select(gtx, &e.key, keyNames) }),
+					layout.Rigid(func(gtx C) D { return k.SelectOptions(gtx, &e.key, keyNames) }),
 					layout.Rigid(kit.Gap(8)),
 					layout.Rigid(func(gtx C) D { return k.Checkbox(gtx, &e.keyOnly, "Only offer this key, not the ones in the agent") }),
 				)
 			}
 
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return k.Select(gtx, &e.key, keyNames) }),
+				layout.Rigid(func(gtx C) D { return k.SelectOptions(gtx, &e.key, keyNames) }),
 				layout.Rigid(kit.Gap(6)),
 				layout.Rigid(func(gtx C) D {
 					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.Danger}, "Choose the key to use.")
@@ -406,9 +418,7 @@ func (e *Editor) Layout(gtx C) bool {
 	if e.expanded {
 		children = append(children,
 			card("Organization",
-				field("Folder", func(gtx C) D {
-					return k.Field(gtx, &e.group, kit.FieldOpts{Hint: "Production/Web"})
-				}),
+				field("Folder", e.folderField),
 				field("Tags", func(gtx C) D { return k.Field(gtx, &e.tags, kit.FieldOpts{Hint: "web, db"}) }),
 			),
 			card("Advanced",
@@ -478,6 +488,44 @@ func (e *Editor) Layout(gtx C) bool {
 		),
 	})
 	return closed
+}
+
+func (e *Editor) folderField(gtx C) D {
+	k := e.h.Kit()
+
+	if i, ok := e.folderMenu.Chosen(); ok && i < len(e.folderPaths) {
+		e.group.SetText(e.folderPaths[i])
+	}
+
+	if e.folderBtn.Clicked(gtx) {
+		e.openFolderMenu(gtx)
+	}
+
+	dims := k.Field(gtx, &e.group, kit.FieldOpts{
+		Hint: "Production/Web",
+		Trailing: func(gtx C) D {
+			return k.IconButtonSized(gtx, &e.folderBtn, icons.ExpandMore, false, 22, 16, k.Th.TextMuted)
+		},
+	})
+
+	e.folderMenu.Width = unit.Dp(float32(dims.Size.X) / gtx.Metric.PxPerDp)
+	k.Menu(gtx, &e.folderMenu)
+	return dims
+}
+
+func (e *Editor) openFolderMenu(gtx C) {
+	k := e.h.Kit()
+	current := vault.CleanFolder(e.group.Text())
+	e.folderPaths = append(e.folderPaths[:0], "")
+	items := []kit.MenuItem{{Label: "No folder", Icon: icons.HomeOutline, Checked: current == ""}}
+
+	for _, f := range e.h.Vault().Snapshot().AllFolders() {
+		e.folderPaths = append(e.folderPaths, f)
+		items = append(items, kit.MenuItem{Label: vault.FolderName(f), Icon: icons.FolderOutline, Checked: f == current, Depth: strings.Count(f, vault.FolderSep)})
+	}
+
+	e.folderMenu.MaxHeight = folderMenuHeight
+	e.folderMenu.Open(items, image.Pt(0, gtx.Dp(k.Th.FieldHeight)+gtx.Dp(2)))
 }
 
 func (e *Editor) Dialog() *kit.Dialog {

@@ -231,10 +231,12 @@ func (d *Form) multiField(gtx C, f *Field) D {
 			}
 
 			kit.Border(gtx, r, gtx.Dp(th.Radius), 1, line)
+			k.FieldArea(gtx, &f.Editor, size)
 
 			gtx.Constraints = layout.Exact(size)
 			layout.UniformInset(8).Layout(gtx, func(gtx C) D {
 				return layout.NW.Layout(gtx, func(gtx C) D {
+					gtx.Constraints.Min = gtx.Constraints.Max
 					return k.Editor(gtx, &f.Editor, f.Hint, true)
 				})
 			})

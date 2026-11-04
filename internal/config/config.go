@@ -24,6 +24,16 @@ const (
 	ClipboardBlock = "block"
 )
 
+const (
+	HostIconsOS       = "os"
+	HostIconsTerminal = "terminal"
+)
+
+const (
+	HostIconTintColor = "color"
+	HostIconTintMono  = "mono"
+)
+
 type Settings struct {
 	Theme         string  `json:"theme"`
 	FontSize      float32 `json:"fontSize"`
@@ -54,6 +64,8 @@ type Settings struct {
 	TermScheme    string  `json:"terminalScheme"`
 	TabStyle      string  `json:"tabStyle"`
 	TabIcons      bool    `json:"tabIcons"`
+	HostIcons     string  `json:"hostIcons"`
+	HostIconTint  string  `json:"hostIconTint"`
 
 	SystemKnownHosts bool `json:"systemKnownHosts"`
 	WriteKnownHosts  bool `json:"writeKnownHosts"`
@@ -93,6 +105,8 @@ func Defaults() Settings {
 		Corners:          "normal",
 		TabStyle:         "classic",
 		TabIcons:         true,
+		HostIcons:        HostIconsOS,
+		HostIconTint:     HostIconTintColor,
 		DesignVersion:    designVersion,
 	}
 }
@@ -190,6 +204,14 @@ func (s Settings) sanitized() Settings {
 
 	if s.Clipboard != ClipboardAllow && s.Clipboard != ClipboardBlock {
 		s.Clipboard = ClipboardAsk
+	}
+
+	if s.HostIcons != HostIconsTerminal {
+		s.HostIcons = HostIconsOS
+	}
+
+	if s.HostIconTint != HostIconTintMono {
+		s.HostIconTint = HostIconTintColor
 	}
 
 	return s

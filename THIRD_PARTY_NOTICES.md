@@ -52,6 +52,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Simple Icons 13.21.0
+
+Operating system logos in `internal/ui/icons/brand_data.go`, from https://simpleicons.org. The collection is released under CC0 1.0. These logos carry their own terms:
+
+- Debian: CC BY-SA 3.0
+- Gentoo: CC BY-SA 2.5
+- Rocky Linux: CC BY-SA 4.0
+- Fedora: https://docs.fedoraproject.org/en-US/project/brand/
+
+All logos are trademarks of their owners and only identify the system a host runs. Boreal is not affiliated with or endorsed by them.
+
 ## Fonts
 
 Embedded in `internal/fonts/data/` under the SIL Open Font License 1.1; each font ships with its license text next to it:

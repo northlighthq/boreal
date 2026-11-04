@@ -4,9 +4,12 @@ import (
 	"image"
 
 	"gioui.org/font"
+	"gioui.org/io/event"
+	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/clip"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
@@ -51,6 +54,7 @@ func (k *Kit) Field(gtx C, ed *widget.Editor, o FieldOpts) D {
 	}
 
 	RRect(gtx, r, radius, th.Field)
+	k.FieldArea(gtx, ed, size)
 
 	gtx.Constraints = layout.Exact(size)
 	layout.Inset{Left: 10, Right: 6}.Layout(gtx, func(gtx C) D {
@@ -67,7 +71,7 @@ func (k *Kit) Field(gtx C, ed *widget.Editor, o FieldOpts) D {
 			layout.Flexed(1, func(gtx C) D {
 				gtx.Constraints.Min.Y = h
 				return layout.W.Layout(gtx, func(gtx C) D {
-					gtx.Constraints.Min.Y = 0
+					gtx.Constraints.Min = image.Pt(gtx.Constraints.Max.X, 0)
 
 					if k.Redact != nil && !gtx.Focused(ed) {
 						if t := ed.Text(); k.Redact(t) != t {
@@ -93,6 +97,33 @@ func (k *Kit) Field(gtx C, ed *widget.Editor, o FieldOpts) D {
 
 	Border(gtx, r, radius, 1, Lerp(th.FieldLine, accent, focus))
 	return D{Size: size}
+}
+
+type fieldArea struct {
+	ed *widget.Editor
+}
+
+// FieldArea makes the whole box of a text field clickable. Lay it out before the
+// editor: the editor stays on top and only the padding around it lands here.
+func (k *Kit) FieldArea(gtx C, ed *widget.Editor, size image.Point) {
+	tag := fieldArea{ed}
+
+	for {
+		ev, ok := gtx.Event(pointer.Filter{Target: tag, Kinds: pointer.Press})
+
+		if !ok {
+			break
+		}
+
+		if e, ok := ev.(pointer.Event); ok && e.Buttons.Contain(pointer.ButtonPrimary) {
+			gtx.Execute(key.FocusCmd{Tag: ed})
+			ed.SetCaret(ed.Len(), ed.Len())
+		}
+	}
+
+	defer clip.Rect{Max: size}.Push(gtx.Ops).Pop()
+	pointer.CursorText.Add(gtx.Ops)
+	event.Op(gtx.Ops, tag)
 }
 
 func (k *Kit) LabeledField(gtx C, label string, ed *widget.Editor, o FieldOpts) D {

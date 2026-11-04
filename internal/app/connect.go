@@ -167,7 +167,10 @@ func (a *App) newSSHPaneIn(h vault.Host, dir string) *Pane {
 		Scrollback: a.settings.Scrollback,
 		Title:      h.Title(),
 		OnChange:   a.Invalidate,
-		OnConnect:  func(c *sshx.Client) { a.autoTunnels(h.ID, c) },
+		OnConnect: func(c *sshx.Client) {
+			a.autoTunnels(h.ID, c)
+			go a.detectOS(h.ID, c)
+		},
 		Dir:        dir,
 	})
 
@@ -184,6 +187,22 @@ func (a *App) newSSHPaneIn(h vault.Host, dir string) *Pane {
 	}
 
 	return p
+}
+
+func (a *App) detectOS(hostID string, c *sshx.Client) {
+	if hostID == "" {
+		return
+	}
+
+	name, err := sshx.DetectOS(c)
+
+	if err != nil || name == "" {
+		return
+	}
+
+	if a.vault.SetHostOS(hostID, name) == nil {
+		a.Invalidate()
+	}
 }
 
 func (a *App) Connect(h vault.Host) {

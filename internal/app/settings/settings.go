@@ -42,6 +42,10 @@ var cursorStyles = []string{config.CursorBlock, config.CursorBar, config.CursorU
 
 var clipboardModes = []string{config.ClipboardAsk, config.ClipboardAllow, config.ClipboardBlock}
 
+var hostIconModes = []string{config.HostIconsOS, config.HostIconsTerminal}
+
+var hostIconTints = []string{config.HostIconTintColor, config.HostIconTintMono}
+
 var keymap = [][2]string{
 	{"Search everywhere", "Ctrl+Shift+P"},
 	{"New local terminal", "Ctrl+Shift+T"},
@@ -84,6 +88,8 @@ type Dialog struct {
 	accents  []widget.Clickable
 	accent   string
 	tabIcons widget.Bool
+	hostIcon kit.Segmented
+	hostTint kit.Segmented
 
 	fontSize, lineHeight, scrollback, keepAlive         widget.Editor
 	blink, copySel, confirm, hideIPs, restore, ligs, hl widget.Bool
@@ -147,6 +153,8 @@ func New(a core.Host) *Dialog {
 	d.density.Value = index(theme.Densities, s.Density)
 	d.corners.Value = index(theme.CornerStyles, s.Corners)
 	d.tabStyle.Value = index(tabStyles, s.TabStyle)
+	d.hostIcon.Value = index(hostIconModes, s.HostIcons)
+	d.hostTint.Value = index(hostIconTints, s.HostIconTint)
 	d.scheme.Value = max(0, index(theme.Schemes(), s.TermScheme))
 	d.autoUpdate.Value = s.AutoUpdate
 	d.links.Value = urlhandler.Registered()
@@ -204,6 +212,8 @@ func (d *Dialog) collect(a core.Host) config.Settings {
 	s.Density = theme.Densities[d.density.Value]
 	s.Corners = theme.CornerStyles[d.corners.Value]
 	s.TabStyle = tabStyles[d.tabStyle.Value]
+	s.HostIcons = hostIconModes[d.hostIcon.Value]
+	s.HostIconTint = hostIconTints[d.hostTint.Value]
 	s.TermScheme = ""
 
 	if d.scheme.Value > 0 {
@@ -390,6 +400,20 @@ func (d *Dialog) content(a core.Host, gtx C) D {
 			row("Corners", left(func(gtx C) D { return k.Segmented(gtx, &d.corners, []string{"Sharp", "Normal", "Round"}) })),
 			row("Tabs", left(func(gtx C) D { return k.Segmented(gtx, &d.tabStyle, []string{"Classic", "Pill", "Underline"}) })),
 			row("Tab icons", left(func(gtx C) D { return k.Toggle(gtx, &d.tabIcons) })),
+			row("Host icons", left(func(gtx C) D {
+				return k.Segmented(gtx, &d.hostIcon, []string{"Operating system", "Terminal"})
+			})),
+			layout.Rigid(func(gtx C) D {
+				if hostIconModes[d.hostIcon.Value] != config.HostIconsOS {
+					return D{}
+				}
+
+				return layout.Inset{Bottom: 14}.Layout(gtx, func(gtx C) D {
+					return k.FormRow(gtx, "Host icon colors", settingsLabelWidth, left(func(gtx C) D {
+						return k.Segmented(gtx, &d.hostTint, []string{"Color", "Monochrome"})
+					}))
+				})
+			}),
 			row("Terminal colors", func(gtx C) D {
 				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(280))
 				return k.Select(gtx, &d.scheme, theme.Schemes())

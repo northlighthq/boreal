@@ -109,6 +109,7 @@ func (e *InlineEdit) Layout(gtx C, k *Kit, hint string) (D, EditResult) {
 	event.Op(gtx.Ops, &e.inside)
 	in.Pop()
 	pass.Pop()
+	k.FieldArea(gtx, &e.editor, size)
 
 	gtx.Constraints = layout.Exact(size)
 	r := image.Rectangle{Max: size}
@@ -119,6 +120,7 @@ func (e *InlineEdit) Layout(gtx C, k *Kit, hint string) (D, EditResult) {
 			layout.Flexed(1, func(gtx C) D {
 				gtx.Constraints.Min.Y = h
 				return layout.W.Layout(gtx, func(gtx C) D {
+					gtx.Constraints.Min.X = gtx.Constraints.Max.X
 					return k.Editor(gtx, &e.editor, hint, false)
 				})
 			}),

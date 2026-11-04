@@ -9,12 +9,11 @@ import (
 )
 
 func Ring(ops *op.Ops, r image.Rectangle, radius, width float32) clip.PathSpec {
-	h := width / 2
 	x0, y0, x1, y1 := float32(r.Min.X), float32(r.Min.Y), float32(r.Max.X), float32(r.Max.Y)
 	var p clip.Path
 	p.Begin(ops)
-	roundRect(&p, x0-h, y0-h, x1+h, y1+h, radius+h, false)
-	roundRect(&p, x0+h, y0+h, x1-h, y1-h, max(radius-h, 0), true)
+	roundRect(&p, x0, y0, x1, y1, radius, false)
+	roundRect(&p, x0+width, y0+width, x1-width, y1-width, max(radius-width, 0), true)
 	return p.End()
 }
 

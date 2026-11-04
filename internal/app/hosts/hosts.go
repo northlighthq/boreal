@@ -36,6 +36,12 @@ const folderIndent = 16
 const dragThreshold = 6
 
 const (
+	actionButton  = 26
+	actionButtons = 3
+	moreMenuWidth = 240
+)
+
+const (
 	hostMenuConnect = iota
 	hostMenuSplit
 	hostMenuSFTP
@@ -169,13 +175,13 @@ func (p *Panel) Actions(gtx C) D {
 	}
 
 	if p.more.Clicked(gtx) {
-		p.moreMenu.Width = 240
+		p.moreMenu.Width = moreMenuWidth
 		p.moreMenu.Open([]kit.MenuItem{
 			moreNewHost:   {Label: "New host", Icon: icons.PlusOutline, Shortcut: "Ctrl+Shift+N"},
 			moreNewFolder: {Label: "New folder…", Icon: icons.FolderOutline},
 			moreImport:    {Label: "Import ~/.ssh/config", Icon: icons.DownloadOutline},
 			moreQuick:     {Label: "Quick connect…", Icon: icons.ArrowRight},
-		}, image.Pt(-gtx.Dp(200), gtx.Dp(28)))
+		}, image.Pt(gtx.Dp(actionButton*actionButtons-moreMenuWidth), gtx.Dp(actionButton+4)))
 	}
 
 	if i, ok := p.moreMenu.Chosen(); ok {
@@ -192,7 +198,7 @@ func (p *Panel) Actions(gtx C) D {
 	}
 
 	btn := func(clk *widget.Clickable, ic *icons.Icon) layout.FlexChild {
-		return layout.Rigid(func(gtx C) D { return k.IconButtonSized(gtx, clk, ic, false, 26, 16, th.TextMuted) })
+		return layout.Rigid(func(gtx C) D { return k.IconButtonSized(gtx, clk, ic, false, actionButton, 16, th.TextMuted) })
 	}
 	dims := layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 		btn(&p.addFolder, icons.NewFolderOutline),
@@ -427,6 +433,7 @@ func (p *Panel) hostRow(a core.Host, gtx C, h *vault.Host, depth int) D {
 
 	selected := p.selected == h.ID
 	indent := unit.Dp(depth*folderIndent + 22)
+	ic, tint := core.HostIcon(a.Settings(), h.OS)
 
 	if len(p.folders) == 0 {
 		indent = 0
@@ -437,7 +444,7 @@ func (p *Panel) hostRow(a core.Host, gtx C, h *vault.Host, depth int) D {
 		fg := kit.Lerp(kit.Lerp(th.TextMuted, th.Text, hv), th.Text, kit.B2F(selected))
 		return k.Row(gtx, r, kit.RowOpts{Selected: selected, Focused: true, Indent: indent}, func(gtx C) D {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return icons.Terminal.Layout(gtx, 16, kit.Lerp(th.TextMuted, fg, hv)) }),
+				layout.Rigid(func(gtx C) D { return ic.Layout(gtx, 16, k.IconTint(tint, kit.Lerp(th.TextMuted, fg, hv))) }),
 				layout.Rigid(kit.Gap(10)),
 				layout.Flexed(1, func(gtx C) D { return k.Label(gtx, kit.TextStyle{Color: fg}, h.Title()) }),
 				layout.Rigid(func(gtx C) D {
@@ -451,7 +458,7 @@ func (p *Panel) hostRow(a core.Host, gtx C, h *vault.Host, depth int) D {
 		})
 	}
 
-	dims := p.draggable(a, gtx, drag, row, h.Title(), icons.Terminal)
+	dims := p.draggable(a, gtx, drag, row, h.Title(), ic)
 
 	if p.menuHost.ID == h.ID {
 		k.Menu(gtx, &p.menu)
@@ -640,8 +647,7 @@ func (p *Panel) openMoveMenu(gtx C, h vault.Host) {
 
 	for _, f := range p.folders {
 		p.moveDest = append(p.moveDest, f)
-		label := strings.Repeat("    ", strings.Count(f, vault.FolderSep)) + vault.FolderName(f)
-		items = append(items, kit.MenuItem{Label: label, Icon: icons.FolderOutline, Disabled: f == current})
+		items = append(items, kit.MenuItem{Label: vault.FolderName(f), Icon: icons.FolderOutline, Disabled: f == current, Depth: strings.Count(f, vault.FolderSep)})
 	}
 
 	p.moveMenu.Width = 240

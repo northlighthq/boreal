@@ -34,7 +34,7 @@ snippets**) into one calm window, with an activity bar for the tools and the Nor
 - **Font ligatures** (JetBrains Mono, Fira Code), clickable OSC 8 links, OSC 52 copy and
   OSC 7 working folder; **save a session to a log file** as plain text.
 - **Hosts in folders**: subfolders, drag and drop, tags, search and **`~/.ssh/config`
-  import**.
+  import**. Each host shows the **logo of its operating system**, in color or monochrome.
 - **Authentication** with a password, a key from the keychain or the Windows OpenSSH
   agent, including keyboard-interactive; **jump hosts**, keep-alive and reconnect.
 - **Host key verification** (trust on first use) with a warning when a key changes.
