@@ -8,6 +8,9 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 - Hosts show the logo of their operating system, detected when you connect. Settings › Appearance switches back to the terminal icon and between color and monochrome.
 - The host editor shows a key icon next to each SSH key and a menu with your folders next to the Folder field.
 
+### Security
+- Built with Go 1.26.10 and updated `golang.org/x/net`, which fix several issues in HTTP, TLS and certificate handling.
+
 ### Fixes
 - Borders are no longer cut on the left of checkboxes, fields, selects and other controls.
 - The whole box of a text field is clickable, not just the text.

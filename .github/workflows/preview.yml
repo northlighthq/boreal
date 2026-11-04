@@ -5,140 +5,30 @@ on:
     tags: ["preview-*"]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  linux:
-    strategy:
-      matrix:
-        include:
-          - arch: x86_64
-            runner: ubuntu-22.04
-          - arch: aarch64
-            runner: ubuntu-22.04-arm
-    runs-on: ${{ matrix.runner }}
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - id: version
+        run: echo "version=0.1.1-dev.preview.${GITHUB_REF_NAME#preview-}" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: Install Gio dependencies
-        run: sudo apt-get update && sudo apt-get install -y gcc pkg-config libwayland-dev libx11-dev libx11-xcb-dev libxkbcommon-x11-dev libgles2-mesa-dev libegl1-mesa-dev libffi-dev libxcursor-dev libvulkan-dev
-
-      - name: Version
-        run: |
-          echo "BUILD=${GITHUB_REF_NAME#preview-}" >> "$GITHUB_ENV"
-          echo "VERSION=0.1.1-dev.preview.${GITHUB_REF_NAME#preview-}" >> "$GITHUB_ENV"
-
-      - name: Build
-        run: go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/version.Version=$VERSION" -o build/boreal ./cmd/boreal
-
-      - name: Package AppImage
-        env:
-          APPIMAGE_EXTRACT_AND_RUN: 1
-        run: |
-          name="Boreal-preview-$BUILD-linux-${{ matrix.arch }}.AppImage"
-          curl -fsSL -o linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${{ matrix.arch }}.AppImage"
-          chmod +x linuxdeploy
-          mkdir -p AppDir/usr/share/doc/boreal dist
-          cp LICENSE THIRD_PARTY_NOTICES.md AppDir/usr/share/doc/boreal/
-          LDAI_OUTPUT="dist/$name" ./linuxdeploy --appdir AppDir -e build/boreal -d packaging/linux/boreal.desktop -i packaging/boreal.png --output appimage
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-${{ matrix.arch }}
-          path: dist/*.AppImage
-
-  macos:
-    runs-on: macos-latest
-    env:
-      MACOSX_DEPLOYMENT_TARGET: "12.0"
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: Version
-        run: |
-          echo "BUILD=${GITHUB_REF_NAME#preview-}" >> "$GITHUB_ENV"
-          echo "VERSION=0.1.1-dev.preview.${GITHUB_REF_NAME#preview-}" >> "$GITHUB_ENV"
-
-      - name: Icon
-        run: |
-          mkdir -p build/boreal.iconset
-          for s in 16 32 128 256; do
-            sips -z $s $s packaging/boreal.png --out build/boreal.iconset/icon_${s}x${s}.png >/dev/null
-          done
-          for s in 16 32 128; do
-            d=$((s * 2))
-            sips -z $d $d packaging/boreal.png --out build/boreal.iconset/icon_${s}x${s}@2x.png >/dev/null
-          done
-          iconutil -c icns build/boreal.iconset -o build/boreal.icns
-
-      - name: Build and package
-        run: |
-          mkdir -p dist
-          for arch in arm64 amd64; do
-            label=$([ "$arch" = arm64 ] && echo apple-silicon || echo intel)
-            app="build/$arch/Boreal.app"
-            mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-            CGO_ENABLED=1 GOARCH=$arch CC="clang -arch $([ "$arch" = amd64 ] && echo x86_64 || echo arm64)" \
-              go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/version.Version=$VERSION" -o "$app/Contents/MacOS/boreal" ./cmd/boreal
-            sed "s/VERSION/${VERSION%%-*}/g" packaging/macos/Info.plist > "$app/Contents/Info.plist"
-            cp build/boreal.icns "$app/Contents/Resources/boreal.icns"
-            cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
-            codesign --force --deep --sign - "$app"
-            mkdir -p "build/dmg-$arch"
-            cp -R "$app" "build/dmg-$arch/"
-            ln -s /Applications "build/dmg-$arch/Applications"
-            hdiutil create -volname Boreal -srcfolder "build/dmg-$arch" -ov -format UDZO "dist/Boreal-preview-$BUILD-macos-$label.dmg"
-          done
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos
-          path: dist/*.dmg
-
-  windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: Version
-        shell: bash
-        run: |
-          echo "BUILD=${GITHUB_REF_NAME#preview-}" >> "$GITHUB_ENV"
-          echo "VERSION=0.1.1-dev.preview.${GITHUB_REF_NAME#preview-}" >> "$GITHUB_ENV"
-
-      - name: Build and package
-        shell: pwsh
-        run: ./packaging/build.ps1 -Version $env:VERSION -Installer
-
-      - name: Rename
-        shell: bash
-        run: |
-          mkdir out
-          mv "dist/boreal-$VERSION-windows-amd64.zip" "out/Boreal-preview-$BUILD-windows-x64.zip"
-          mv "dist/boreal-$VERSION-windows-arm64.zip" "out/Boreal-preview-$BUILD-windows-arm64.zip"
-          mv "dist/boreal-$VERSION-setup.exe" "out/Boreal-preview-$BUILD-windows-x64-setup.exe"
-          mv "dist/boreal-$VERSION-arm64-setup.exe" "out/Boreal-preview-$BUILD-windows-arm64-setup.exe"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows
-          path: out/*
+  package:
+    needs: version
+    uses: ./.github/workflows/package.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
 
   publish:
-    needs: [linux, macos, windows]
+    needs: [version, package]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -146,7 +36,9 @@ jobs:
           merge-multiple: true
 
       - name: Checksums
-        run: cd dist && sha256sum Boreal-* > checksums.txt
+        run: |
+          rm -f dist/platty-*
+          cd dist && sha256sum boreal-* > checksums.txt
 
       - name: Release notes
         run: |
@@ -160,8 +52,8 @@ jobs:
           ### 🐧 Linux
           Pick **x86_64** for most PCs and **aarch64** for ARM boards and laptops.
           \`\`\`sh
-          chmod +x Boreal-preview-$BUILD-linux-x86_64.AppImage
-          ./Boreal-preview-$BUILD-linux-x86_64.AppImage
+          chmod +x boreal-$VERSION-linux-x86_64.AppImage
+          ./boreal-$VERSION-linux-x86_64.AppImage
           \`\`\`
           It needs Wayland or X11 with OpenGL ES or Vulkan. If your system has no FUSE, add \`--appimage-extract-and-run\`.
 

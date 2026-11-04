@@ -1,15 +1,80 @@
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, without the v (0.1.1-beta.5)
+        required: true
+        type: string
+      prerelease:
+        description: Mark it as a pre-release
+        type: boolean
+        default: true
+      dry_run:
+        description: Build and test everything, but publish nothing
+        type: boolean
+        default: false
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  release:
-    runs-on: windows-latest
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate
+        env:
+          VERSION: ${{ inputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]]; then
+            echo "::error::$VERSION is not a valid version, use something like 0.1.1-beta.5"
+            exit 1
+          fi
+
+          if [ "$DRY_RUN" != true ] && [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "::error::Releases are published from main. Use a dry run on other branches."
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::The tag v$VERSION already exists"
+            exit 1
+          fi
+
+          bash packaging/release-notes.sh "$VERSION" >/dev/null
+
+  ci:
+    needs: check
+    uses: ./.github/workflows/ci.yml
+
+  dependencies:
+    needs: check
+    uses: ./.github/workflows/dependencies.yml
+
+  package:
+    needs: [ci, dependencies]
+    uses: ./.github/workflows/package.yml
+    with:
+      version: ${{ inputs.version }}
+
+  publish:
+    if: ${{ !inputs.dry_run }}
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ inputs.version }}
+      PRERELEASE: ${{ inputs.prerelease }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
@@ -17,38 +82,36 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Version
-        shell: bash
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
-
-      - name: Build and package
-        shell: pwsh
-        run: ./packaging/build.ps1 -Version $env:VERSION -Installer
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
       - name: Sign
-        shell: bash
         env:
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
-        run: go run ./packaging/sign dist/boreal-*.zip dist/boreal-*-setup.exe dist/platty-*.zip dist/platty-*-setup.exe
-
-      - name: Release notes
-        shell: bash
-        run: |
-          awk -v v="## $VERSION" 'index($0, v) == 1 { on = 1; next } on && /^## / { exit } on' CHANGELOG.md > dist/notes.md
-          cat >> dist/notes.md <<NOTES
-
-          ### Install
-          - **boreal-$VERSION-setup.exe** installs Boreal for your user, without administrator rights.
-          - **boreal-$VERSION-windows-amd64.zip** is the portable version: unzip it and run \`boreal.exe\`.
-          - On Windows on ARM (Snapdragon, Surface Pro X), use **boreal-$VERSION-arm64-setup.exe** or **boreal-$VERSION-windows-arm64.zip** for a native build.
-
-          Beta builds aren't code-signed yet. If SmartScreen stops the download or the first launch, choose *More info* and then *Run anyway*.
-          NOTES
+        run: go run ./packaging/sign dist/boreal-* dist/platty-*
 
       - name: Publish
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/boreal-*.zip dist/boreal-*-setup.exe dist/platty-*.zip dist/platty-*-setup.exe dist/SHA256SUMS dist/SHA256SUMS.sig \
-            --title "Boreal $VERSION" --notes-file dist/notes.md --prerelease
+          bash packaging/release-notes.sh "$VERSION" > notes.md
+          flags=()
+
+          if [ "$PRERELEASE" = true ]; then
+            flags+=(--prerelease)
+          fi
+
+          gh release create "v$VERSION" dist/* --target "$GITHUB_SHA" --title "Boreal $VERSION" --notes-file notes.md "${flags[@]}"
+
+      - name: Date the changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git switch -C main origin/main
+          sed -i "s/^## Unreleased$/## $VERSION ($(date -u +%F))/" CHANGELOG.md
+
+          if ! git diff --quiet; then
+            git commit -am "docs(changelog): release $VERSION"
+            git push origin main
+          fi
