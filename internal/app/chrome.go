@@ -516,7 +516,13 @@ func (c *chrome) header(a *App, gtx C) D {
 		layout.Rigid(func(gtx C) D { return c.windowControls(a, gtx) }),
 	)
 
-	layout.Inset{Left: 12, Right: 8, Top: headerHeight - tabHeight}.Layout(gtx, func(gtx C) D {
+	left := unit.Dp(12)
+
+	if a.tools.open[core.Left] < 0 {
+		left = 0
+	}
+
+	layout.Inset{Left: left, Right: 8, Top: headerHeight - tabHeight}.Layout(gtx, func(gtx C) D {
 		gtx.Constraints.Min.Y = gtx.Dp(tabHeight)
 		return layout.Flex{Alignment: layout.Middle}.Layout(gtx, children...)
 	})
@@ -660,10 +666,6 @@ func (c *chrome) main(a *App, gtx C) D {
 	layout.Flex{}.Layout(bg,
 		layout.Flexed(1, func(gtx C) D {
 			in := layout.Inset{Bottom: cardMargin, Right: cardMargin}
-
-			if a.tools.open[core.Left] < 0 {
-				in.Left = cardMargin
-			}
 
 			if a.tools.open[core.Right] >= 0 {
 				in.Right = 0
