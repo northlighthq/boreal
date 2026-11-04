@@ -25,9 +25,9 @@ jobs:
             runner: ubuntu-22.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -48,7 +48,7 @@ jobs:
           cp LICENSE THIRD_PARTY_NOTICES.md AppDir/usr/share/doc/boreal/
           LDAI_OUTPUT="dist/boreal-$VERSION-linux-$ARCH.AppImage" ./linuxdeploy --appdir AppDir -e build/boreal -d packaging/linux/boreal.desktop -i packaging/boreal.png --output appimage
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-${{ matrix.arch }}
           path: dist/*.AppImage
@@ -59,9 +59,9 @@ jobs:
     env:
       MACOSX_DEPLOYMENT_TARGET: "12.0"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -96,7 +96,7 @@ jobs:
             hdiutil create -volname Boreal -srcfolder "build/dmg-$arch" -ov -format UDZO "dist/boreal-$VERSION-macos-$label.dmg"
           done
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: macos
           path: dist/*.dmg
@@ -105,9 +105,9 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -115,7 +115,7 @@ jobs:
         shell: pwsh
         run: ./packaging/build.ps1 -Version $env:VERSION -Installer
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: |
