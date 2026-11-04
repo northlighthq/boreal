@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -67,6 +71,13 @@ jobs:
             (cd "$dir" && go vet ./...)
           done
 
+      - name: Tests
+        run: |
+          go test ./...
+          for dir in libs/*/; do
+            (cd "$dir" && go test ./...)
+          done
+
       - name: Build
         run: go build -o bin/boreal ./cmd/boreal
 
@@ -86,6 +97,13 @@ jobs:
         run: |
           for dir in libs/*/; do
             (cd "$dir" && go vet ./...)
+          done
+
+      - name: Tests
+        run: |
+          go test ./...
+          for dir in libs/*/; do
+            (cd "$dir" && go test ./...)
           done
 
       - name: Build
