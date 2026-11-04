@@ -23,6 +23,7 @@ import (
 const (
 	menuWidth    = unit.Dp(220)
 	menuItemH    = unit.Dp(28)
+	menuIndent   = unit.Dp(16)
 	catcherReach = 1 << 14
 )
 
@@ -33,6 +34,7 @@ type MenuItem struct {
 	Danger   bool
 	Disabled bool
 	Checked  bool
+	Depth    int
 }
 
 func Separator() MenuItem {
@@ -40,9 +42,11 @@ func Separator() MenuItem {
 }
 
 type Menu struct {
-	Items []MenuItem
-	Width unit.Dp
+	Items     []MenuItem
+	Width     unit.Dp
+	MaxHeight unit.Dp
 
+	list       layout.List
 	open       bool
 	pos        image.Point
 	clks       []widget.Clickable
@@ -68,6 +72,7 @@ func (m *Menu) Open(items []MenuItem, pos image.Point) {
 	m.known = false
 	m.focused = false
 	m.focusTries = 0
+	m.list = layout.List{Axis: layout.Vertical}
 	m.clks = make([]widget.Clickable, len(items))
 }
 
@@ -186,8 +191,18 @@ func (k *Kit) menuCard(gtx C, m *Menu) D {
 
 	gtx.Constraints = layout.Constraints{Min: image.Pt(gtx.Dp(width), 0), Max: image.Pt(gtx.Dp(width), 1<<20)}
 
+	if m.MaxHeight > 0 {
+		gtx.Constraints.Max.Y = gtx.Dp(m.MaxHeight)
+	}
+
 	rec := op.Record(gtx.Ops)
 	dims := layout.UniformInset(6).Layout(gtx, func(gtx C) D {
+		if m.MaxHeight > 0 {
+			return m.list.Layout(gtx, len(m.Items), func(gtx C, i int) D {
+				return k.menuItem(gtx, &m.clks[i], m.Items[i], m.active == i)
+			})
+		}
+
 		children := make([]layout.FlexChild, len(m.Items))
 
 		for i := range m.Items {
@@ -245,6 +260,15 @@ func (k *Kit) menuItem(gtx C, clk *widget.Clickable, it MenuItem, active bool) D
 			gtx.Constraints.Min.Y = h
 			return layout.Inset{Left: 8, Right: 8}.Layout(gtx, func(gtx C) D {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(func(gtx C) D {
+						if it.Depth == 0 {
+							return D{}
+						}
+
+						return layout.Inset{Left: menuIndent * unit.Dp(it.Depth-1), Right: 6}.Layout(gtx, func(gtx C) D {
+							return icons.Nested.Layout(gtx, 14, th.TextFaint)
+						})
+					}),
 					layout.Rigid(func(gtx C) D {
 						col := image.Pt(gtx.Dp(24), 0)
 
@@ -615,6 +639,11 @@ func (m *Menu) step(dir int) {
 
 		if it := m.Items[i]; it.Label != "" && !it.Disabled {
 			m.active = i
+
+			if p := m.list.Position; i < p.First || i >= p.First+p.Count-1 {
+				m.list.ScrollTo(i)
+			}
+
 			return
 		}
 	}

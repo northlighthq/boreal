@@ -1,12 +1,14 @@
 package hosts
 
 import (
+	"image"
 	"strconv"
 	"strings"
 
 	"gioui.org/font"
 	"gioui.org/io/key"
 	"gioui.org/layout"
+	"gioui.org/unit"
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/app/core"
@@ -15,6 +17,8 @@ import (
 	"github.com/northlighthq/boreal/internal/ui/kit"
 	"github.com/northlighthq/boreal/internal/vault"
 )
+
+const folderMenuHeight = 280
 
 type Editor struct {
 	h    core.Host
@@ -32,6 +36,10 @@ type Editor struct {
 
 	keyIDs  []string
 	jumpIDs []string
+
+	folderBtn   widget.Clickable
+	folderMenu  kit.Menu
+	folderPaths []string
 
 	save, saveConnect widget.Clickable
 	invalid           bool
@@ -406,9 +414,7 @@ func (e *Editor) Layout(gtx C) bool {
 	if e.expanded {
 		children = append(children,
 			card("Organization",
-				field("Folder", func(gtx C) D {
-					return k.Field(gtx, &e.group, kit.FieldOpts{Hint: "Production/Web"})
-				}),
+				field("Folder", e.folderField),
 				field("Tags", func(gtx C) D { return k.Field(gtx, &e.tags, kit.FieldOpts{Hint: "web, db"}) }),
 			),
 			card("Advanced",
@@ -478,6 +484,44 @@ func (e *Editor) Layout(gtx C) bool {
 		),
 	})
 	return closed
+}
+
+func (e *Editor) folderField(gtx C) D {
+	k := e.h.Kit()
+
+	if i, ok := e.folderMenu.Chosen(); ok && i < len(e.folderPaths) {
+		e.group.SetText(e.folderPaths[i])
+	}
+
+	if e.folderBtn.Clicked(gtx) {
+		e.openFolderMenu(gtx)
+	}
+
+	dims := k.Field(gtx, &e.group, kit.FieldOpts{
+		Hint: "Production/Web",
+		Trailing: func(gtx C) D {
+			return k.IconButtonSized(gtx, &e.folderBtn, icons.ExpandMore, false, 22, 16, k.Th.TextMuted)
+		},
+	})
+
+	e.folderMenu.Width = unit.Dp(float32(dims.Size.X) / gtx.Metric.PxPerDp)
+	k.Menu(gtx, &e.folderMenu)
+	return dims
+}
+
+func (e *Editor) openFolderMenu(gtx C) {
+	k := e.h.Kit()
+	current := vault.CleanFolder(e.group.Text())
+	e.folderPaths = append(e.folderPaths[:0], "")
+	items := []kit.MenuItem{{Label: "No folder", Icon: icons.HomeOutline, Checked: current == ""}}
+
+	for _, f := range e.h.Vault().Snapshot().AllFolders() {
+		e.folderPaths = append(e.folderPaths, f)
+		items = append(items, kit.MenuItem{Label: vault.FolderName(f), Icon: icons.FolderOutline, Checked: f == current, Depth: strings.Count(f, vault.FolderSep)})
+	}
+
+	e.folderMenu.MaxHeight = folderMenuHeight
+	e.folderMenu.Open(items, image.Pt(0, gtx.Dp(k.Th.FieldHeight)+gtx.Dp(2)))
 }
 
 func (e *Editor) Dialog() *kit.Dialog {

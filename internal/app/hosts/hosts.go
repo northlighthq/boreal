@@ -640,8 +640,7 @@ func (p *Panel) openMoveMenu(gtx C, h vault.Host) {
 
 	for _, f := range p.folders {
 		p.moveDest = append(p.moveDest, f)
-		label := strings.Repeat("    ", strings.Count(f, vault.FolderSep)) + vault.FolderName(f)
-		items = append(items, kit.MenuItem{Label: label, Icon: icons.FolderOutline, Disabled: f == current})
+		items = append(items, kit.MenuItem{Label: vault.FolderName(f), Icon: icons.FolderOutline, Disabled: f == current, Depth: strings.Count(f, vault.FolderSep)})
 	}
 
 	p.moveMenu.Width = 240
