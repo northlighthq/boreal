@@ -95,6 +95,8 @@ type Session struct {
 
 	steps []Step
 
+	activity activity
+
 	logMu  sync.Mutex
 	log    *textLog
 	mirror func(p []byte)
@@ -232,6 +234,7 @@ func (s *Session) SendOnly(p []byte) {
 		return
 	}
 
+	s.activity.hush(time.Now(), echoQuiet)
 	buf := make([]byte, len(p))
 	copy(buf, p)
 
@@ -242,6 +245,7 @@ func (s *Session) SendOnly(p []byte) {
 }
 
 func (s *Session) Resize(cols, rows int) {
+	s.activity.hush(time.Now(), echoQuiet)
 	s.term.Resize(cols, rows)
 
 	s.mu.Lock()
@@ -356,6 +360,7 @@ func (s *Session) connect() {
 	s.state = Connected
 	s.started = time.Now()
 	s.mu.Unlock()
+	s.activity.hush(time.Now(), startupQuiet)
 
 	if s.Kind == SSH {
 		t.Resize(s.term.Size())
@@ -428,6 +433,7 @@ func (s *Session) readLoop(gen int, t Transport) {
 			}
 
 			s.writeLog(buf[:n])
+			s.activity.note(time.Now())
 			s.opts.OnChange()
 		}
 
