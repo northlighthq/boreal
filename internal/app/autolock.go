@@ -52,8 +52,12 @@ func (a *App) systemLock() {
 	a.LockVault()
 }
 
+func (a *App) HelloAvailable() bool {
+	return a.autoLock.helloReady.Load()
+}
+
 func (a *App) canHello() bool {
-	return a.autoLock.helloReady.Load() && a.vault.OSUnlock()
+	return a.settings.WindowsHello && a.HelloAvailable() && a.vault.OSUnlock()
 }
 
 func (a *App) CanLock() bool {

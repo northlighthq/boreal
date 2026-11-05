@@ -16,9 +16,9 @@ import (
 
 const minMasterPassword = 10
 
-var lockAfterMinutes = []int{0, 5, 15, 30, 60}
+var lockAfterMinutes = []int{0, 1, 5, 15, 30, 60, 120, 240}
 
-var lockAfterLabels = []string{"Never", "After 5 minutes", "After 15 minutes", "After 30 minutes", "After 1 hour"}
+var lockAfterLabels = []string{"Never", "After 1 minute", "After 5 minutes", "After 15 minutes", "After 30 minutes", "After 1 hour", "After 2 hours", "After 4 hours"}
 
 type security struct {
 	current, next, confirm widget.Editor
@@ -26,7 +26,7 @@ type security struct {
 	lockNow, forget        widget.Clickable
 	osUnlock               widget.Bool
 	readKnown, writeKnown  widget.Bool
-	lockOnSystem           widget.Bool
+	lockOnSystem, hello    widget.Bool
 	lockAfter              kit.Select
 	message                string
 	failed                 bool
@@ -133,16 +133,59 @@ func (d *Dialog) securityPage(a core.Host, gtx C, row func(string, layout.Widget
 		}
 	}
 
+	toggle := func(b *widget.Bool, text string) layout.Widget {
+		return left(func(gtx C) D {
+			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(func(gtx C) D { return k.Toggle(gtx, b) }),
+				layout.Rigid(kit.Gap(12)),
+				layout.Rigid(muted(text)),
+			)
+		})
+	}
+
+	section := func(title string) layout.FlexChild {
+		return layout.Rigid(func(gtx C) D {
+			return layout.Inset{Top: 10, Bottom: 14}.Layout(gtx, func(gtx C) D { return k.SectionTitle(gtx, title) })
+		})
+	}
+
+	helloRow := a.HelloAvailable() && v.OSUnlock()
+	canLock := has || helloRow && s.hello.Value
+
+	children := []layout.FlexChild{section("Lock")}
+
+	if helloRow {
+		children = append(children, row("Windows Hello", toggle(&s.hello, "Ask for Windows Hello to unlock Boreal")))
+	}
+
+	if canLock {
+		children = append(children,
+			row("Lock automatically", func(gtx C) D {
+				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(220))
+				return k.Select(gtx, &s.lockAfter, lockAfterLabels)
+			}),
+			row("", toggle(&s.lockOnSystem, "Also lock when "+vault.OSName+" locks the session")),
+			row("", left(func(gtx C) D {
+				return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock now  ·  Ctrl+Shift+L")
+			})),
+		)
+	}
+
+	if !canLock {
+		children = append(children, row("", muted("Boreal stays unlocked. Turn on Windows Hello or set a master password to lock it.")))
+	}
+
 	status := "Not set. The vault opens with your " + vault.OSOwner + " only."
 
 	if has {
 		status = "Set."
 	}
 
-	children := []layout.FlexChild{
+	children = append(children,
+		section("Master password"),
 		row("Storage", muted("Encrypted with XChaCha20-Poly1305 in %AppData%\\Boreal."+vaultSummary(a))),
 		row("Master password", muted(status)),
-	}
+	)
 
 	if has {
 		children = append(children, row("Current password", field(&s.current, "Current master password")))
@@ -186,51 +229,13 @@ func (d *Dialog) securityPage(a core.Host, gtx C, row func(string, layout.Widget
 	}
 
 	if has {
-		children = append(children,
-			row("Unlock with "+vault.OSName, left(func(gtx C) D {
-				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &s.osUnlock) }),
-					layout.Rigid(kit.Gap(12)),
-					layout.Rigid(muted("Open the vault on this PC without typing the password")),
-				)
-			})),
-		)
-	}
-
-	if a.CanLock() {
-		children = append(children,
-			row("Lock automatically", func(gtx C) D {
-				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(220))
-				return k.Select(gtx, &s.lockAfter, lockAfterLabels)
-			}),
-			row("", left(func(gtx C) D {
-				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &s.lockOnSystem) }),
-					layout.Rigid(kit.Gap(12)),
-					layout.Rigid(muted("Also lock when "+vault.OSName+" locks the session")),
-				)
-			})),
-			row("", left(func(gtx C) D {
-				return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock now  ·  Ctrl+Shift+L")
-			})),
-		)
+		children = append(children, row("Unlock with "+vault.OSName, toggle(&s.osUnlock, "Open the vault on this PC without typing the password")))
 	}
 
 	children = append(children,
-		row("OpenSSH known_hosts", left(func(gtx C) D {
-			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &s.readKnown) }),
-				layout.Rigid(kit.Gap(12)),
-				layout.Rigid(muted("Trust servers already in ~/.ssh/known_hosts and respect its @revoked lines")),
-			)
-		})),
-		row("", left(func(gtx C) D {
-			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &s.writeKnown) }),
-				layout.Rigid(kit.Gap(12)),
-				layout.Rigid(muted("Add the server keys you accept to ~/.ssh/known_hosts too")),
-			)
-		})),
+		section("Known hosts"),
+		row("OpenSSH known_hosts", toggle(&s.readKnown, "Trust servers already in ~/.ssh/known_hosts and respect its @revoked lines")),
+		row("", toggle(&s.writeKnown, "Add the server keys you accept to ~/.ssh/known_hosts too")),
 	)
 
 	if n := v.SavedPassphrases(); n > 0 {

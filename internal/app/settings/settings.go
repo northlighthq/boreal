@@ -169,6 +169,7 @@ func New(a core.Host) *Dialog {
 	d.sec.readKnown.Value = s.SystemKnownHosts
 	d.sec.writeKnown.Value = s.WriteKnownHosts
 	d.sec.lockOnSystem.Value = s.LockOnSystemLock
+	d.sec.hello.Value = s.WindowsHello
 	d.list.Axis = layout.Vertical
 	return d
 }
@@ -225,6 +226,7 @@ func (d *Dialog) collect(a core.Host) config.Settings {
 	s.SystemKnownHosts = d.sec.readKnown.Value
 	s.WriteKnownHosts = d.sec.writeKnown.Value
 	s.LockOnSystemLock = d.sec.lockOnSystem.Value
+	s.WindowsHello = d.sec.hello.Value
 	return s
 }
 
