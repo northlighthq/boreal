@@ -75,6 +75,7 @@ type Host interface {
 	RememberPassphrase(keyID, pass string)
 	LockVault()
 	CanLock() bool
+	HelloAvailable() bool
 	ExportData()
 	ImportData()
 	ExportSSHConfig()

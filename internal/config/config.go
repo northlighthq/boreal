@@ -70,6 +70,7 @@ type Settings struct {
 	SystemKnownHosts bool `json:"systemKnownHosts"`
 	WriteKnownHosts  bool `json:"writeKnownHosts"`
 	LockOnSystemLock bool `json:"lockOnSystemLock"`
+	WindowsHello     bool `json:"windowsHello"`
 }
 
 const designVersion = 3
@@ -94,6 +95,7 @@ func Defaults() Settings {
 
 		SystemKnownHosts: true,
 		LockOnSystemLock: true,
+		WindowsHello:     true,
 		Clipboard:        ClipboardAsk,
 		AutoUpdate:       true,
 		Ligatures:        true,

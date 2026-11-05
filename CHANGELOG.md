@@ -2,6 +2,16 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## Unreleased
+
+### Security
+- Windows Hello can be turned off in Settings › Security, separately from how the vault is stored.
+- Boreal can lock after 1 minute, 2 hours or 4 hours, besides the existing times.
+- The lock options come first in Settings › Security.
+
+### Interface
+- A new lock screen, with Windows Hello as the main action.
+
 ## 0.1.1-beta.5 (2026-11-04)
 
 ### Hosts
