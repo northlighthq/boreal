@@ -2,7 +2,7 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## 0.1.1-beta.6 (2026-11-05)
 
 ### Security
 - Windows Hello can be turned off in Settings › Security, separately from how the vault is stored.
