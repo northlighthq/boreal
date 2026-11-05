@@ -183,7 +183,7 @@ func (d *Dialog) securityPage(a core.Host, gtx C, row func(string, layout.Widget
 
 	children = append(children,
 		section("Master password"),
-		row("Storage", muted("Encrypted with XChaCha20-Poly1305 in %AppData%\\Boreal."+vaultSummary(a))),
+		row("Storage", muted("Encrypted with XChaCha20-Poly1305 in %AppData%\\Boreal. "+vaultSummary(a))),
 		row("Master password", muted(status)),
 	)
 
