@@ -3,6 +3,7 @@ package app
 import (
 	"image"
 	"image/color"
+	"time"
 
 	"gioui.org/gesture"
 	"gioui.org/io/pointer"
@@ -90,6 +91,7 @@ type Tab struct {
 	root      *node
 	active    *Pane
 	row       widget.Clickable
+	seen      time.Time
 
 	appear   kit.Anim
 	vanish   kit.Anim

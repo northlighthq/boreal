@@ -75,21 +75,22 @@ type Dialog struct {
 	page  int
 	dlg   kit.Dialog
 
-	pages    []widget.Clickable
-	theme    kit.Select
-	cur      kit.Segmented
-	clip     kit.Segmented
-	shell    kit.Select
-	termFont kit.Select
-	scheme   kit.Select
-	density  kit.Segmented
-	corners  kit.Segmented
-	tabStyle kit.Segmented
-	accents  []widget.Clickable
-	accent   string
-	tabIcons widget.Bool
-	hostIcon kit.Segmented
-	hostTint kit.Segmented
+	pages       []widget.Clickable
+	theme       kit.Select
+	cur         kit.Segmented
+	clip        kit.Segmented
+	shell       kit.Select
+	termFont    kit.Select
+	scheme      kit.Select
+	density     kit.Segmented
+	corners     kit.Segmented
+	tabStyle    kit.Segmented
+	accents     []widget.Clickable
+	accent      string
+	tabIcons    widget.Bool
+	tabActivity widget.Bool
+	hostIcon    kit.Segmented
+	hostTint    kit.Segmented
 
 	fontSize, lineHeight, scrollback, keepAlive         widget.Editor
 	blink, copySel, confirm, hideIPs, restore, ligs, hl widget.Bool
@@ -148,6 +149,7 @@ func New(a core.Host) *Dialog {
 	d.ligs.Value = s.Ligatures
 	d.hl.Value = s.Highlight
 	d.tabIcons.Value = s.TabIcons
+	d.tabActivity.Value = s.TabActivity
 	d.accent = s.Accent
 	d.accents = make([]widget.Clickable, len(theme.Accents))
 	d.density.Value = index(theme.Densities, s.Density)
@@ -209,6 +211,7 @@ func (d *Dialog) collect(a core.Host) config.Settings {
 	s.Ligatures = d.ligs.Value
 	s.Highlight = d.hl.Value
 	s.TabIcons = d.tabIcons.Value
+	s.TabActivity = d.tabActivity.Value
 	s.Accent = d.accent
 	s.Density = theme.Densities[d.density.Value]
 	s.Corners = theme.CornerStyles[d.corners.Value]
@@ -402,6 +405,7 @@ func (d *Dialog) content(a core.Host, gtx C) D {
 			row("Corners", left(func(gtx C) D { return k.Segmented(gtx, &d.corners, []string{"Sharp", "Normal", "Round"}) })),
 			row("Tabs", left(func(gtx C) D { return k.Segmented(gtx, &d.tabStyle, []string{"Classic", "Pill", "Underline"}) })),
 			row("Tab icons", left(func(gtx C) D { return k.Toggle(gtx, &d.tabIcons) })),
+			row("Tab activity", left(func(gtx C) D { return k.Toggle(gtx, &d.tabActivity) })),
 			row("Host icons", left(func(gtx C) D {
 				return k.Segmented(gtx, &d.hostIcon, []string{"Operating system", "Terminal"})
 			})),
