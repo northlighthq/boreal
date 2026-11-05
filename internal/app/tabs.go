@@ -29,6 +29,7 @@ func (c *chrome) tabStrip(a *App, gtx C) D {
 	k := a.kit
 	th := a.th()
 	c.handleTabMenu(a)
+	a.markSeenTabs(gtx.Now)
 
 	if c.newTab.Clicked(gtx) {
 		a.NewLocalTab(a.DefaultProfile())
@@ -259,7 +260,8 @@ func (c *chrome) tab(a *App, gtx C, i, x, w int, active bool) {
 		title += " (" + strconv.Itoa(n) + ")"
 	}
 
-	fg := kit.Lerp(kit.Lerp(th.TextMuted, th.Text, hv), th.Text, kit.B2F(active))
+	unread := c.tabUnread(a, gtx, t)
+	fg := kit.Lerp(kit.Lerp(th.TextMuted, th.Text, max(hv, unread)), th.Text, kit.B2F(active))
 	fg = kit.Fade(fg, v*v)
 
 	t.row.Layout(gtx, func(gtx C) D {

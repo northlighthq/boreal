@@ -64,6 +64,7 @@ type Settings struct {
 	TermScheme    string  `json:"terminalScheme"`
 	TabStyle      string  `json:"tabStyle"`
 	TabIcons      bool    `json:"tabIcons"`
+	TabActivity   bool    `json:"tabActivity"`
 	HostIcons     string  `json:"hostIcons"`
 	HostIconTint  string  `json:"hostIconTint"`
 
@@ -107,6 +108,7 @@ func Defaults() Settings {
 		Corners:          "normal",
 		TabStyle:         "classic",
 		TabIcons:         true,
+		TabActivity:      true,
 		HostIcons:        HostIconsOS,
 		HostIconTint:     HostIconTintColor,
 		DesignVersion:    designVersion,
