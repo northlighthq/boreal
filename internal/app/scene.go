@@ -12,22 +12,7 @@ import (
 	"github.com/northlighthq/boreal/internal/ui/icons"
 	"github.com/northlighthq/boreal/internal/ui/kit"
 	"github.com/northlighthq/boreal/internal/ui/mark"
-	"github.com/northlighthq/boreal/internal/ui/theme"
 )
-
-func lockBadge(gtx C, th *theme.Theme) D {
-	box := gtx.Dp(56)
-	r := image.Rect(0, 0, box, box)
-	kit.RRect(gtx, r, gtx.Dp(th.RadiusLarge+2), th.Selection)
-	kit.Border(gtx, r, gtx.Dp(th.RadiusLarge+2), 1, th.Border)
-
-	px := gtx.Dp(24)
-	off := op.Offset(image.Pt((box-px)/2, (box-px)/2)).Push(gtx.Ops)
-	icons.Lock.Layout(gtx, 24, th.Text)
-	off.Pop()
-
-	return D{Size: image.Pt(box, box)}
-}
 
 func (a *App) stepList(gtx C, p *Pane, live bool) D {
 	k := a.kit

@@ -67,7 +67,7 @@ func (a *App) unlockWithHello() {
 		return
 	}
 
-	l.busy, l.err = true, ""
+	l.busy, l.viaHello, l.err = true, true, ""
 	l.result = make(chan error, 1)
 	result, hwnd := l.result, a.view
 
