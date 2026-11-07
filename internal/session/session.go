@@ -96,6 +96,7 @@ type Session struct {
 	steps []Step
 
 	activity activity
+	matcher  lineMatcher
 
 	logMu  sync.Mutex
 	log    *textLog
@@ -137,7 +138,7 @@ func New(o Options) *Session {
 	}
 
 	s.term = vt.New(max(o.Cols, 1), max(o.Rows, 1),
-		vt.WithReply(s.SendOnly),
+		vt.WithReply(s.write),
 		vt.WithClipboard(func(text string) {
 			if o.OnClipboard != nil {
 				o.OnClipboard(text)
@@ -224,6 +225,16 @@ func (s *Session) SendOnly(p []byte) {
 		return
 	}
 
+	s.activity.hush(time.Now(), echoQuiet)
+	s.matcher.typed()
+	s.write(p)
+}
+
+func (s *Session) write(p []byte) {
+	if len(p) == 0 {
+		return
+	}
+
 	st, _ := s.State()
 
 	if st == Closed || st == Failed {
@@ -234,7 +245,6 @@ func (s *Session) SendOnly(p []byte) {
 		return
 	}
 
-	s.activity.hush(time.Now(), echoQuiet)
 	buf := make([]byte, len(p))
 	copy(buf, p)
 
@@ -434,6 +444,7 @@ func (s *Session) readLoop(gen int, t Transport) {
 
 			s.writeLog(buf[:n])
 			s.activity.note(time.Now())
+			s.matcher.feed(buf[:n])
 			s.opts.OnChange()
 		}
 
