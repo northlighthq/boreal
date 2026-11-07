@@ -62,3 +62,32 @@ func TestUnlockOSNeedsOSKey(t *testing.T) {
 		t.Fatalf("got %v, want ErrNeedUnlock", err)
 	}
 }
+
+func TestSetTriggers(t *testing.T) {
+	path := filepath.Join(t.TempDir(), vaultFile)
+	v, err := OpenAt(path)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := v.SetTriggers([]Trigger{{Pattern: "error", Color: TriggerRed, Notify: true}}); err != nil {
+		t.Fatal(err)
+	}
+
+	again, err := OpenAt(path)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := again.Snapshot().Triggers
+
+	if len(got) != 1 || got[0].ID == "" || got[0].Pattern != "error" || !got[0].Notify {
+		t.Fatalf("triggers should be saved with an ID, got %+v", got)
+	}
+
+	if _, err := (Trigger{Pattern: " "}).Compile(); err != ErrEmptyPattern {
+		t.Fatalf("an empty pattern should not compile, got %v", err)
+	}
+}
