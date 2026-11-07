@@ -7,6 +7,9 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 ### Terminal
 - The title of a background tab turns bright when its terminal prints something new, until you open it. Settings › Appearance turns this off.
 
+### Fixes
+- Boreal can be closed while locked with SSH sessions or tunnels open, instead of getting stuck.
+
 ## 0.1.1-beta.6 (2026-11-05)
 
 ### Security
