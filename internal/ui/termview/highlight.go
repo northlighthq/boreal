@@ -31,12 +31,24 @@ var highlightColors = func() []vt.Color {
 	return out
 }()
 
+var markInk = vt.RGB(16, 16, 16)
+
+type Mark struct {
+	Re    *regexp.Regexp
+	Color vt.Color
+}
+
+func (v *View) SetMarks(marks []Mark) {
+	v.marks = marks
+	v.cache.invalidate()
+}
+
 func plain(c vt.Cell) bool {
 	return c.Fg.Kind() == vt.ColorDefault && c.Bg.Kind() == vt.ColorDefault && c.Attr&(vt.AttrInverse|vt.AttrInvisible) == 0 && c.Link == 0
 }
 
 func (v *View) highlight(cells []vt.Cell) []vt.Cell {
-	if !v.set.Highlight || v.frame.AltScreen {
+	if (!v.set.Highlight && len(v.marks) == 0) || v.frame.AltScreen {
 		return cells
 	}
 
@@ -71,44 +83,61 @@ func (v *View) highlight(cells []vt.Cell) []vt.Cell {
 
 	offs = append(offs, end)
 	v.hlOffs = offs
-
-	if !any {
-		return cells
-	}
-
 	s := sb.String()
-	matches := highlightRe.FindAllStringSubmatchIndex(s, -1)
-
-	if len(matches) == 0 {
-		return cells
-	}
-
-	out := append(v.hlCells[:0], cells...)
-
-	for _, m := range matches {
-		for g := 2; g+1 < len(m); g += 2 {
-			if m[g] < 0 {
-				continue
-			}
-
-			start, end := m[g], m[g+1]
-
-			if g/2 == highlightRe.SubexpIndex("path") {
-				start += len(s[start:end]) - len(strings.TrimLeft(s[start:end], " \t=:"))
-			}
-
-			col := highlightColors[g/2]
-
-			for x := offs[start]; x < offs[end]; x++ {
-				if plain(out[x]) {
-					out[x].Fg = col
-				}
-			}
-
-			break
+	out := cells
+	copied := false
+	own := func() {
+		if !copied {
+			out = append(v.hlCells[:0], cells...)
+			copied = true
 		}
 	}
 
-	v.hlCells = out
+	if v.set.Highlight && any {
+		for _, m := range highlightRe.FindAllStringSubmatchIndex(s, -1) {
+			for g := 2; g+1 < len(m); g += 2 {
+				if m[g] < 0 {
+					continue
+				}
+
+				start, end := m[g], m[g+1]
+
+				if g/2 == highlightRe.SubexpIndex("path") {
+					start += len(s[start:end]) - len(strings.TrimLeft(s[start:end], " 	=:"))
+				}
+
+				own()
+				col := highlightColors[g/2]
+
+				for x := offs[start]; x < offs[end]; x++ {
+					if plain(out[x]) {
+						out[x].Fg = col
+					}
+				}
+
+				break
+			}
+		}
+	}
+
+	for _, mk := range v.marks {
+		for _, m := range mk.Re.FindAllStringIndex(s, -1) {
+			if m[0] == m[1] {
+				continue
+			}
+
+			own()
+
+			for x := offs[m[0]]; x < offs[m[1]]; x++ {
+				out[x].Fg, out[x].Bg = markInk, mk.Color
+				out[x].Attr &^= vt.AttrInverse | vt.AttrInvisible
+			}
+		}
+	}
+
+	if copied {
+		v.hlCells = out
+	}
+
 	return out
 }
