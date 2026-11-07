@@ -31,6 +31,7 @@ var settingsPages = []struct {
 }{
 	{"Appearance", icons.Tune},
 	{"Terminal", icons.Terminal},
+	{"Triggers", icons.LucideBell},
 	{"SSH", icons.Lock},
 	{"Security", icons.Shield},
 	{"Data", icons.Download},
@@ -70,6 +71,7 @@ var keymap = [][2]string{
 type Dialog struct {
 	h     core.Host
 	sec   security
+	trig  triggers
 	about about
 	s     config.Settings
 	page  int
@@ -104,6 +106,7 @@ type Dialog struct {
 
 func New(a core.Host) *Dialog {
 	d := &Dialog{h: a, s: a.Settings(), pages: make([]widget.Clickable, len(settingsPages))}
+	d.trig.load(a)
 	dialogs.SingleLine(&d.fontSize, &d.lineHeight, &d.scrollback, &d.keepAlive, &d.skipTags)
 	d.fontSize.Filter = "0123456789."
 	d.lineHeight.Filter = "0123456789."
@@ -235,13 +238,28 @@ func (d *Dialog) collect(a core.Host) config.Settings {
 
 func (d *Dialog) commit(a core.Host) {
 	s := d.collect(a)
+	triggersChanged := d.trig.changed()
 
-	if s == d.s {
+	if s == d.s && !triggersChanged {
 		return
 	}
 
-	a.UpdateSettings(s)
-	d.s = s
+	if triggersChanged {
+		list := d.trig.collect()
+
+		if err := a.Vault().SetTriggers(list); err != nil {
+			a.Toasts().Error("Couldn't save the triggers", err.Error())
+			return
+		}
+
+		d.trig.saved = list
+	}
+
+	if s != d.s {
+		a.UpdateSettings(s)
+		d.s = s
+	}
+
 	a.Toasts().Success("Settings saved", "Your changes are applied.")
 }
 
@@ -482,6 +500,8 @@ func (d *Dialog) content(a core.Host, gtx C) D {
 			}),
 		}
 	case 2:
+		children = append([]layout.FlexChild{header}, d.triggersPage(a, gtx)...)
+	case 3:
 		agent := "Not detected (start the “OpenSSH Authentication Agent” service or Pageant)"
 
 		if sshx.AgentAvailable() {
@@ -503,13 +523,13 @@ func (d *Dialog) content(a core.Host, gtx C) D {
 				)
 			})),
 		}
-	case 3:
-		children = append([]layout.FlexChild{header}, d.securityPage(a, gtx, row, left)...)
 	case 4:
-		children = append([]layout.FlexChild{header}, d.dataPage(a, row)...)
-	case 6:
-		children = d.aboutPage(a, gtx)
+		children = append([]layout.FlexChild{header}, d.securityPage(a, gtx, row, left)...)
 	case 5:
+		children = append([]layout.FlexChild{header}, d.dataPage(a, row)...)
+	case 7:
+		children = d.aboutPage(a, gtx)
+	case 6:
 		children = []layout.FlexChild{header}
 
 		for _, km := range keymap {
