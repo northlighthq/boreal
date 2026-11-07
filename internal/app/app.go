@@ -193,7 +193,7 @@ func (a *App) loop() error {
 }
 
 func (a *App) confirmClose() bool {
-	if a.closing || !a.settings.ConfirmClose {
+	if a.closing || !a.settings.ConfirmClose || a.vault.Locked() {
 		return false
 	}
 
