@@ -141,24 +141,28 @@ release. Tick *dry run* to build everything without publishing.
 
 ```
 boreal/
-├── cmd/boreal/            # the app
+├── cmd/boreal/            # entry point: desktop on Windows, macOS and Linux, mobile on Android
 ├── internal/
-│   ├── core/              # no UI: sessions, SSH, the vault and everything around them
+│   ├── core/              # no UI, shared by every app
 │   │   ├── session/       # local and SSH sessions
 │   │   ├── sshx/          # SSH: auth, host keys, jump hosts, forwarding, SFTP, metrics
 │   │   ├── vault/         # encrypted storage
 │   │   └── tunnel/  transfer/  config/  backup/  secure/  sshconfig/  update/ ...
-│   ├── common/            # UI building blocks: kit, termview, theme, icons, toast, fonts ...
-│   ├── desktop/           # the window: sidebar, tabs, split panes and wiring
+│   ├── common/            # UI shared by desktop and mobile
+│   │   └── kit/  termview/  theme/  icons/  toast/  fonts/  metrics/ ...
+│   ├── desktop/           # the desktop app: sidebar, tabs, split panes and wiring
 │   │   ├── base/          # interfaces between the window and its parts
 │   │   ├── hosts/  keychain/  forwards/  snippets/  knownhosts/  sftp/
 │   │   └── settings/  palette/  welcome/  dialogs/
+│   ├── mobile/            # the Android app: screens, navigation and touch controls
+│   │   ├── ui/  nav/      # mobile design system and screen stack
+│   │   └── hosts/  terminal/  keys/  snippets/  settings/  lock/
 │   └── platform/          # OS integration: local shells, file drop, keyring
 ├── libs/                  # reusable libraries, each with its own go.mod
 │   ├── vt/                # terminal emulator (parser/, input/)
 │   ├── pty/               # pseudo terminals (ConPTY, Unix)
 │   └── glyphs/            # glyph rasterizer
-└── packaging/             # release script, installer and icon
+└── packaging/             # release scripts, installer, icons and the Android build
 ```
 
 The libraries in `libs/` are also published as their own repositories under
@@ -173,6 +177,7 @@ The libraries in `libs/` are also published as their own repositories under
 | Windows 11 on ARM64 | 🧪 Native builds, not yet tested on ARM hardware |
 | macOS (Apple Silicon and Intel) | 🛠️ Planned, see [#1](https://github.com/northlighthq/boreal/issues/1) |
 | Linux (X11 and Wayland) | 🛠️ Planned, see [#2](https://github.com/northlighthq/boreal/issues/2) |
+| Android 9 and later | 🧪 In development, see [docs/mobile.md](docs/mobile.md) |
 
 The SSH layer, the terminal engine and the vault are portable Go; the issues list what's
 left for each system.
