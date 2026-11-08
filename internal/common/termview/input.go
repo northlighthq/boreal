@@ -85,7 +85,7 @@ func (v *View) filters() []event.Filter {
 		transfer.TargetFilter{Target: v, Type: mimeText},
 		pointer.Filter{
 			Target:  v,
-			Kinds:   pointer.Press | pointer.Release | pointer.Drag | pointer.Move | pointer.Scroll | pointer.Leave,
+			Kinds:   pointer.Press | pointer.Release | pointer.Drag | pointer.Move | pointer.Scroll | pointer.Leave | pointer.Cancel,
 			ScrollY: pointer.ScrollRange{Min: -scrollMax, Max: scrollMax},
 		},
 		key.Filter{Focus: v, Name: key.NameTab, Optional: allMods},
@@ -297,6 +297,10 @@ func (v *View) reporting(m key.Modifiers) bool {
 }
 
 func (v *View) handlePointer(gtx layout.Context, e pointer.Event) {
+	if v.handleTouch(gtx, e) {
+		return
+	}
+
 	switch e.Kind {
 	case pointer.Press:
 		v.wantFocus = true
