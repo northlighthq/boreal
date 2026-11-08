@@ -18,7 +18,7 @@ func protect(plain []byte) ([]byte, error) {
 	name := hex.EncodeToString(id)
 
 	if err := keyring.Set(name, "Boreal vault key", plain); err != nil {
-		return bytes.Clone(plain), nil
+		return nil, ErrNoKeyring
 	}
 
 	return append(bytes.Clone(keyringRef), name...), nil
@@ -30,6 +30,10 @@ func unprotect(enc []byte) ([]byte, error) {
 	}
 
 	return bytes.Clone(enc), nil
+}
+
+func plainOS(enc []byte) bool {
+	return len(enc) > 0 && !bytes.HasPrefix(enc, keyringRef)
 }
 
 func forget(enc []byte) {

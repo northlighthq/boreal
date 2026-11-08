@@ -58,4 +58,6 @@ func dpapi(in, entropy []byte, encrypt bool) ([]byte, error) {
 	return res, nil
 }
 
+func plainOS(enc []byte) bool { return false }
+
 func forget(enc []byte) {}

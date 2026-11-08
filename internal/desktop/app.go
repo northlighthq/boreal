@@ -109,6 +109,8 @@ type App struct {
 	vaultRev   uint64
 	mu         sync.Mutex
 
+	protecting *dialogs.Form
+
 	triggerSrc   []vault.Trigger
 	triggers     []compiledTrigger
 	triggerFired map[triggerKey]time.Time
@@ -269,6 +271,14 @@ func (a *App) frame(gtx C) {
 			a.runSnippetKey(name)
 		}
 	default:
+	}
+
+	if _, intro := a.modal.(*onboarding.Intro); !intro && (a.modal == nil || a.modal == a.protecting) {
+		if a.modal == nil {
+			a.protecting = nil
+		}
+
+		a.requireProtection()
 	}
 
 	a.handleShortcuts(gtx)

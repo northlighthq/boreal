@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	vaultFile = "vault.dat"
-	version   = 1
+	FileName = "vault.dat"
+	version  = 1
 )
 
 const (
@@ -180,7 +180,7 @@ func Open() (*Vault, error) {
 		return nil, err
 	}
 
-	return OpenAt(filepath.Join(dir, vaultFile))
+	return OpenAt(filepath.Join(dir, FileName))
 }
 
 func (v *Vault) Revision() uint64 {
@@ -212,6 +212,10 @@ func (v *Vault) update(fn func(d *Data)) error {
 
 	if v.locked {
 		return ErrLocked
+	}
+
+	if v.env.OS == nil && v.env.Password == nil {
+		return ErrNeedPassword
 	}
 
 	fn(&v.data)

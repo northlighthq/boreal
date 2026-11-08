@@ -6,7 +6,7 @@ import (
 )
 
 func TestLockWithoutPasswordAndUnlockOS(t *testing.T) {
-	v, err := OpenAt(filepath.Join(t.TempDir(), vaultFile))
+	v, err := OpenAt(filepath.Join(t.TempDir(), FileName))
 
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +40,7 @@ func TestLockWithoutPasswordAndUnlockOS(t *testing.T) {
 }
 
 func TestUnlockOSNeedsOSKey(t *testing.T) {
-	v, err := OpenAt(filepath.Join(t.TempDir(), vaultFile))
+	v, err := OpenAt(filepath.Join(t.TempDir(), FileName))
 
 	if err != nil {
 		t.Fatal(err)
@@ -64,7 +64,7 @@ func TestUnlockOSNeedsOSKey(t *testing.T) {
 }
 
 func TestSetTriggers(t *testing.T) {
-	path := filepath.Join(t.TempDir(), vaultFile)
+	path := filepath.Join(t.TempDir(), FileName)
 	v, err := OpenAt(path)
 
 	if err != nil {
