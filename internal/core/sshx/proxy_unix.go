@@ -8,7 +8,7 @@ import (
 )
 
 func quoteArg(v string) (string, bool) {
-	return "'" + strings.ReplaceAll(v, "'", `'''`) + "'", true
+	return "'" + strings.ReplaceAll(v, "'", `'\''`) + "'", true
 }
 
 func shellCommand(line string) *exec.Cmd {
