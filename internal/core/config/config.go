@@ -128,6 +128,15 @@ func Dir() (string, error) {
 		os.Rename(filepath.Join(base, legacyDir), dir)
 	}
 
+	if private, ok := privateDir(); ok {
+		if _, err := os.Stat(private); os.IsNotExist(err) {
+			os.MkdirAll(filepath.Dir(private), 0o700)
+			os.Rename(dir, private)
+		}
+
+		dir = private
+	}
+
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}
