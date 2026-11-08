@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	boreal "github.com/northlighthq/boreal/internal/app"
-	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/core/config"
+	boreal "github.com/northlighthq/boreal/internal/desktop"
 )
 
 const (

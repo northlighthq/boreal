@@ -40,7 +40,7 @@ jobs:
       - name: Benchmarks run once
         shell: bash
         run: |
-          go test ./internal/ui/termview -run '^$' -bench . -benchtime 1x
+          go test ./internal/common/termview -run '^$' -bench . -benchtime 1x
           (cd libs/vt && go test -run '^$' -bench . -benchtime 1x)
 
       - name: Build
@@ -124,7 +124,7 @@ jobs:
 
       - name: Tests
         run: |
-          go test ./internal/backup ./internal/sshx ./internal/vault
+          go test ./internal/core/backup ./internal/core/sshx ./internal/core/vault
           (cd libs/vt && go test ./...)
 
       - name: Fuzz the VT emulator
@@ -132,10 +132,10 @@ jobs:
         run: go test -run '^$' -fuzz '^FuzzTerminal$' -fuzztime 30s .
 
       - name: Fuzz the metrics parser
-        run: go test ./internal/sshx -run '^$' -fuzz '^FuzzParseStats$' -fuzztime 30s
+        run: go test ./internal/core/sshx -run '^$' -fuzz '^FuzzParseStats$' -fuzztime 30s
 
       - name: Fuzz backup files
-        run: go test ./internal/backup -run '^$' -fuzz '^FuzzParse$' -fuzztime 20s
+        run: go test ./internal/core/backup -run '^$' -fuzz '^FuzzParse$' -fuzztime 20s
 
       - name: Fuzz backup import
-        run: go test ./internal/backup -run '^$' -fuzz '^FuzzDecodeAndMerge$' -fuzztime 30s
+        run: go test ./internal/core/backup -run '^$' -fuzz '^FuzzDecodeAndMerge$' -fuzztime 30s

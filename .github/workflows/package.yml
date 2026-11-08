@@ -35,7 +35,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y gcc pkg-config libwayland-dev libx11-dev libx11-xcb-dev libxkbcommon-x11-dev libgles2-mesa-dev libegl1-mesa-dev libffi-dev libxcursor-dev libvulkan-dev
 
       - name: Build
-        run: go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/version.Version=$VERSION" -o build/boreal ./cmd/boreal
+        run: go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/core/version.Version=$VERSION" -o build/boreal ./cmd/boreal
 
       - name: Package AppImage
         env:
@@ -85,7 +85,7 @@ jobs:
             app="build/$arch/Boreal.app"
             mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
             CGO_ENABLED=1 GOARCH=$arch CC="clang -arch $([ "$arch" = amd64 ] && echo x86_64 || echo arm64)" \
-              go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/version.Version=$VERSION" -o "$app/Contents/MacOS/boreal" ./cmd/boreal
+              go build -trimpath -ldflags "-s -w -X github.com/northlighthq/boreal/internal/core/version.Version=$VERSION" -o "$app/Contents/MacOS/boreal" ./cmd/boreal
             sed "s/VERSION/${VERSION%%-*}/g" packaging/macos/Info.plist > "$app/Contents/Info.plist"
             cp build/boreal.icns "$app/Contents/Resources/boreal.icns"
             cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"

@@ -143,16 +143,17 @@ release. Tick *dry run* to build everything without publishing.
 boreal/
 ├── cmd/boreal/            # the app
 ├── internal/
-│   ├── app/               # the window: sidebar, tabs, split panes and wiring
-│   │   ├── core/          # interfaces between the window and its parts
+│   ├── core/              # no UI: sessions, SSH, the vault and everything around them
+│   │   ├── session/       # local and SSH sessions
+│   │   ├── sshx/          # SSH: auth, host keys, jump hosts, forwarding, SFTP, metrics
+│   │   ├── vault/         # encrypted storage
+│   │   └── tunnel/  transfer/  config/  backup/  secure/  sshconfig/  update/ ...
+│   ├── common/            # UI building blocks: kit, termview, theme, icons, toast, fonts ...
+│   ├── desktop/           # the window: sidebar, tabs, split panes and wiring
+│   │   ├── base/          # interfaces between the window and its parts
 │   │   ├── hosts/  keychain/  forwards/  snippets/  knownhosts/  sftp/
 │   │   └── settings/  palette/  welcome/  dialogs/
-│   ├── session/           # local and SSH sessions
-│   ├── sshx/              # SSH: auth, host keys, jump hosts, forwarding, SFTP, metrics
-│   ├── vault/             # encrypted storage
-│   ├── tunnel/  sshconfig/  config/  fonts/  format/  privacy/
-│   ├── platform/          # OS integration: local shells, file drop, keyring
-│   └── ui/                # theme, icons, component kit and widgets (termview, mark...)
+│   └── platform/          # OS integration: local shells, file drop, keyring
 ├── libs/                  # reusable libraries, each with its own go.mod
 │   ├── vt/                # terminal emulator (parser/, input/)
 │   ├── pty/               # pseudo terminals (ConPTY, Unix)
