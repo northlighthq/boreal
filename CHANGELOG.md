@@ -2,6 +2,19 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## Unreleased
+
+### Security
+- When the system keyring isn't available, Boreal asks for a master password instead of saving the vault key unprotected.
+- Changing or removing the master password re-encrypts the vault with a new key.
+- With Windows Hello turned on, Boreal starts locked and asks for it. Settings › Security explains what Hello protects when there's no master password.
+- Host names, addresses and users are quoted when they're inserted into a proxy command.
+- Imported files no longer bring proxy commands, commands run on connect, or tunnels that start on their own or listen beyond this computer. Boreal lists what it left out.
+- Editing a remote file always opens it in a text editor, whatever its extension.
+- The tunnel editor warns when a tunnel listens beyond this computer.
+- Pasting several lines asks first when the shell would run them as they arrive.
+- The master password needs at least 10 characters everywhere.
+
 ## 0.1.1-beta.7 (2026-11-08)
 
 ### Terminal
