@@ -52,6 +52,7 @@ type Settings struct {
 	CopyOnSelect bool
 	Ligatures    bool
 	Highlight    bool
+	Touch        bool
 }
 
 type metrics struct {
@@ -89,10 +90,12 @@ type View struct {
 	cursorImg cursorImage
 	scrollY   float32
 
-	focused    bool
-	wantFocus  bool
-	lastInput  time.Time
-	blinkStart time.Time
+	focused      bool
+	wantFocus    bool
+	wantKeyboard bool
+	touch        touchState
+	lastInput    time.Time
+	blinkStart   time.Time
 
 	sel    selection
 	search search
@@ -105,6 +108,7 @@ type View struct {
 	Extras    func() []Extra
 	Expand    func(word string) (string, bool)
 	OnPaste   func(text string) bool
+	Transform func(text string) string
 	extras    []Extra
 	word      []rune
 
@@ -193,6 +197,8 @@ func (v *View) Layout(gtx layout.Context) layout.Dimensions {
 		v.wantFocus = false
 	}
 
+	v.applyKeyboard(gtx)
+
 	fresh := !v.snapped || gen != v.snapGen || v.offset != v.frame.Offset
 
 	if fresh {
@@ -207,7 +213,7 @@ func (v *View) Layout(gtx layout.Context) layout.Dimensions {
 	paint.ColorOp{Color: v.theme.Background}.Add(gtx.Ops)
 	paint.PaintOp{}.Add(gtx.Ops)
 	event.Op(gtx.Ops, v)
-	key.InputHintOp{Tag: v, Hint: key.HintAny}.Add(gtx.Ops)
+	key.InputHintOp{Tag: v, Hint: v.inputHint()}.Add(gtx.Ops)
 
 	cursor := pointer.CursorText
 
