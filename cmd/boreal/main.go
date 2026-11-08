@@ -8,8 +8,8 @@ import (
 
 	"gioui.org/app"
 
-	boreal "github.com/northlighthq/boreal/internal/app"
-	"github.com/northlighthq/boreal/internal/launch"
+	"github.com/northlighthq/boreal/internal/core/launch"
+	boreal "github.com/northlighthq/boreal/internal/desktop"
 	"github.com/northlighthq/boreal/internal/platform/instance"
 )
 

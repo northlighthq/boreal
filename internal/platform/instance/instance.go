@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/northlighthq/boreal/internal/config"
+	"github.com/northlighthq/boreal/internal/core/config"
 )
 
 const (
