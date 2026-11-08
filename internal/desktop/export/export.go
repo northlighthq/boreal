@@ -274,6 +274,7 @@ func Import(h base.Host) {
 			return
 		}
 
+		defanged := backup.Defang(&data)
 		st, err := h.Vault().Merge(data)
 
 		if err != nil {
@@ -282,6 +283,10 @@ func Import(h base.Host) {
 		}
 
 		h.Toasts().Success("Data imported", summary(st))
+
+		if len(defanged) > 0 {
+			h.Toasts().Info("Commands and tunnels left off", fmt.Sprintf("Proxy commands, commands run on connect and tunnels that start on their own aren't imported, so a shared file can't run anything on this computer. Review: %s.", strings.Join(defanged, ", ")))
+		}
 
 		if st.Conflicts > 0 {
 			h.Toasts().Info("Some host keys were kept", fmt.Sprintf("%d known hosts had a different key in the file; the ones you already trusted were kept.", st.Conflicts))
