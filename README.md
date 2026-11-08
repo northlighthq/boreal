@@ -33,6 +33,8 @@ snippets**) into one calm window, with an activity bar for the tools and the Nor
   WSL and Git Bash.
 - **Font ligatures** (JetBrains Mono, Fira Code), clickable OSC 8 links, OSC 52 copy and
   OSC 7 working folder; **save a session to a log file** as plain text.
+- **Output triggers**: highlight a line, show a notification or play a sound when the
+  output matches a regular expression, for every session, local terminals or one host.
 - **Hosts in folders**: subfolders, drag and drop, tags, search and **`~/.ssh/config`
   import**. Each host shows the **logo of its operating system**, in color or monochrome.
 - **Authentication** with a password, a key from the keychain or the Windows OpenSSH

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -109,6 +110,35 @@ type Snippet struct {
 	Trigger  string `json:"trigger,omitempty"`
 }
 
+const (
+	TriggerLocal   = "local"
+	TriggerRed     = "red"
+	TriggerYellow  = "yellow"
+	TriggerGreen   = "green"
+	TriggerBlue    = "blue"
+	TriggerMagenta = "magenta"
+	TriggerCyan    = "cyan"
+)
+
+var TriggerColors = []string{TriggerRed, TriggerYellow, TriggerGreen, TriggerBlue, TriggerMagenta, TriggerCyan}
+
+type Trigger struct {
+	ID      string `json:"id"`
+	Pattern string `json:"pattern"`
+	Color   string `json:"color,omitempty"`
+	Notify  bool   `json:"notify,omitempty"`
+	Sound   bool   `json:"sound,omitempty"`
+	HostID  string `json:"hostId,omitempty"`
+}
+
+func (t Trigger) Compile() (*regexp.Regexp, error) {
+	if strings.TrimSpace(t.Pattern) == "" {
+		return nil, ErrEmptyPattern
+	}
+
+	return regexp.Compile("(?i)" + t.Pattern)
+}
+
 type KnownHost struct {
 	Host        string    `json:"host"`
 	KeyType     string    `json:"keyType"`
@@ -123,6 +153,7 @@ type Data struct {
 	Keys       []Key       `json:"keys"`
 	Forwards   []Forward   `json:"forwards"`
 	Snippets   []Snippet   `json:"snippets"`
+	Triggers   []Trigger   `json:"triggers,omitempty"`
 	KnownHosts []KnownHost `json:"knownHosts"`
 	Folders    []string    `json:"folders,omitempty"`
 }
@@ -137,7 +168,10 @@ type Vault struct {
 	locked bool
 }
 
-var ErrNotFound = errors.New("vault: not found")
+var (
+	ErrNotFound     = errors.New("vault: not found")
+	ErrEmptyPattern = errors.New("vault: empty trigger pattern")
+)
 
 func Open() (*Vault, error) {
 	dir, err := config.Dir()
@@ -166,6 +200,7 @@ func (v *Vault) Snapshot() Data {
 		Keys:       slices.Clone(v.data.Keys),
 		Forwards:   slices.Clone(v.data.Forwards),
 		Snippets:   slices.Clone(v.data.Snippets),
+		Triggers:   slices.Clone(v.data.Triggers),
 		KnownHosts: slices.Clone(v.data.KnownHosts),
 		Folders:    slices.Clone(v.data.Folders),
 	}
@@ -325,6 +360,20 @@ func (v *Vault) SaveSnippet(s Snippet) (Snippet, error) {
 func (v *Vault) DeleteSnippet(id string) error {
 	return v.update(func(d *Data) {
 		d.Snippets = slices.DeleteFunc(d.Snippets, func(s Snippet) bool { return s.ID == id })
+	})
+}
+
+func (v *Vault) SetTriggers(list []Trigger) error {
+	list = slices.Clone(list)
+
+	for i := range list {
+		if list[i].ID == "" {
+			list[i].ID = NewID()
+		}
+	}
+
+	return v.update(func(d *Data) {
+		d.Triggers = list
 	})
 }
 

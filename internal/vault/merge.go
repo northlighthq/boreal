@@ -40,6 +40,10 @@ func (v *Vault) Merge(in Data) (MergeStats, error) {
 			st.Snippets++
 		}
 
+		for _, t := range in.Triggers {
+			d.Triggers = upsert(d.Triggers, t, func(x Trigger) string { return x.ID })
+		}
+
 		for _, f := range in.Folders {
 			if !slices.Contains(d.Folders, f) {
 				d.Folders = append(d.Folders, f)

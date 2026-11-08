@@ -70,6 +70,7 @@ type View struct {
 
 	set     Settings
 	hlCells []vt.Cell
+	marks   []Mark
 	hlOffs  []int
 	hlAlt   bool
 	m       metrics

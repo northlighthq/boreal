@@ -28,6 +28,7 @@ const (
 	toastInfo toastKind = iota
 	toastSuccess
 	toastError
+	toastNotice
 )
 
 type toast struct {
@@ -71,6 +72,10 @@ func (t *Stack) pushAction(kind toastKind, title, message, label string, action 
 }
 
 func (t *Stack) Info(title, msg string) { t.push(toastInfo, title, msg) }
+
+func (t *Stack) Notice(title, msg, label string, fn func()) {
+	t.pushAction(toastNotice, title, msg, label, fn)
+}
 
 func (t *Stack) Success(title, msg string) { t.push(toastSuccess, title, msg) }
 
@@ -137,6 +142,8 @@ func (t *Stack) Layout(gtx layout.Context, k *kit.Kit) {
 				ic, col = icons.Check, th.Success
 			case toastError:
 				ic, col = icons.Error, th.Danger
+			case toastNotice:
+				ic, col = icons.LucideBell, th.Accent
 			}
 
 			return layout.Flex{}.Layout(gtx,
@@ -153,7 +160,7 @@ func (t *Stack) Layout(gtx layout.Context, k *kit.Kit) {
 							}
 
 							return layout.Inset{Top: 2}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-								return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Size: th.TextSizeSmall, MaxLines: 3}, it.message)
+								return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Size: th.TextSizeSmall, MaxLines: 3, Mono: it.kind == toastNotice}, it.message)
 							})
 						}),
 						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
@@ -162,6 +169,7 @@ func (t *Stack) Layout(gtx layout.Context, k *kit.Kit) {
 							}
 
 							return layout.Inset{Top: 8}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+								gtx.Constraints.Min.X = 0
 								return k.Button(gtx, &it.act, kit.Secondary, nil, it.label)
 							})
 						}),

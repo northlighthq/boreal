@@ -108,6 +108,11 @@ type App struct {
 	rate       trafficRate
 	vaultRev   uint64
 	mu         sync.Mutex
+
+	triggerSrc   []vault.Trigger
+	triggers     []compiledTrigger
+	triggerFired map[triggerKey]time.Time
+	revealing    *Pane
 }
 
 func Run(args []string) error {
@@ -271,10 +276,12 @@ func (a *App) frame(gtx C) {
 	a.applyServerCopies(gtx)
 	a.restoreTabs()
 	a.handleLaunches()
+	a.revealPending()
 
 	if rev := a.vault.Revision(); rev != a.vaultRev {
 		a.vaultRev = rev
 		a.tools.refresh(a)
+		a.applyTriggers()
 	}
 
 	gtx.Constraints.Min = gtx.Constraints.Max

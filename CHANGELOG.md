@@ -5,6 +5,7 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 ## Unreleased
 
 ### Terminal
+- Triggers in Settings › Triggers highlight, notify or play a sound when terminal output matches a regular expression, for every session, local terminals only or one host. A notification's Show button opens the pane. Lines you type don't count.
 - The title of a background tab turns bright when its terminal prints something new, until you open it. Settings › Appearance turns this off.
 
 ### Fixes
