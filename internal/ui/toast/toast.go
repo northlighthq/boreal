@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"gioui.org/font"
+	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -18,8 +20,9 @@ import (
 
 const (
 	toastLife  = 5 * time.Second
-	toastWidth = unit.Dp(340)
+	toastWidth = unit.Dp(360)
 	maxToasts  = 4
+	keyAction  = 0xf0
 )
 
 type toastKind uint8
@@ -29,6 +32,11 @@ const (
 	toastSuccess
 	toastError
 	toastNotice
+)
+
+type (
+	C = layout.Context
+	D = layout.Dimensions
 )
 
 type toast struct {
@@ -49,13 +57,9 @@ type Stack struct {
 	onChange func()
 }
 
-func (t *Stack) push(kind toastKind, title, message string) {
-	t.pushAction(kind, title, message, "", nil)
-}
-
-func (t *Stack) pushAction(kind toastKind, title, message, label string, action func()) {
+func (t *Stack) push(it *toast) {
 	t.mu.Lock()
-	it := &toast{kind: kind, title: title, message: message, born: time.Now(), label: label, action: action}
+	it.born = time.Now()
 	it.appear.Set(0)
 	t.items = append(t.items, it)
 
@@ -71,25 +75,27 @@ func (t *Stack) pushAction(kind toastKind, title, message, label string, action 
 	}
 }
 
-func (t *Stack) Info(title, msg string) { t.push(toastInfo, title, msg) }
+func (t *Stack) Info(title, msg string) { t.push(&toast{kind: toastInfo, title: title, message: msg}) }
 
 func (t *Stack) Notice(title, msg, label string, fn func()) {
-	t.pushAction(toastNotice, title, msg, label, fn)
+	t.push(&toast{kind: toastNotice, title: title, message: msg, label: label, action: fn})
 }
 
-func (t *Stack) Success(title, msg string) { t.push(toastSuccess, title, msg) }
+func (t *Stack) Success(title, msg string) {
+	t.push(&toast{kind: toastSuccess, title: title, message: msg})
+}
 
-func (t *Stack) Error(title, msg string) { t.push(toastError, title, msg) }
+func (t *Stack) Error(title, msg string) { t.push(&toast{kind: toastError, title: title, message: msg}) }
 
 func (t *Stack) SuccessAction(title, msg, label string, fn func()) {
-	t.pushAction(toastSuccess, title, msg, label, fn)
+	t.push(&toast{kind: toastSuccess, title: title, message: msg, label: label, action: fn})
 }
 
 func (t *Stack) ErrorAction(title, msg, label string, fn func()) {
-	t.pushAction(toastError, title, msg, label, fn)
+	t.push(&toast{kind: toastError, title: title, message: msg, label: label, action: fn})
 }
 
-func (t *Stack) Layout(gtx layout.Context, k *kit.Kit) {
+func (t *Stack) Layout(gtx C, k *kit.Kit) {
 	t.mu.Lock()
 	now := time.Now()
 	var live []*toast
@@ -134,51 +140,8 @@ func (t *Stack) Layout(gtx layout.Context, k *kit.Kit) {
 		rec := op.Record(gtx.Ops)
 		g := gtx
 		g.Constraints = layout.Constraints{Min: image.Pt(w, 0), Max: image.Pt(w, size.Y)}
-		dims := layout.UniformInset(12).Layout(g, func(gtx layout.Context) layout.Dimensions {
-			ic, col := icons.Info, th.TextMuted
-
-			switch it.kind {
-			case toastSuccess:
-				ic, col = icons.Check, th.Success
-			case toastError:
-				ic, col = icons.Error, th.Danger
-			case toastNotice:
-				ic, col = icons.LucideBell, th.Accent
-			}
-
-			return layout.Flex{}.Layout(gtx,
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ic.Layout(gtx, 18, col) }),
-				layout.Rigid(kit.Gap(10)),
-				layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							return k.Label(gtx, kit.TextStyle{Weight: font.Medium}, it.title)
-						}),
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							if it.message == "" {
-								return layout.Dimensions{}
-							}
-
-							return layout.Inset{Top: 2}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-								return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Size: th.TextSizeSmall, MaxLines: 3, Mono: it.kind == toastNotice}, it.message)
-							})
-						}),
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							if it.action == nil {
-								return layout.Dimensions{}
-							}
-
-							return layout.Inset{Top: 8}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-								gtx.Constraints.Min.X = 0
-								return k.Button(gtx, &it.act, kit.Secondary, nil, it.label)
-							})
-						}),
-					)
-				}),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return k.IconButtonSized(gtx, &it.close, icons.Close, false, 20, 14, th.TextMuted)
-				}),
-			)
+		dims := layout.Inset{Top: 10, Bottom: 12, Left: 12, Right: 8}.Layout(g, func(gtx C) D {
+			return it.layout(gtx, k)
 		})
 		call := rec.Stop()
 
@@ -187,14 +150,91 @@ func (t *Stack) Layout(gtx layout.Context, k *kit.Kit) {
 		x := size.X - w - gtx.Dp(16) + int(float32(gtx.Dp(40))*(1-ap))
 		off := op.Offset(image.Pt(x, y)).Push(gtx.Ops)
 		opacity := paint.PushOpacity(gtx.Ops, ap)
-		r := image.Rectangle{Max: dims.Size}
-		radius := gtx.Dp(12)
-		k.SurfaceRect(gtx, r, radius, th.Popup, true)
+		k.SurfaceRect(gtx, image.Rectangle{Max: dims.Size}, gtx.Dp(12), th.Popup, true)
 		call.Add(gtx.Ops)
 		opacity.Pop()
 		off.Pop()
 		y -= gtx.Dp(8)
 	}
+}
+
+func (it *toast) layout(gtx C, k *kit.Kit) D {
+	th := k.Th
+	ic, col := icons.Info, th.TextMuted
+
+	switch it.kind {
+	case toastSuccess:
+		ic, col = icons.Check, th.Success
+	case toastError:
+		ic, col = icons.Error, th.Danger
+	case toastNotice:
+		ic, col = icons.LucideBell, th.Accent
+	}
+
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(func(gtx C) D {
+			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(func(gtx C) D { return ic.Layout(gtx, 16, col) }),
+				layout.Rigid(kit.Gap(8)),
+				layout.Flexed(1, func(gtx C) D {
+					return k.Label(gtx, kit.TextStyle{Weight: font.Medium, MaxLines: 1}, it.title)
+				}),
+				layout.Rigid(func(gtx C) D {
+					if it.action == nil {
+						return D{}
+					}
+
+					return layout.Inset{Left: 12, Right: 4}.Layout(gtx, func(gtx C) D { return it.actionLink(gtx, k) })
+				}),
+				layout.Rigid(func(gtx C) D {
+					return k.IconButtonSized(gtx, &it.close, icons.Close, false, 22, 14, th.TextMuted)
+				}),
+			)
+		}),
+		layout.Rigid(func(gtx C) D {
+			if it.message == "" {
+				return D{}
+			}
+
+			if it.kind == toastNotice {
+				return layout.Inset{Top: 8, Right: 4}.Layout(gtx, func(gtx C) D { return it.line(gtx, k) })
+			}
+
+			return layout.Inset{Top: 2, Left: 24, Right: 26}.Layout(gtx, func(gtx C) D {
+				return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Size: th.TextSizeSmall, MaxLines: 3}, it.message)
+			})
+		}),
+	)
+}
+
+func (it *toast) actionLink(gtx C, k *kit.Kit) D {
+	th := k.Th
+	h := k.Hover(gtx, kit.Key(&it.act, keyAction), it.act.Hovered())
+
+	return it.act.Layout(gtx, func(gtx C) D {
+		c := kit.Lerp(th.Accent, th.Text, h)
+		dims := k.Label(gtx, kit.TextStyle{Color: c, Weight: font.Medium, Size: th.TextSizeSmall}, it.label)
+		kit.Cursor(gtx, dims.Size, pointer.CursorPointer)
+		return dims
+	})
+}
+
+func (it *toast) line(gtx C, k *kit.Kit) D {
+	th := k.Th
+	gtx.Constraints.Min.X = gtx.Constraints.Max.X
+
+	rec := op.Record(gtx.Ops)
+	dims := layout.Inset{Top: 7, Bottom: 7, Left: 10, Right: 10}.Layout(gtx, func(gtx C) D {
+		return k.Label(gtx, kit.TextStyle{Color: th.Foreground, Size: th.TextSizeSmall, MaxLines: 2, Mono: true}, it.message)
+	})
+	call := rec.Stop()
+
+	r := image.Rectangle{Max: dims.Size}
+	area := clip.UniformRRect(r, gtx.Dp(6)).Push(gtx.Ops)
+	kit.Rect(gtx, r, th.Background)
+	area.Pop()
+	call.Add(gtx.Ops)
+	return dims
 }
 
 func (t *Stack) OnChange(fn func()) {
