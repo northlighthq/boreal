@@ -2,7 +2,7 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## 0.1.1-beta.7 (2026-11-08)
 
 ### Terminal
 - Triggers in Settings › Triggers highlight, notify or play a sound when terminal output matches a regular expression, for every session, local terminals only or one host. A notification's Show button opens the pane. Lines you type don't count.
