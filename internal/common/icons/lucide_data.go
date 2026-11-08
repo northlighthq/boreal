@@ -1,6 +1,8 @@
 package icons
 
 var lucidePaths = map[string]string{
+	"lucide-arrow-left":  "M12 19L5 12L12 5 M19 12L5 12",
+	"lucide-ellipsis-vertical": "M12 11a1 1 0 1 0 0 2a1 1 0 1 0 0 -2z M12 4a1 1 0 1 0 0 2a1 1 0 1 0 0 -2z M12 18a1 1 0 1 0 0 2a1 1 0 1 0 0 -2z",
 	"lucide-bell":        "M10.268 21a2 2 0 0 0 3.464 0 M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326",
 	"lucide-cable":       "M17 21v-2a1 1 0 0 1-1-1v-1a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1 M19 15V6.5a1 1 0 0 0-7 0v11a1 1 0 0 1-7 0V9 M21 21v-2h-4 M3 5h4V3 M7 5a1 1 0 0 1 1 1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1V3",
 	"lucide-corner-down-right": "M15 10l5 5l-5 5 M4 4v7a4 4 0 0 0 4 4h12",

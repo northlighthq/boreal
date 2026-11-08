@@ -16,6 +16,8 @@ var (
 	LucideFingerprint = lucide("fingerprint")
 	LucideGear        = lucide("settings")
 	LucideBell        = lucide("bell")
+	LucideArrowLeft   = lucide("arrow-left")
+	LucideMore        = lucide("ellipsis-vertical")
 	Nested            = lucide("corner-down-right")
 	FolderOutline     = tabler("folder")
 	FolderFilled      = tablerFilled("folder")
