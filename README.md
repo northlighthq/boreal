@@ -136,6 +136,8 @@ boreal/
 │   │   ├── hosts/  keychain/  forwards/  snippets/  knownhosts/  sftp/
 │   │   └── settings/  palette/  welcome/  dialogs/
 │   ├── mobile/            # the Android app: screens, navigation and touch controls
+│   │   ├── ui/  nav/      # mobile design system and screen stack
+│   │   └── hosts/  terminal/  keys/  snippets/  settings/  lock/
 │   └── platform/          # OS integration: local shells, file drop, keyring, Hello
 ├── libs/                  # reusable libraries, each with its own go.mod
 │   ├── vt/                # terminal emulator (parser/, input/)
