@@ -23,6 +23,7 @@ import (
 	"github.com/northlighthq/boreal/internal/common/theme"
 	"github.com/northlighthq/boreal/internal/core/config"
 	"github.com/northlighthq/boreal/internal/core/sshconfig"
+	"github.com/northlighthq/boreal/internal/core/vault"
 	"github.com/northlighthq/boreal/internal/desktop/base"
 	"github.com/northlighthq/boreal/internal/desktop/hosts"
 )
@@ -43,7 +44,7 @@ const (
 )
 
 const (
-	minPassword = 10
+	minPassword = vault.MinPassword
 	columnWidth = 560
 )
 

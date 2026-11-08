@@ -272,3 +272,12 @@ func Describe(r vault.Forward) string {
 		return fmt.Sprintf("SOCKS5 on %s:%d", bind, r.BindPort)
 	}
 }
+
+func Loopback(addr string) bool {
+	if addr == "" || addr == "localhost" {
+		return true
+	}
+
+	ip := net.ParseIP(addr)
+	return ip != nil && ip.IsLoopback()
+}

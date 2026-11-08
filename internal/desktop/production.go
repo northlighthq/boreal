@@ -37,19 +37,30 @@ func (a *App) tabProtected(t *Tab) bool {
 func (a *App) guardPaste(p *Pane, text string) bool {
 	lines := strings.Count(strings.TrimRight(text, "\r\n"), "\n") + 1
 
-	if lines < 2 || !a.protected(p) {
+	protected := a.protected(p)
+
+	if lines < 2 || (!protected && p.view.BracketedPaste()) {
 		return false
 	}
 
-	h, _ := a.paneHost(p)
+	title := p.sess.Title()
+
+	if h, ok := a.paneHost(p); ok {
+		title = h.Title()
+	}
 	preview := strings.Split(strings.TrimRight(text, "\r\n"), "\n")
 
 	if len(preview) > pasteSample {
 		preview = append(preview[:pasteSample], "…")
 	}
 
-	msg := fmt.Sprintf("%s is a protected host. You're about to paste %d lines:\n%s", h.Title(), lines, strings.Join(preview, "\n"))
-	a.Open(dialogs.NewConfirm(a.kit, "Paste into "+h.Title()+"?", msg, "Paste", func() {
+	msg := fmt.Sprintf("Each line runs as soon as it arrives. You're about to paste %d lines:\n%s", lines, strings.Join(preview, "\n"))
+
+	if protected {
+		msg = fmt.Sprintf("%s is a protected host. You're about to paste %d lines:\n%s", title, lines, strings.Join(preview, "\n"))
+	}
+
+	a.Open(dialogs.NewConfirm(a.kit, "Paste into "+title+"?", msg, "Paste", func() {
 		p.view.Paste(text)
 		p.view.Focus()
 	}))

@@ -143,7 +143,7 @@ func (c *client) find(id string) ([]dbus.ObjectPath, error) {
 	return append(unlocked, locked...), nil
 }
 
-func Set(id, label string, value []byte) error {
+func systemSet(id, label string, value []byte) error {
 	c, err := connect()
 
 	if err != nil {
@@ -174,7 +174,7 @@ func Set(id, label string, value []byte) error {
 	return c.prompt(prompt)
 }
 
-func Get(id string) ([]byte, error) {
+func systemGet(id string) ([]byte, error) {
 	c, err := connect()
 
 	if err != nil {
@@ -206,7 +206,7 @@ func Get(id string) ([]byte, error) {
 	return s.Value, nil
 }
 
-func Delete(id string) error {
+func systemDelete(id string) error {
 	c, err := connect()
 
 	if err != nil {

@@ -85,7 +85,7 @@ func status(st C.OSStatus) error {
 	return fmt.Errorf("keyring: keychain error %d", int(st))
 }
 
-func Set(id, label string, value []byte) error {
+func systemSet(id, label string, value []byte) error {
 	cs, ca, cl := C.CString(service), C.CString(id), C.CString(label)
 	defer C.free(unsafe.Pointer(cs))
 	defer C.free(unsafe.Pointer(ca))
@@ -100,7 +100,7 @@ func Set(id, label string, value []byte) error {
 	return status(C.kr_set(cs, ca, cl, p, C.int(len(value))))
 }
 
-func Get(id string) ([]byte, error) {
+func systemGet(id string) ([]byte, error) {
 	cs, ca := C.CString(service), C.CString(id)
 	defer C.free(unsafe.Pointer(cs))
 	defer C.free(unsafe.Pointer(ca))
@@ -121,7 +121,7 @@ func Get(id string) ([]byte, error) {
 	return C.GoBytes(out, n), nil
 }
 
-func Delete(id string) error {
+func systemDelete(id string) error {
 	cs, ca := C.CString(service), C.CString(id)
 	defer C.free(unsafe.Pointer(cs))
 	defer C.free(unsafe.Pointer(ca))

@@ -42,10 +42,17 @@ func (c *cmdConn) SetWriteDeadline(time.Time) error { return nil }
 func (c *cmdConn) Write(p []byte) (int, error)      { return c.WriteCloser.Write(p) }
 func (c *cmdConn) Read(p []byte) (int, error)       { return c.Reader.Read(p) }
 
-var errEmptyProxy = errors.New("the proxy command is empty")
+var (
+	errEmptyProxy  = errors.New("the proxy command is empty")
+	errUnsafeProxy = errors.New("the host's name, address or user has characters that aren't safe in a proxy command")
+)
 
 func proxyConn(h vault.Host) (net.Conn, error) {
-	line := ProxyCommandLine(h)
+	line, err := ProxyCommandLine(h)
+
+	if err != nil {
+		return nil, err
+	}
 
 	if strings.TrimSpace(line) == "" {
 		return nil, errEmptyProxy
@@ -71,7 +78,7 @@ func proxyConn(h vault.Host) (net.Conn, error) {
 	return &cmdConn{Reader: stdout, WriteCloser: stdin, cmd: cmd}, nil
 }
 
-func ProxyCommandLine(h vault.Host) string {
+func ProxyCommandLine(h vault.Host) (string, error) {
 	vars := map[byte]string{
 		'h': h.Address,
 		'p': strconv.Itoa(port(h)),
@@ -96,7 +103,13 @@ func ProxyCommandLine(h vault.Host) string {
 		}
 
 		if v, ok := vars[s[i]]; ok {
-			b.WriteString(v)
+			q, ok := quoteArg(v)
+
+			if !ok {
+				return "", errUnsafeProxy
+			}
+
+			b.WriteString(q)
 			continue
 		}
 
@@ -104,5 +117,5 @@ func ProxyCommandLine(h vault.Host) string {
 		b.WriteByte(s[i])
 	}
 
-	return b.String()
+	return b.String(), nil
 }

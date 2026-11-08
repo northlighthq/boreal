@@ -58,7 +58,7 @@ func writeLegacy(t *testing.T, withOS bool) (string, []byte) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(t.TempDir(), vaultFile)
+	path := filepath.Join(t.TempDir(), FileName)
 
 	if err := os.WriteFile(path, raw, 0o600); err != nil {
 		t.Fatal(err)
@@ -168,7 +168,7 @@ func TestLegacyVaultWithOSKeyUpgrades(t *testing.T) {
 }
 
 func TestNewerVaultIsRejected(t *testing.T) {
-	path := filepath.Join(t.TempDir(), vaultFile)
+	path := filepath.Join(t.TempDir(), FileName)
 	raw, _ := json.Marshal(envelope{Format: fileFormat, Version: fileVersion + 1})
 
 	if err := os.WriteFile(path, raw, 0o600); err != nil {

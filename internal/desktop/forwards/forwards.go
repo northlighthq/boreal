@@ -471,6 +471,13 @@ func (e *Editor) Layout(gtx C) bool {
 		}),
 	}
 
+	if e.kind.Value != 1 && !sshx.Loopback(strings.TrimSpace(e.bindAddr.Text())) {
+		children = append(children, row("", func(gtx C) D {
+			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.Danger, MaxLines: 3},
+				"Other devices on your network can use this tunnel. A SOCKS tunnel has no password, so anyone who reaches it can browse through the server.")
+		}))
+	}
+
 	if e.kind.Value != 2 {
 		children = append(children, row("Destination", func(gtx C) D {
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,

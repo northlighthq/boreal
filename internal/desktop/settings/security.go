@@ -14,7 +14,7 @@ import (
 	"github.com/northlighthq/boreal/internal/desktop/base"
 )
 
-const minMasterPassword = 10
+const minMasterPassword = vault.MinPassword
 
 var lockAfterMinutes = []int{0, 1, 5, 15, 30, 60, 120, 240}
 
@@ -155,7 +155,11 @@ func (d *Dialog) securityPage(a base.Host, gtx C, row func(string, layout.Widget
 	children := []layout.FlexChild{section("Lock")}
 
 	if helloRow {
-		children = append(children, row("Windows Hello", toggle(&s.hello, "Ask for Windows Hello to unlock Boreal")))
+		children = append(children, row("Windows Hello", toggle(&s.hello, "Ask for Windows Hello to open and unlock Boreal")))
+
+		if !has {
+			children = append(children, row("", muted("Windows Hello locks Boreal's window, but programs running as you could still read the vault. Set a master password to encrypt it with something only you know.")))
+		}
 	}
 
 	if canLock {
