@@ -15,6 +15,14 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 - Pasting several lines asks first when the shell would run them as they arrive.
 - The master password needs at least 10 characters everywhere.
 
+### Terminal
+- Ctrl+Backspace deletes the word before the cursor and Ctrl+Delete the word after it, over SSH and in local shells. Full screen programs like vim still get the usual keys.
+
+### Interface
+- With more tabs than fit, the tab bar no longer swaps tabs around when you pick a hidden one. It scrolls just enough to show it, and the mouse wheel scrolls it too.
+- Closing tabs with the close button keeps the others the same width until the pointer leaves the tab bar, so the next close button stays under it.
+- Middle click closes a tab, and the tab menu can close every tab to the right.
+
 ## 0.1.1-beta.7 (2026-11-08)
 
 ### Terminal
