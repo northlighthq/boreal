@@ -25,6 +25,8 @@ const (
 	scrollMax      = 1 << 20
 	altScrollLines = 3
 	multiClick     = 450 * time.Millisecond
+	wordBack       = "\x1b\x7f"
+	wordForward    = "\x1bd"
 )
 
 const allMods = key.ModCtrl | key.ModShift | key.ModAlt | key.ModSuper
@@ -131,6 +133,11 @@ func (v *View) handleKey(gtx layout.Context, e key.Event) {
 		return
 	}
 
+	if seq, ok := v.wordKey(e); ok {
+		v.send([]byte(seq))
+		return
+	}
+
 	mods := toMod(e.Modifiers)
 
 	if k, ok := specialKeys[e.Name]; ok {
@@ -194,6 +201,21 @@ func (v *View) shortcut(gtx layout.Context, e key.Event) bool {
 	}
 
 	return true
+}
+
+func (v *View) wordKey(e key.Event) (string, bool) {
+	if e.Modifiers != key.ModCtrl || v.ConPTY || v.modes.AltScreen {
+		return "", false
+	}
+
+	switch e.Name {
+	case key.NameDeleteBackward:
+		return wordBack, true
+	case key.NameDeleteForward:
+		return wordForward, true
+	}
+
+	return "", false
 }
 
 func keyRune(e key.Event) (rune, bool) {

@@ -2,6 +2,7 @@ package desktop
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 
@@ -73,6 +74,7 @@ func (a *App) termSettings() termview.Settings {
 func (a *App) newPane(s *session.Session) *Pane {
 	p := &Pane{sess: s, icon: icons.Terminal, color: a.th().TextMuted}
 	p.view = termview.New(s, a.kit, a.glyphs, a.termSettings())
+	p.view.ConPTY = s.Kind == session.Local && runtime.GOOS == "windows"
 	p.view.OnOpenURL = func(link string) {
 		if !openURL(link) {
 			a.toasts.Error("Link not opened", "Boreal only opens http and https links.")

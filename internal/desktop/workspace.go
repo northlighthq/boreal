@@ -274,6 +274,25 @@ func (w *workspace) closeTab(i int) {
 	w.focusActive()
 }
 
+func (w *workspace) closeTabOf(t *Tab) {
+	for i, x := range w.tabs {
+		if x == t {
+			w.closeTab(i)
+			return
+		}
+	}
+}
+
+func (w *workspace) closingTabs() bool {
+	for _, t := range w.tabs {
+		if t.closing {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (w *workspace) neighbor(i int) int {
 	for d := 1; d < len(w.tabs); d++ {
 		for _, j := range []int{i + d, i - d} {
