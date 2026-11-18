@@ -21,6 +21,7 @@ const (
 	tabMenuSep
 	tabMenuClose
 	tabMenuCloseOthers
+	tabMenuCloseRight
 )
 
 const tabDragThreshold = 6
@@ -93,6 +94,11 @@ func (c *chrome) trackTab(a *App, gtx C, t *Tab, x int, size image.Point) {
 		case pointer.Press:
 			if e.Buttons.Contain(pointer.ButtonSecondary) {
 				c.openTabMenu(a, t, image.Pt(x+int(e.Position.X), int(e.Position.Y)+gtx.Dp(30)))
+				continue
+			}
+
+			if e.Buttons.Contain(pointer.ButtonTertiary) {
+				a.ws.closeTabOf(t)
 				continue
 			}
 
@@ -171,6 +177,7 @@ func (c *chrome) openTabMenu(a *App, t *Tab, at image.Point) {
 		tabMenuSep:         kit.Separator(),
 		tabMenuClose:       {Label: "Close", Icon: icons.Close},
 		tabMenuCloseOthers: {Label: "Close other tabs", Disabled: len(a.ws.tabs) < 2},
+		tabMenuCloseRight:  {Label: "Close tabs to the right", Disabled: a.ws.tabs[len(a.ws.tabs)-1] == t},
 	}, at)
 }
 
@@ -188,11 +195,10 @@ func (c *chrome) handleTabMenu(a *App) {
 	case tabMenuDuplicate:
 		a.duplicateTab(t)
 	case tabMenuClose:
-		for j, x := range a.ws.tabs {
-			if x == t {
-				a.ws.closeTab(j)
-				return
-			}
+		a.ws.closeTabOf(t)
+	case tabMenuCloseRight:
+		for j := len(a.ws.tabs) - 1; j >= 0 && a.ws.tabs[j] != t; j-- {
+			a.ws.closeTab(j)
 		}
 	case tabMenuCloseOthers:
 		for j := len(a.ws.tabs) - 1; j >= 0; j-- {
