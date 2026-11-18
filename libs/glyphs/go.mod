@@ -1,6 +1,6 @@
 module github.com/northlighthq/glyphs
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/go-text/typesetting v0.3.5

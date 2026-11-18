@@ -1,6 +1,6 @@
 module github.com/northlighthq/boreal
 
-go 1.26.10
+go 1.26.11
 
 require (
 	gioui.org v0.10.3
