@@ -57,6 +57,7 @@ type chrome struct {
 	renaming   *Tab
 	rename     kit.InlineEdit
 	tabPos     map[*Tab][2]int
+	strip      tabStrip
 	splitR     widget.Clickable
 	splitD     widget.Clickable
 	toolPanel  widget.Clickable

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gioui.org/f32"
+	"gioui.org/io/event"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -21,9 +22,21 @@ import (
 )
 
 const (
-	tabHeight = unit.Dp(36)
-	tabInfoW  = unit.Dp(320)
+	tabHeight       = unit.Dp(36)
+	tabInfoW        = unit.Dp(320)
+	stripScrollStep = unit.Dp(48)
+	stripScrollMax  = 1 << 20
 )
+
+type tabStrip struct {
+	over     bool
+	scrolled bool
+	wheel    float32
+	first    int
+	held     int
+	width    int
+	seen     *Tab
+}
 
 func (c *chrome) tabStrip(a *App, gtx C) D {
 	k := a.kit
@@ -60,14 +73,13 @@ func (c *chrome) tabStrip(a *App, gtx C) D {
 		w = min(maxW, (avail-b2i(fit < n)*more)/fit)
 	}
 
+	c.stripEvents(gtx, w, n-fit)
+	w = c.holdWidth(a, w)
+	first := c.tabWindow(a, n, fit)
 	visible := make([]int, 0, fit)
 
-	for i := 0; i < n && len(visible) < fit; i++ {
+	for i := first; i < n && len(visible) < fit; i++ {
 		visible = append(visible, i)
-	}
-
-	if act := a.ws.active; fit < n && act >= fit {
-		visible[len(visible)-1] = act
 	}
 
 	shown := map[int]bool{}
@@ -179,7 +191,93 @@ func (c *chrome) tabStrip(a *App, gtx C) D {
 	k.IconButtonSized(gtx, &c.newTab, icons.PlusOutline, false, 28, 16, th.TextMuted)
 	st.Pop()
 
-	return D{Size: image.Pt(max(x+plus, gtx.Constraints.Max.X), h)}
+	size := image.Pt(max(x+plus, gtx.Constraints.Max.X), h)
+	area := clip.Rect{Max: size}.Push(gtx.Ops)
+	pass := pointer.PassOp{}.Push(gtx.Ops)
+	event.Op(gtx.Ops, &c.strip)
+	pass.Pop()
+	area.Pop()
+
+	return D{Size: size}
+}
+
+func (c *chrome) stripEvents(gtx C, w, overflow int) {
+	for {
+		ev, ok := gtx.Event(pointer.Filter{
+			Target:  &c.strip,
+			Kinds:   pointer.Enter | pointer.Leave | pointer.Move | pointer.Cancel | pointer.Scroll,
+			ScrollX: pointer.ScrollRange{Min: -stripScrollMax, Max: stripScrollMax},
+			ScrollY: pointer.ScrollRange{Min: -stripScrollMax, Max: stripScrollMax},
+		})
+
+		if !ok {
+			return
+		}
+
+		e, ok := ev.(pointer.Event)
+
+		if !ok {
+			continue
+		}
+
+		switch e.Kind {
+		case pointer.Enter, pointer.Move:
+			c.strip.over = true
+		case pointer.Leave, pointer.Cancel:
+			c.strip.over = false
+		case pointer.Scroll:
+			c.scrollTabs(e.Scroll.X+e.Scroll.Y, float32(gtx.Dp(stripScrollStep)), overflow)
+		}
+	}
+}
+
+func (c *chrome) scrollTabs(delta, step float32, overflow int) {
+	if overflow <= 0 {
+		c.strip.wheel = 0
+		return
+	}
+
+	c.strip.wheel += delta
+	steps := int(c.strip.wheel / step)
+
+	if steps == 0 {
+		return
+	}
+
+	c.strip.wheel -= float32(steps) * step
+	c.strip.first = min(max(c.strip.first+steps, 0), overflow)
+	c.strip.scrolled = true
+}
+
+func (c *chrome) tabWindow(a *App, n, fit int) int {
+	if t := a.ws.current(); t != c.strip.seen {
+		c.strip.seen = t
+		c.strip.scrolled = false
+	}
+
+	if act := a.ws.active; !c.strip.scrolled && act >= 0 {
+		c.strip.first = min(c.strip.first, act)
+		c.strip.first = max(c.strip.first, act-fit+1)
+	}
+
+	c.strip.first = min(max(c.strip.first, 0), max(n-fit, 0))
+	return c.strip.first
+}
+
+func (c *chrome) holdWidth(a *App, w int) int {
+	switch {
+	case !c.strip.over:
+		c.strip.held = 0
+	case c.strip.held == 0 && a.ws.closingTabs():
+		c.strip.held = c.strip.width
+	}
+
+	if c.strip.held > 0 {
+		return min(w, c.strip.held)
+	}
+
+	c.strip.width = w
+	return w
 }
 
 func (c *chrome) moreTabsButton(a *App, gtx C, hidden int) D {
