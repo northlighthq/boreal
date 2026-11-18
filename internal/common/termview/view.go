@@ -108,6 +108,7 @@ type View struct {
 	extras    []Extra
 	word      []rune
 
+	ConPTY    bool
 	Debug     bool
 	lastFrame time.Duration
 }
