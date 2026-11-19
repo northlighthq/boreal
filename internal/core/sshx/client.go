@@ -5,24 +5,20 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"os"
-	"runtime"
 	"strconv"
 	"sync"
 	"time"
 
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/agent"
 
 	"github.com/northlighthq/boreal/internal/core/vault"
 )
 
 const (
-	dialTimeout      = 15 * time.Second
-	windowsAgentPipe = `\\.\pipe\openssh-ssh-agent`
-	termType         = "xterm-256color"
+	dialTimeout = 15 * time.Second
+	termType    = "xterm-256color"
 )
 
 var ErrHostKeyRejected = errors.New("server key rejected")
@@ -229,8 +225,8 @@ func authMethods(t Target, hooks Hooks) ([]ssh.AuthMethod, func()) {
 	onlyKey := t.Host.IdentitiesOnly && t.Host.Auth == vault.AuthKey && t.Key != nil
 
 	if !onlyKey {
-		if ag, closeFn, err := dialAgent(); err == nil {
-			methods = append(methods, ssh.PublicKeysCallback(ag.Signers))
+		if ag, closeFn, err := dialAgent(t.Host.Agent); err == nil {
+			methods = append(methods, ssh.PublicKeysCallback(agentSigners(ag, t.Host.AgentKey, progress)))
 			cleanup = closeFn
 		}
 	}
@@ -271,40 +267,6 @@ func authMethods(t Target, hooks Hooks) ([]ssh.AuthMethod, func()) {
 	}
 
 	return methods, cleanup
-}
-
-func dialAgent() (agent.ExtendedAgent, func(), error) {
-	var rw io.ReadWriteCloser
-	var err error
-
-	if sock := os.Getenv("SSH_AUTH_SOCK"); sock != "" && runtime.GOOS != "windows" {
-		rw, err = net.Dial("unix", sock)
-	} else if runtime.GOOS == "windows" {
-		rw, err = os.OpenFile(windowsAgentPipe, os.O_RDWR, 0)
-
-		if err != nil {
-			rw, err = dialPageant()
-		}
-	} else {
-		err = errors.New("no agent")
-	}
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return agent.NewClient(rw), func() { rw.Close() }, nil
-}
-
-func AgentAvailable() bool {
-	_, closeFn, err := dialAgent()
-
-	if err != nil {
-		return false
-	}
-
-	closeFn()
-	return true
 }
 
 func hostKeyCallback(v *vault.Vault, hooks Hooks) ssh.HostKeyCallback {

@@ -50,6 +50,8 @@ type Host struct {
 	ForwardAgent   bool      `json:"forwardAgent,omitempty"`
 	ProxyCommand   string    `json:"proxyCommand,omitempty"`
 	IdentitiesOnly bool      `json:"identitiesOnly,omitempty"`
+	Agent          string    `json:"agent,omitempty"`
+	AgentKey       string    `json:"agentKey,omitempty"`
 	Tmux           string    `json:"tmux,omitempty"`
 	OS             string    `json:"os,omitempty"`
 	Created        time.Time `json:"created"`
