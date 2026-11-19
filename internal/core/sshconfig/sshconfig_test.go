@@ -189,7 +189,7 @@ Host tunnel
 func TestFormatRoundTrip(t *testing.T) {
 	in := []Entry{
 		{Alias: "a", HostName: "a.example.com", User: "me", Port: 2222, Jump: []string{"b", "c"}, IdentitiesOnly: true},
-		{Alias: "b", HostName: "b.example.com", Port: 22, ProxyCommand: "nc %h %p", ForwardAgent: true},
+		{Alias: "b", HostName: "b.example.com", Port: 22, ProxyCommand: "nc %h %p", ForwardAgent: true, Agent: "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"},
 	}
 
 	path := write(t, t.TempDir(), "config", Format(in))
@@ -205,7 +205,7 @@ func TestFormatRoundTrip(t *testing.T) {
 		t.Fatalf("a: %+v", a)
 	}
 
-	if b.ProxyCommand != "nc %h %p" || !b.ForwardAgent {
+	if b.ProxyCommand != "nc %h %p" || !b.ForwardAgent || b.Agent != "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" {
 		t.Fatalf("b: %+v", b)
 	}
 }

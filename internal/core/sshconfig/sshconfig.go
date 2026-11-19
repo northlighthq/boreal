@@ -28,6 +28,7 @@ const (
 	keyCertificate    = "certificatefile"
 	keyIdentitiesOnly = "identitiesonly"
 	keyForwardAgent   = "forwardagent"
+	keyIdentityAgent  = "identityagent"
 	keyProxyJump      = "proxyjump"
 	keyProxyCommand   = "proxycommand"
 )
@@ -40,6 +41,7 @@ var supported = map[string]struct{}{
 	keyCertificate:    {},
 	keyIdentitiesOnly: {},
 	keyForwardAgent:   {},
+	keyIdentityAgent:  {},
 	keyProxyJump:      {},
 	keyProxyCommand:   {},
 }
@@ -76,6 +78,7 @@ type Entry struct {
 	Certificate    string
 	IdentitiesOnly bool
 	ForwardAgent   bool
+	Agent          string
 	ProxyCommand   string
 	Jump           []string
 }
@@ -365,6 +368,8 @@ func (s *state) apply(key string, args []string) {
 		s.entry.IdentitiesOnly = yes(val)
 	case keyForwardAgent:
 		s.entry.ForwardAgent = yes(val)
+	case keyIdentityAgent:
+		s.entry.Agent = val
 	case keyProxyJump:
 		if strings.EqualFold(val, none) {
 			return
@@ -608,6 +613,10 @@ func Format(entries []Entry) string {
 
 		if e.ForwardAgent {
 			b.WriteString("    ForwardAgent yes\n")
+		}
+
+		if e.Agent != "" {
+			b.WriteString("    IdentityAgent " + quoted(e.Agent) + "\n")
 		}
 
 		if len(e.Jump) > 0 {

@@ -77,6 +77,10 @@ func (imp *sshImport) host(e sshconfig.Entry) {
 		h.ProxyCommand = e.ProxyCommand
 	}
 
+	if sshx.LocalAgentPath(e.Agent) {
+		h.Agent = e.Agent
+	}
+
 	if h.Address == "" {
 		h.Address = e.Alias
 	}
