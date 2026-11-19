@@ -20,6 +20,7 @@ import (
 type SheetItem struct {
 	Icon   *icons.Icon
 	Label  string
+	Value  string
 	Danger bool
 	Do     func()
 }
@@ -116,6 +117,7 @@ func (s *Sheet) Layout(gtx C, k *kit.Kit) bool {
 
 				return Row(gtx, k, &s.clks[i], RowOpts{
 					Title:  it.Label,
+					Value:  it.Value,
 					Danger: it.Danger,
 					Lead: func(gtx C) D {
 						return layout.Inset{Left: 8}.Layout(gtx, func(gtx C) D { return it.Icon.Layout(gtx, 22, fg) })
