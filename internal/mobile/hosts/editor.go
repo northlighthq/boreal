@@ -21,23 +21,27 @@ const (
 
 var authLabels = []string{"Password", "SSH key"}
 
+const agentNote = "This host signs in with the SSH agent on your computer. Choose Password or SSH key to sign in from this phone."
+
 type Editor struct {
 	h     ui.Host
 	host  vault.Host
 	isNew bool
 
-	label    widget.Editor
-	address  widget.Editor
-	port     widget.Editor
-	user     widget.Editor
-	password widget.Editor
-	folder   widget.Editor
-	startup  widget.Editor
-	auth     ui.Segmented
-	keyID    string
-	keyRows  map[string]*widget.Clickable
-	reveal   widget.Clickable
-	shown    bool
+	label     widget.Editor
+	address   widget.Editor
+	port      widget.Editor
+	user      widget.Editor
+	password  widget.Editor
+	folder    widget.Editor
+	startup   widget.Editor
+	auth      ui.Segmented
+	startAuth int
+	authSet   bool
+	keyID     string
+	keyRows   map[string]*widget.Clickable
+	reveal    widget.Clickable
+	shown     bool
 
 	save    widget.Clickable
 	saveBar widget.Clickable
@@ -71,7 +75,23 @@ func NewEditor(h ui.Host, host vault.Host) *Editor {
 		e.auth.Value = authKey
 	}
 
+	e.startAuth = e.auth.Value
 	return e
+}
+
+func (e *Editor) keepsAgent() bool {
+	return e.host.Auth == vault.AuthAgent && !e.authSet && e.password.Text() == e.host.Password
+}
+
+func authFor(keepAgent bool, choice int, keyID, password string) (string, string, string) {
+	switch {
+	case keepAgent:
+		return vault.AuthAgent, "", ""
+	case choice == authKey:
+		return vault.AuthKey, keyID, ""
+	}
+
+	return vault.AuthPassword, "", password
 }
 
 func (e *Editor) Title() string {
@@ -106,6 +126,10 @@ func (e *Editor) Layout(gtx C) D {
 
 	if e.remove.Clicked(gtx) {
 		confirmDelete(e.h, e.host, e.h.Pop)
+	}
+
+	if e.auth.Value != e.startAuth {
+		e.authSet = true
 	}
 
 	addrErr := e.tried && strings.TrimSpace(e.address.Text()) == ""
@@ -144,6 +168,10 @@ func (e *Editor) Layout(gtx C) D {
 			return ui.Field(gtx, k, &e.port, ui.FieldOpts{Label: "Port", Hint: "22", Invalid: portErr, Help: help})
 		},
 		func(gtx C) D { return e.auth.Layout(gtx, k, authLabels) },
+	}
+
+	if e.keepsAgent() {
+		children = append(children, func(gtx C) D { return ui.Caption(gtx, k, agentNote) })
 	}
 
 	if e.auth.Value == authPassword {
@@ -253,11 +281,7 @@ func (e *Editor) submit() {
 		h.Port, _ = strconv.Atoi(p)
 	}
 
-	if e.auth.Value == authKey {
-		h.Auth, h.KeyID, h.Password = vault.AuthKey, e.keyID, ""
-	} else {
-		h.Auth, h.KeyID, h.Password = vault.AuthPassword, "", e.password.Text()
-	}
+	h.Auth, h.KeyID, h.Password = authFor(e.keepsAgent(), e.auth.Value, e.keyID, e.password.Text())
 
 	if _, err := e.h.Vault().SaveHost(h); err != nil {
 		e.h.Notify("Couldn't save the host", err.Error())
