@@ -9,6 +9,7 @@ import (
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/core/config"
 	"github.com/northlighthq/boreal/internal/core/vault"
 	"github.com/northlighthq/boreal/internal/mobile/keys"
 	"github.com/northlighthq/boreal/internal/mobile/ui"
@@ -43,11 +44,10 @@ type Editor struct {
 	reveal    widget.Clickable
 	shown     bool
 
-	save    widget.Clickable
-	saveBar widget.Clickable
-	remove  widget.Clickable
-	list    widget.List
-	tried   bool
+	save   widget.Clickable
+	remove widget.Clickable
+	list   widget.List
+	tried  bool
 }
 
 func NewEditor(h ui.Host, host vault.Host) *Editor {
@@ -103,16 +103,12 @@ func (e *Editor) Title() string {
 }
 
 func (e *Editor) Actions() []ui.Action {
-	return []ui.Action{{Icon: icons.Check, Click: &e.save, Do: e.submit}}
+	return []ui.Action{{Icon: icons.Check, Click: &e.save, Do: e.submit, Primary: true}}
 }
 
 func (e *Editor) Layout(gtx C) D {
 	k := e.h.Kit()
 	th := k.Th
-
-	if e.saveBar.Clicked(gtx) {
-		e.submit()
-	}
 
 	if e.reveal.Clicked(gtx) {
 		e.shown = !e.shown
@@ -142,71 +138,70 @@ func (e *Editor) Layout(gtx C) D {
 		}
 	}
 
-	children := []ui.W{
-		func(gtx C) D {
-			return ui.Field(gtx, k, &e.label, ui.FieldOpts{Label: "Name", Hint: "Production web"})
-		},
-		func(gtx C) D {
-			help := ""
-
-			if addrErr {
-				help = "Enter the server's address or name."
-			}
-
-			return ui.Field(gtx, k, &e.address, ui.FieldOpts{Label: "Address", Hint: "203.0.113.10 or server.example.com", Invalid: addrErr, Help: help})
-		},
-		func(gtx C) D {
-			return ui.Field(gtx, k, &e.user, ui.FieldOpts{Label: "Username", Hint: "root"})
-		},
-		func(gtx C) D {
-			help := ""
-
-			if portErr {
-				help = "Use a number between 1 and 65535."
-			}
-
-			return ui.Field(gtx, k, &e.port, ui.FieldOpts{Label: "Port", Hint: "22", Invalid: portErr, Help: help})
-		},
-		func(gtx C) D { return e.auth.Layout(gtx, k, authLabels) },
+	connection := func(gtx C) D {
+		return ui.Section(gtx, k, "Connection",
+			func(gtx C) D { return ui.FormRow(gtx, k, "Name", &e.label, ui.FormOpts{Hint: "Production web"}) },
+			func(gtx C) D {
+				return ui.FormRow(gtx, k, "Address", &e.address, ui.FormOpts{Hint: "server.example.com", Mono: true, Invalid: addrErr})
+			},
+			func(gtx C) D { return ui.FormRow(gtx, k, "Port", &e.port, ui.FormOpts{Hint: "22", Mono: true, Invalid: portErr}) },
+			func(gtx C) D { return ui.FormRow(gtx, k, "Username", &e.user, ui.FormOpts{Hint: "root", Mono: true}) },
+		)
 	}
 
+	signIn := []ui.W{func(gtx C) D { return e.auth.Layout(gtx, k, authLabels) }}
+
 	if e.keepsAgent() {
-		children = append(children, func(gtx C) D { return ui.Caption(gtx, k, agentNote) })
+		signIn = append(signIn, func(gtx C) D { return ui.Caption(gtx, k, agentNote) })
 	}
 
 	if e.auth.Value == authPassword {
-		children = append(children, func(gtx C) D {
+		signIn = append(signIn, func(gtx C) D {
 			ic := icons.Visibility
 
 			if e.shown {
 				ic = icons.VisibilityOff
 			}
 
-			return ui.Field(gtx, k, &e.password, ui.FieldOpts{
-				Label:    "Password",
-				Hint:     "Leave empty to be asked when you connect",
-				Trailing: func(gtx C) D { return ui.IconButton(gtx, k, &e.reveal, ic, th.TextMuted) },
-			})
+			return ui.Section(gtx, k, "",
+				func(gtx C) D {
+					return ui.FormRow(gtx, k, "Password", &e.password, ui.FormOpts{
+						Hint:     "Ask each time",
+						Trailing: func(gtx C) D { return ui.IconButton(gtx, k, &e.reveal, ic, th.TextMuted) },
+					})
+				},
+			)
 		})
 	} else {
-		children = append(children, func(gtx C) D { return e.keyPicker(gtx, saved) })
+		signIn = append(signIn, func(gtx C) D { return e.keyPicker(gtx, saved) })
+	}
+
+	children := []ui.W{connection}
+
+	switch {
+	case addrErr:
+		children = append(children, func(gtx C) D { return ui.Caption(gtx, k, "Enter the server's address or name.") })
+	case portErr:
+		children = append(children, func(gtx C) D { return ui.Caption(gtx, k, "Use a port between 1 and 65535.") })
 	}
 
 	children = append(children,
+		func(gtx C) D { return ui.Group(gtx, k, "Sign in", signIn...) },
 		func(gtx C) D {
-			return ui.Field(gtx, k, &e.folder, ui.FieldOpts{Label: "Folder", Hint: "Optional, groups hosts in the list"})
-		},
-		func(gtx C) D {
-			return ui.Field(gtx, k, &e.startup, ui.FieldOpts{Label: "Run on connect", Hint: "Optional command", Mono: true})
-		},
-		func(gtx C) D {
-			return ui.Button(gtx, k, &e.saveBar, ui.Primary, nil, "Save host", true)
+			return ui.Section(gtx, k, "Options",
+				func(gtx C) D { return ui.FormRow(gtx, k, "Folder", &e.folder, ui.FormOpts{Hint: "None"}) },
+				func(gtx C) D {
+					return ui.FormRow(gtx, k, "On connect", &e.startup, ui.FormOpts{Hint: "cd /srv/app", Mono: true})
+				},
+			)
 		},
 	)
 
 	if !e.isNew {
 		children = append(children, func(gtx C) D {
-			return ui.Button(gtx, k, &e.remove, ui.Destructive, icons.Delete, "Delete host", true)
+			return ui.Section(gtx, k, "",
+				func(gtx C) D { return ui.ActionRow(gtx, k, &e.remove, icons.Delete, "Delete host", ui.Destructive) },
+			)
 		})
 	}
 
@@ -247,7 +242,7 @@ func (e *Editor) keyPicker(gtx C, saved []vault.Key) D {
 		}
 	}
 
-	return ui.Section(gtx, k, "KEY", rows...)
+	return ui.Section(gtx, k, "Key", rows...)
 }
 
 func (e *Editor) portError() bool {
@@ -291,10 +286,20 @@ func (e *Editor) submit() {
 	e.h.Pop()
 }
 
-func Icon(h vault.Host) (*icons.Icon, color.NRGBA) {
-	if b, ok := icons.OS(h.OS); ok {
-		return b.Icon, b.Color
+func Icon(s config.Settings, h vault.Host) (*icons.Icon, color.NRGBA) {
+	if s.HostIcons == config.HostIconsTerminal {
+		return icons.Terminal, color.NRGBA{}
 	}
 
-	return icons.LucideServer, color.NRGBA{}
+	b, ok := icons.OS(h.OS)
+
+	if !ok {
+		return icons.Terminal, color.NRGBA{}
+	}
+
+	if s.HostIconTint == config.HostIconTintMono {
+		return b.Icon, color.NRGBA{}
+	}
+
+	return b.Icon, b.Color
 }

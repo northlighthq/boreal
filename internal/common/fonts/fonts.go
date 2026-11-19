@@ -43,6 +43,11 @@ func Load() (*text.Shaper, font.Font) {
 	return text.NewShaper(text.NoSystemFonts(), text.WithCollection(faces)), font.Font{Typeface: Mono}
 }
 
+func LoadEmbedded() (*text.Shaper, font.Font) {
+	faces := append(embedded(monoFiles), embedded(uiFiles)...)
+	return text.NewShaper(text.NoSystemFonts(), text.WithCollection(faces)), font.Font{Typeface: Mono}
+}
+
 const (
 	JetBrainsMono = "JetBrains Mono"
 	FiraCode      = "Fira Code"

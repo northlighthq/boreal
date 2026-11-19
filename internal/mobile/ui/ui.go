@@ -19,20 +19,21 @@ type (
 )
 
 const (
-	TextBody    = unit.Sp(16)
-	TextSub     = unit.Sp(14)
+	TextBody    = unit.Sp(15)
+	TextSub     = unit.Sp(13)
 	TextCaption = unit.Sp(12)
-	TextBar     = unit.Sp(19)
-	TextLarge   = unit.Sp(30)
+	TextBar     = unit.Sp(17)
+	TextLarge   = unit.Sp(24)
 
-	Gutter      = unit.Dp(16)
-	MinTouch    = unit.Dp(48)
-	RowHeight   = unit.Dp(60)
-	FieldHeight = unit.Dp(52)
-	CardRadius  = unit.Dp(16)
-	FieldRadius = unit.Dp(12)
-	TileSize    = unit.Dp(40)
-	TileRadius  = unit.Dp(11)
+	Gutter        = unit.Dp(16)
+	MinTouch      = unit.Dp(48)
+	RowHeight     = unit.Dp(60)
+	FieldHeight   = unit.Dp(46)
+	ButtonHeight  = unit.Dp(46)
+	LeadSize      = unit.Dp(18)
+	LeadWidth     = unit.Dp(22)
+	SectionGap    = unit.Dp(24)
+	EmptyMaxWidth = unit.Dp(300)
 )
 
 type Host interface {
@@ -50,9 +51,10 @@ type Host interface {
 }
 
 type Action struct {
-	Icon  *icons.Icon
-	Click *widget.Clickable
-	Do    func()
+	Icon    *icons.Icon
+	Click   *widget.Clickable
+	Do      func()
+	Primary bool
 }
 
 type Actionable interface {

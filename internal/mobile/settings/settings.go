@@ -98,7 +98,7 @@ func (r *Root) Layout(gtx C) D {
 			)
 		},
 		func(gtx C) D {
-			return ui.Section(gtx, k, "PRIVACY",
+			return ui.Section(gtx, k, "Privacy",
 				func(gtx C) D {
 					return ui.Row(gtx, k, &r.security, ui.RowOpts{Lead: tile(k, icons.Lock), Title: "Master password", Value: lock, Chevron: true})
 				},
@@ -125,7 +125,7 @@ func (r *Root) Layout(gtx C) D {
 func tile(k *kit.Kit, ic *icons.Icon) ui.W {
 	return func(gtx C) D {
 		th := k.Th
-		return ui.Tile(gtx, ic, th.Accent, kit.Fade(th.Accent, 0.12))
+		return ui.Tile(gtx, ic, th.TextMuted, th.Window)
 	}
 }
 
@@ -164,7 +164,7 @@ func (a *Appearance) Layout(gtx C) D {
 		func(gtx C) D { return a.grid(gtx, k, s.Theme) },
 		func(gtx C) D {
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return caption(gtx, k, "TERMINAL FONT") }),
+				layout.Rigid(func(gtx C) D { return caption(gtx, k, "Terminal font") }),
 				layout.Rigid(func(gtx C) D { return a.font.Layout(gtx, k, fonts.TerminalFonts) }),
 			)
 		},
@@ -177,7 +177,7 @@ func (a *Appearance) grid(gtx C, k *kit.Kit, current string) D {
 	w := (gtx.Constraints.Max.X - gap*(cols-1)) / cols
 	var rows []layout.FlexChild
 
-	rows = append(rows, layout.Rigid(func(gtx C) D { return caption(gtx, k, "THEME") }))
+	rows = append(rows, layout.Rigid(func(gtx C) D { return caption(gtx, k, "Theme") }))
 
 	for start := 0; start < len(theme.Names); start += cols {
 		rows = append(rows, layout.Rigid(func(gtx C) D {
@@ -303,7 +303,7 @@ func (t *Terminal) Layout(gtx C) D {
 
 	return ui.Page(gtx, &t.list,
 		func(gtx C) D {
-			return ui.Section(gtx, k, "TEXT",
+			return ui.Section(gtx, k, "Text",
 				func(gtx C) D {
 					return ui.Row(gtx, k, nil, ui.RowOpts{
 						Title: "Text size",
@@ -328,7 +328,7 @@ func (t *Terminal) Layout(gtx C) D {
 		},
 		func(gtx C) D {
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return caption(gtx, k, "CURSOR") }),
+				layout.Rigid(func(gtx C) D { return caption(gtx, k, "Cursor") }),
 				layout.Rigid(func(gtx C) D { return t.cursor.Layout(gtx, k, []string{"Block", "Bar", "Underline"}) }),
 			)
 		},
@@ -380,33 +380,45 @@ func (s *Security) Layout(gtx C) D {
 		},
 	}
 
+	rows := []ui.W{}
+
 	if has {
-		children = append(children, func(gtx C) D {
-			return ui.Field(gtx, k, &s.current, ui.FieldOpts{Label: "Current password"})
-		})
+		rows = append(rows, func(gtx C) D { return ui.FormRow(gtx, k, "Current", &s.current, ui.FormOpts{Hint: "Password"}) })
 	}
 
-	children = append(children,
-		func(gtx C) D { return ui.Field(gtx, k, &s.next, ui.FieldOpts{Label: "New password"}) },
-		func(gtx C) D {
-			return ui.Field(gtx, k, &s.confirm, ui.FieldOpts{Label: "Repeat it", Invalid: s.err != "", Help: s.err})
-		},
-		func(gtx C) D {
-			label := "Set password"
-
-			if has {
-				label = "Change password"
-			}
-
-			return ui.Button(gtx, k, &s.save, ui.Primary, nil, label, true)
-		},
+	rows = append(rows,
+		func(gtx C) D { return ui.FormRow(gtx, k, "New", &s.next, ui.FormOpts{Hint: "At least 10 characters"}) },
+		func(gtx C) D { return ui.FormRow(gtx, k, "Repeat", &s.confirm, ui.FormOpts{Hint: "Same again", Invalid: s.err != ""}) },
 	)
 
+	children = append(children, func(gtx C) D {
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Rigid(func(gtx C) D { return ui.Section(gtx, k, "", rows...) }),
+			layout.Rigid(func(gtx C) D {
+				if s.err == "" {
+					return D{}
+				}
+
+				return layout.Inset{Left: 4, Top: 8}.Layout(gtx, func(gtx C) D {
+					return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: k.Th.Danger, MaxLines: 3}, s.err)
+				})
+			}),
+		)
+	})
+
+	label := "Set password"
+
 	if has {
-		children = append(children, func(gtx C) D {
-			return ui.Button(gtx, k, &s.remove, ui.Destructive, nil, "Remove password", true)
-		})
+		label = "Change password"
 	}
+
+	actions := []ui.W{func(gtx C) D { return ui.ActionRow(gtx, k, &s.save, icons.Lock, label, ui.Primary) }}
+
+	if has {
+		actions = append(actions, func(gtx C) D { return ui.ActionRow(gtx, k, &s.remove, icons.Delete, "Remove password", ui.Destructive) })
+	}
+
+	children = append(children, func(gtx C) D { return ui.Section(gtx, k, "", actions...) })
 
 	return ui.Page(gtx, &s.list, children...)
 }
@@ -476,9 +488,7 @@ func (a *About) Layout(gtx C) D {
 }
 
 func caption(gtx C, k *kit.Kit, s string) D {
-	return layout.Inset{Left: 4, Bottom: 8}.Layout(gtx, func(gtx C) D {
-		return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: k.Th.TextMuted, Weight: font.SemiBold}, s)
-	})
+	return ui.Heading(gtx, k, s)
 }
 
 func layoutOffset(gtx C, y int, w ui.W) {
