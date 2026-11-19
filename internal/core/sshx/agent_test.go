@@ -36,17 +36,17 @@ func TestLocalAgentPath(t *testing.T) {
 }
 
 func TestAgentCandidates(t *testing.T) {
-	if _, err := agentCandidates("none"); !errors.Is(err, errAgentOff) {
+	if _, err := agentCandidates("none"); !errors.Is(err, ErrAgentOff) {
 		t.Fatalf("none: err = %v", err)
 	}
 
-	if _, err := agentCandidates(`\\server\pipe\openssh-ssh-agent`); !errors.Is(err, errRemoteAgent) {
+	if _, err := agentCandidates(`\\server\pipe\openssh-ssh-agent`); !errors.Is(err, ErrRemoteAgent) {
 		t.Fatalf("remote pipe: err = %v", err)
 	}
 
 	t.Setenv(agentEnv, "")
 
-	if _, err := agentCandidates(agentEnv); !errors.Is(err, errNoAgent) {
+	if _, err := agentCandidates(agentEnv); !errors.Is(err, ErrNoAgent) {
 		t.Fatalf("empty SSH_AUTH_SOCK: err = %v", err)
 	}
 

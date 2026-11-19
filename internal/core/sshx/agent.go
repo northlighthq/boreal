@@ -35,9 +35,9 @@ var knownAgents = map[string][]string{
 }
 
 var (
-	errNoAgent     = errors.New("no SSH agent found")
-	errAgentOff    = errors.New("the SSH agent is turned off for this host")
-	errRemoteAgent = errors.New("the SSH agent must be on this computer")
+	ErrNoAgent     = errors.New("no SSH agent found")
+	ErrAgentOff    = errors.New("the SSH agent is turned off for this host")
+	ErrRemoteAgent = errors.New("the SSH agent must be on this computer")
 )
 
 type AgentKey struct {
@@ -93,18 +93,18 @@ func agentCandidates(want string) ([]string, error) {
 	want = strings.TrimSpace(want)
 
 	if strings.EqualFold(want, AgentNone) {
-		return nil, errAgentOff
+		return nil, ErrAgentOff
 	}
 
 	if want != "" {
 		p := expandAgentPath(want)
 
 		if p == "" {
-			return nil, errNoAgent
+			return nil, ErrNoAgent
 		}
 
 		if !LocalAgentPath(p) {
-			return nil, errRemoteAgent
+			return nil, ErrRemoteAgent
 		}
 
 		return []string{p}, nil
@@ -156,7 +156,7 @@ func openAgent(want string) (io.ReadWriteCloser, string, error) {
 		return nil, "", err
 	}
 
-	err = errNoAgent
+	err = ErrNoAgent
 
 	for _, p := range paths {
 		rw, dialErr := openAgentPath(p)
@@ -181,9 +181,21 @@ func dialAgent(want string) (agent.ExtendedAgent, func(), error) {
 	return agent.NewClient(rw), func() { rw.Close() }, nil
 }
 
-func AgentAvailable() bool {
-	_, ok := AgentPath("")
-	return ok
+func AgentName(p string) string {
+	lower := strings.ToLower(p)
+
+	switch {
+	case p == pageantName:
+		return pageantName
+	case strings.Contains(lower, "1password"):
+		return "1Password"
+	case strings.Contains(lower, "bitwarden"):
+		return "Bitwarden"
+	case strings.EqualFold(p, windowsAgentPipe):
+		return "the OpenSSH agent pipe"
+	}
+
+	return p
 }
 
 func AgentPath(want string) (string, bool) {
