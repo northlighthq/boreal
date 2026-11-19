@@ -504,8 +504,8 @@ func (d *Dialog) content(a base.Host, gtx C) D {
 	case 3:
 		agent := "Not detected (start the “OpenSSH Authentication Agent” service or Pageant)"
 
-		if sshx.AgentAvailable() {
-			agent = "Available"
+		if path, ok := sshx.AgentPath(""); ok {
+			agent = "Found " + sshx.AgentName(path)
 		}
 
 		children = []layout.FlexChild{

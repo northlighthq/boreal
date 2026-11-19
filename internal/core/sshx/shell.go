@@ -29,7 +29,7 @@ func OpenShell(c *Client, cols, rows int, h vault.Host) (*Shell, error) {
 	}
 
 	if h.ForwardAgent {
-		if err := c.forwardAgent(sess); err != nil {
+		if err := c.forwardAgent(sess, h.Agent); err != nil {
 			sess.Close()
 			return nil, err
 		}
@@ -114,9 +114,9 @@ func (s *Shell) Close() error {
 	return s.sess.Close()
 }
 
-func (c *Client) forwardAgent(sess *ssh.Session) error {
+func (c *Client) forwardAgent(sess *ssh.Session, want string) error {
 	c.agentOnce.Do(func() {
-		ag, closeAgent, err := dialAgent()
+		ag, closeAgent, err := dialAgent(want)
 
 		if err != nil {
 			c.agentErr = fmt.Errorf("agent forwarding: %w", err)

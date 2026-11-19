@@ -285,7 +285,7 @@ func Import(h base.Host) {
 		h.Toasts().Success("Data imported", summary(st))
 
 		if len(defanged) > 0 {
-			h.Toasts().Info("Commands and tunnels left off", fmt.Sprintf("Proxy commands, commands run on connect and tunnels that start on their own aren't imported, so a shared file can't run anything on this computer. Review: %s.", strings.Join(defanged, ", ")))
+			h.Toasts().Info("Commands and tunnels left off", fmt.Sprintf("Proxy commands, commands run on connect, SSH agents on other computers and tunnels that start on their own aren't imported, so a shared file can't run anything or reach out from this computer. Review: %s.", strings.Join(defanged, ", ")))
 		}
 
 		if st.Conflicts > 0 {

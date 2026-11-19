@@ -33,6 +33,7 @@ func SSHConfig(hosts []vault.Host) []byte {
 			Port:           h.Port,
 			IdentitiesOnly: h.IdentitiesOnly,
 			ForwardAgent:   h.ForwardAgent,
+			Agent:          h.Agent,
 			ProxyCommand:   h.ProxyCommand,
 		}
 

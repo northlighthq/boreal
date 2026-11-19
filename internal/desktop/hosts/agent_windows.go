@@ -1,3 +1,3 @@
 package hosts
 
-const agentHint = "Keys from the Windows SSH agent (ssh-agent service) or Pageant will be used, including hardware keys added with ssh-add."
+const agentHint = "Leave empty for the OpenSSH agent pipe, which 1Password, Bitwarden and the Windows ssh-agent service use, or Pageant. Type none to turn the agent off for this host."

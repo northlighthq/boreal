@@ -13,6 +13,7 @@ import (
 
 	"github.com/northlighthq/boreal/internal/common/icons"
 	"github.com/northlighthq/boreal/internal/common/kit"
+	"github.com/northlighthq/boreal/internal/core/sshx"
 	"github.com/northlighthq/boreal/internal/core/vault"
 	"github.com/northlighthq/boreal/internal/desktop/base"
 	"github.com/northlighthq/boreal/internal/desktop/dialogs"
@@ -29,6 +30,7 @@ type Editor struct {
 	forward, keyOnly                                                        widget.Bool
 
 	auth     kit.Segmented
+	agent    agentField
 	key      kit.Select
 	jump     kit.Select
 	reveal   widget.Clickable
@@ -54,7 +56,7 @@ var authMethods = []string{vault.AuthPassword, vault.AuthKey, vault.AuthAgent}
 
 func NewEditor(a base.Host, h vault.Host) *Editor {
 	e := &Editor{h: a, host: h}
-	dialogs.SingleLine(&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy, &e.tmux)
+	dialogs.SingleLine(&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy, &e.tmux, &e.agent.path)
 	e.port.Filter = "0123456789"
 	e.password.Mask = '•'
 
@@ -75,6 +77,8 @@ func NewEditor(a base.Host, h vault.Host) *Editor {
 	e.proxy.SetText(h.ProxyCommand)
 	e.tmux.SetText(h.Tmux)
 	e.keyOnly.Value = h.IdentitiesOnly
+	e.agent.path.SetText(h.Agent)
+	e.agent.load(h.AgentKey)
 
 	e.auth.Value = 2
 
@@ -148,6 +152,12 @@ func (e *Editor) collect() (vault.Host, bool) {
 	}
 
 	h.IdentitiesOnly = h.Auth == vault.AuthKey && e.keyOnly.Value
+	h.Agent = strings.TrimSpace(e.agent.path.Text())
+	h.AgentKey = ""
+
+	if h.Auth == vault.AuthAgent {
+		h.AgentKey = e.agent.chosen()
+	}
 	h.Group = vault.CleanFolder(e.group.Text())
 	h.Tags = nil
 
@@ -157,7 +167,7 @@ func (e *Editor) collect() (vault.Host, bool) {
 		}
 	}
 
-	if h.Address == "" || h.Username == "" {
+	if h.Address == "" || h.Username == "" || !sshx.LocalAgentPath(h.Agent) {
 		return h, false
 	}
 
@@ -221,12 +231,16 @@ func (e *Editor) Layout(gtx C) bool {
 		}
 	}
 
-	for _, ed := range []*widget.Editor{&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy, &e.tmux} {
+	for _, ed := range []*widget.Editor{&e.label, &e.address, &e.port, &e.user, &e.password, &e.group, &e.tags, &e.startup, &e.proxy, &e.tmux, &e.agent.path} {
 		for {
 			ev, ok := ed.Update(gtx)
 
 			if !ok {
 				break
+			}
+
+			if _, ok := ev.(widget.ChangeEvent); ok && ed == &e.agent.path {
+				e.agent.load(e.agent.chosen())
 			}
 
 			if _, ok := ev.(widget.SubmitEvent); ok && e.submit(a, false) {
@@ -386,9 +400,7 @@ func (e *Editor) Layout(gtx C) bool {
 			)
 		}))
 	case 2:
-		authRows = append(authRows, field("", func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, agentHint)
-		}))
+		authRows = append(authRows, e.agentRows(field)...)
 	}
 
 	moreToggle := layout.Rigid(func(gtx C) D {

@@ -2,4 +2,4 @@
 
 package hosts
 
-const agentHint = "Keys from your SSH agent ($SSH_AUTH_SOCK) will be used, including hardware keys added with ssh-add."
+const agentHint = "Leave empty for $SSH_AUTH_SOCK, or 1Password and Bitwarden when it isn't set. Type a socket path such as ~/.1password/agent.sock to choose one, or none to turn the agent off."

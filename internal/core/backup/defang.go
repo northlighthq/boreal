@@ -11,11 +11,17 @@ func Defang(d *vault.Data) []string {
 	for i := range d.Hosts {
 		h := &d.Hosts[i]
 
-		if h.ProxyCommand == "" && h.StartupCommand == "" {
+		remote := !sshx.LocalAgentPath(h.Agent)
+
+		if h.ProxyCommand == "" && h.StartupCommand == "" && !remote {
 			continue
 		}
 
 		h.ProxyCommand, h.StartupCommand = "", ""
+
+		if remote {
+			h.Agent = ""
+		}
 		touched = append(touched, h.Title())
 	}
 

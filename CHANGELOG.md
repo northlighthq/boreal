@@ -15,6 +15,13 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 - Pasting several lines asks first when the shell would run them as they arrive.
 - The master password needs at least 10 characters everywhere.
 
+### SSH
+- Hosts that sign in with the agent can choose which agent to use and which of its keys to offer. With many keys in 1Password or Bitwarden, picking one avoids “Too many authentication failures”.
+- On macOS and Linux, Boreal finds the 1Password and Bitwarden agents even when SSH_AUTH_SOCK isn't set, like when it's opened from the Dock.
+- IdentityAgent is read when importing ~/.ssh/config and written when exporting it.
+- Imported files can't point a host at an agent on another computer.
+- Settings › SSH shows which agent Boreal found.
+
 ### Terminal
 - Ctrl+Backspace deletes the word before the cursor and Ctrl+Delete the word after it, over SSH and in local shells. Full screen programs like vim still get the usual keys.
 
