@@ -40,6 +40,9 @@ var (
 	ExpandLess   = tabler("chevron-up")
 	ChevronRight = tabler("chevron-right")
 	ArrowUp      = tabler("arrow-up")
+	ArrowDown    = stroke("M12 5l0 14 M18 13l-6 6 M6 13l6 6")
+	ArrowLeft    = stroke("M5 12l14 0 M5 12l6 6 M5 12l6 -6")
+	Minus        = stroke("M5 12l14 0")
 	ArrowRight   = tabler("arrow-right")
 	Launch       = ArrowRight
 
