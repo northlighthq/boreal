@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"gioui.org/io/key"
 	"gioui.org/layout"
@@ -58,6 +59,14 @@ func (l *List) Subtitle() string {
 	return strconv.Itoa(l.count) + " servers"
 }
 
+func (l *List) Actions() []ui.Action {
+	if l.count == 0 {
+		return nil
+	}
+
+	return []ui.Action{{Icon: icons.Add, Click: &l.add, Do: func() { l.h.Push(NewEditor(l.h, vault.Host{})) }}}
+}
+
 func (l *List) Layout(gtx C) D {
 	k := l.h.Kit()
 	all := l.h.Vault().Snapshot().Hosts
@@ -80,7 +89,7 @@ func (l *List) Layout(gtx C) D {
 	}
 
 	if len(all) == 0 {
-		return ui.Empty(gtx, k, icons.LucideServer, "No hosts yet",
+		return ui.Empty(gtx, k, nil, "No hosts yet",
 			"Add a server once and connect to it with a tap. Hosts, keys and passwords stay encrypted on this device.",
 			func(gtx C) D { return ui.Button(gtx, k, &l.empty, ui.Primary, icons.Add, "Add host", true) })
 	}
@@ -108,25 +117,30 @@ func (l *List) Layout(gtx C) D {
 			caption = ""
 		}
 
-		children = append(children, func(gtx C) D { return ui.Section(gtx, k, caption, rows...) })
+		meta := ""
+
+		if caption != "" {
+			meta = strconv.Itoa(len(g.hosts))
+		}
+
+		children = append(children, func(gtx C) D { return ui.SectionMeta(gtx, k, caption, meta, rows...) })
 	}
 
-	return layout.Stack{}.Layout(gtx,
-		layout.Expanded(func(gtx C) D { return ui.Page(gtx, &l.list, children...) }),
-		layout.Expanded(func(gtx C) D { return ui.FAB(gtx, k, &l.add, icons.Add, "New host") }),
-	)
+	return ui.Page(gtx, &l.list, children...)
 }
 
 func (l *List) row(gtx C, h vault.Host) D {
 	k := l.h.Kit()
 	r := l.state(h.ID)
-	ic, tint := Icon(h)
+	ic, tint := Icon(l.h.Settings(), h)
 
 	return ui.Row(gtx, k, &r.open, ui.RowOpts{
 		Lead:     ui.TileFor(k, ic, tint),
 		Title:    h.Title(),
 		Subtitle: Target(h),
-		Trailing: func(gtx C) D { return ui.IconButton(gtx, k, &r.more, icons.LucideMore, k.Th.TextMuted) },
+		Mono:     true,
+		Value:    ui.Ago(h.LastUsed, time.Now()),
+		Trailing: func(gtx C) D { return ui.IconButton(gtx, k, &r.more, icons.LucideMore, k.Th.TextFaint) },
 	})
 }
 

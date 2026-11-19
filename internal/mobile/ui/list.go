@@ -23,17 +23,19 @@ type RowOpts struct {
 	Chevron  bool
 	Danger   bool
 	Value    string
+	Dot      color.NRGBA
 }
 
 func Section(gtx C, k *kit.Kit, caption string, rows ...W) D {
-	th := k.Th
+	return SectionMeta(gtx, k, caption, "", rows...)
+}
+
+func SectionMeta(gtx C, k *kit.Kit, caption, meta string, rows ...W) D {
 	children := []layout.FlexChild{}
 
-	if caption != "" {
+	if caption != "" || meta != "" {
 		children = append(children, layout.Rigid(func(gtx C) D {
-			return layout.Inset{Left: 4, Bottom: 8}.Layout(gtx, func(gtx C) D {
-				return k.Label(gtx, kit.TextStyle{Size: TextCaption, Color: th.TextMuted, Weight: font.SemiBold, MaxLines: 1}, caption)
-			})
+			return layout.Inset{Left: 4, Right: 4, Bottom: 8}.Layout(gtx, func(gtx C) D { return heading(gtx, k, caption, meta) })
 		}))
 	}
 
@@ -43,13 +45,7 @@ func Section(gtx C, k *kit.Kit, caption string, rows ...W) D {
 
 			for i, r := range rows {
 				if i > 0 {
-					items = append(items, layout.Rigid(func(gtx C) D {
-						return layout.Inset{Left: Gutter}.Layout(gtx, func(gtx C) D {
-							h := max(gtx.Dp(1)/2, 1)
-							kit.Rect(gtx, image.Rect(0, 0, gtx.Constraints.Max.X, h), th.Divider)
-							return D{Size: image.Pt(gtx.Constraints.Max.X, h)}
-						})
-					}))
+					items = append(items, layout.Rigid(func(gtx C) D { return Divider(gtx, k) }))
 				}
 
 				items = append(items, layout.Rigid(r))
@@ -62,14 +58,59 @@ func Section(gtx C, k *kit.Kit, caption string, rows ...W) D {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
 }
 
+func Group(gtx C, k *kit.Kit, caption string, items ...W) D {
+	children := make([]layout.FlexChild, 0, 2*len(items)+1)
+
+	if caption != "" {
+		children = append(children, layout.Rigid(func(gtx C) D {
+			return layout.Inset{Left: 4, Bottom: 10}.Layout(gtx, func(gtx C) D { return heading(gtx, k, caption, "") })
+		}))
+	}
+
+	for i, it := range items {
+		if i > 0 {
+			children = append(children, layout.Rigid(Gap(14)))
+		}
+
+		children = append(children, layout.Rigid(it))
+	}
+
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
+}
+
+func heading(gtx C, k *kit.Kit, caption, meta string) D {
+	th := k.Th
+	style := kit.TextStyle{Size: TextSub, Color: th.TextMuted, Weight: font.Medium, MaxLines: 1}
+
+	return layout.Flex{Alignment: layout.Baseline}.Layout(gtx,
+		layout.Flexed(1, func(gtx C) D { return k.Label(gtx, style, caption) }),
+		layout.Rigid(func(gtx C) D {
+			if meta == "" {
+				return D{}
+			}
+
+			style.Color, style.Weight = th.TextFaint, font.Normal
+			return k.Label(gtx, style, meta)
+		}),
+	)
+}
+
+func Divider(gtx C, k *kit.Kit) D {
+	return layout.Inset{Left: Gutter}.Layout(gtx, func(gtx C) D {
+		h := max(gtx.Dp(1)/2, 1)
+		kit.Rect(gtx, image.Rect(0, 0, gtx.Constraints.Max.X, h), k.Th.Divider)
+		return D{Size: image.Pt(gtx.Constraints.Max.X, h)}
+	})
+}
+
 func Card(gtx C, k *kit.Kit, w W) D {
 	gtx.Constraints.Min.X = gtx.Constraints.Max.X
 	rec := op.Record(gtx.Ops)
 	dims := w(gtx)
 	call := rec.Stop()
 	r := image.Rectangle{Max: dims.Size}
-	radius := gtx.Dp(CardRadius)
-	kit.RRect(gtx, r, radius, k.Th.Panel)
+	radius := gtx.Dp(k.Th.RadiusLarge)
+	kit.RRect(gtx, r, radius, k.Th.Popup)
 	defer clip.UniformRRect(r, radius).Push(gtx.Ops).Pop()
 	call.Add(gtx.Ops)
 	return dims
@@ -93,7 +134,7 @@ func rowBody(gtx C, k *kit.Kit, clk *widget.Clickable, o RowOpts) D {
 	}
 
 	rec := op.Record(gtx.Ops)
-	dims := layout.Inset{Left: Gutter, Right: 12}.Layout(gtx, func(gtx C) D {
+	dims := layout.Inset{Left: Gutter, Right: 8}.Layout(gtx, func(gtx C) D {
 		gtx.Constraints.Min = image.Pt(gtx.Constraints.Max.X, minH)
 		return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
@@ -101,11 +142,11 @@ func rowBody(gtx C, k *kit.Kit, clk *widget.Clickable, o RowOpts) D {
 					return D{}
 				}
 
-				return layout.Inset{Right: 14}.Layout(gtx, o.Lead)
+				return layout.Inset{Right: 12}.Layout(gtx, o.Lead)
 			}),
 			layout.Flexed(1, func(gtx C) D {
 				gtx.Constraints.Min.Y = 0
-				return layout.Inset{Top: 10, Bottom: 10}.Layout(gtx, func(gtx C) D {
+				return layout.Inset{Top: 10, Bottom: 10, Right: 8}.Layout(gtx, func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
 							fg := th.Text
@@ -122,7 +163,18 @@ func rowBody(gtx C, k *kit.Kit, clk *widget.Clickable, o RowOpts) D {
 							}
 
 							return layout.Inset{Top: 2}.Layout(gtx, func(gtx C) D {
-								return k.Label(gtx, kit.TextStyle{Size: TextSub, Color: th.TextMuted, MaxLines: 1, Mono: o.Mono}, o.Subtitle)
+								return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+									layout.Rigid(func(gtx C) D {
+										if o.Dot.A == 0 {
+											return D{}
+										}
+
+										return layout.Inset{Right: 6}.Layout(gtx, func(gtx C) D { return kit.Dot(gtx, o.Dot, 7) })
+									}),
+									layout.Flexed(1, func(gtx C) D {
+										return k.Label(gtx, kit.TextStyle{Size: TextSub, Color: th.TextMuted, MaxLines: 1, Mono: o.Mono}, o.Subtitle)
+									}),
+								)
 							})
 						}),
 					)
@@ -133,8 +185,8 @@ func rowBody(gtx C, k *kit.Kit, clk *widget.Clickable, o RowOpts) D {
 					return D{}
 				}
 
-				return layout.Inset{Left: 8}.Layout(gtx, func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Size: TextSub, Color: th.TextMuted, MaxLines: 1}, o.Value)
+				return layout.Inset{Right: 4}.Layout(gtx, func(gtx C) D {
+					return k.Label(gtx, kit.TextStyle{Size: TextSub, Color: th.TextFaint, MaxLines: 1}, o.Value)
 				})
 			}),
 			layout.Rigid(func(gtx C) D {
@@ -142,15 +194,15 @@ func rowBody(gtx C, k *kit.Kit, clk *widget.Clickable, o RowOpts) D {
 					return D{}
 				}
 
-				return layout.Inset{Left: 8}.Layout(gtx, o.Trailing)
+				return o.Trailing(gtx)
 			}),
 			layout.Rigid(func(gtx C) D {
 				if !o.Chevron {
 					return D{}
 				}
 
-				return layout.Inset{Left: 6}.Layout(gtx, func(gtx C) D {
-					return icons.ChevronRight.Layout(gtx, 18, th.TextFaint)
+				return layout.Inset{Left: 2, Right: 6}.Layout(gtx, func(gtx C) D {
+					return icons.ChevronRight.Layout(gtx, 16, th.TextFaint)
 				})
 			}),
 		)
@@ -165,31 +217,26 @@ func rowBody(gtx C, k *kit.Kit, clk *widget.Clickable, o RowOpts) D {
 	return dims
 }
 
-func Tile(gtx C, ic *icons.Icon, fg, bg color.NRGBA) D {
-	side := gtx.Dp(TileSize)
-	r := image.Rectangle{Max: image.Pt(side, side)}
-	kit.RRect(gtx, r, gtx.Dp(TileRadius), bg)
-	gtx.Constraints = layout.Exact(r.Max)
-	return layout.Center.Layout(gtx, func(gtx C) D { return ic.Layout(gtx, 21, fg) })
+func Tile(gtx C, ic *icons.Icon, fg, _ color.NRGBA) D {
+	size := image.Pt(gtx.Dp(LeadWidth), gtx.Dp(LeadWidth))
+	gtx.Constraints = layout.Exact(size)
+	return layout.Center.Layout(gtx, func(gtx C) D { return ic.Layout(gtx, LeadSize, fg) })
 }
 
 func TileFor(k *kit.Kit, ic *icons.Icon, tint color.NRGBA) W {
 	return func(gtx C) D {
-		th := k.Th
-		fg := th.TextMuted
-		bg := th.Hover
+		fg := k.Th.TextMuted
 
 		if tint.A > 0 {
 			fg = tint
-			bg = kit.Fade(tint, 0.16)
 		}
 
-		return Tile(gtx, ic, fg, bg)
+		return Tile(gtx, ic, fg, color.NRGBA{})
 	}
 }
 
 func Caption(gtx C, k *kit.Kit, s string) D {
-	return layout.Inset{Left: 4, Top: 8}.Layout(gtx, func(gtx C) D {
+	return layout.Inset{Left: 4, Top: 6}.Layout(gtx, func(gtx C) D {
 		return k.Label(gtx, kit.TextStyle{Size: TextCaption, Color: k.Th.TextMuted, MaxLines: 4}, s)
 	})
 }
@@ -197,14 +244,14 @@ func Caption(gtx C, k *kit.Kit, s string) D {
 func Page(gtx C, list *widget.List, children ...W) D {
 	list.Axis = layout.Vertical
 	return list.Layout(gtx, len(children), func(gtx C, i int) D {
-		in := layout.Inset{Left: Gutter, Right: Gutter, Bottom: 22}
+		in := layout.Inset{Left: Gutter, Right: Gutter, Bottom: SectionGap}
 
 		if i == 0 {
-			in.Top = 6
+			in.Top = 4
 		}
 
 		if i == len(children)-1 {
-			in.Bottom = 96
+			in.Bottom = 40
 		}
 
 		return in.Layout(gtx, children[i])

@@ -23,11 +23,12 @@ const (
 )
 
 const (
-	rootBarHeight   = unit.Dp(84)
+	rootBarHeight   = unit.Dp(80)
 	pushBarHeight   = unit.Dp(56)
-	bottomBarHeight = unit.Dp(68)
-	pillWidth       = unit.Dp(60)
-	pillHeight      = unit.Dp(32)
+	bottomBarHeight = unit.Dp(64)
+	activeWidth     = unit.Dp(56)
+	activeHeight    = unit.Dp(30)
+	badgeSize       = unit.Dp(6)
 )
 
 var tabItems = [tabCount]struct {
@@ -56,20 +57,22 @@ func (a *App) topBar(gtx C) D {
 
 	gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, gtx.Dp(rootBarHeight)))
 
-	return layout.Inset{Left: 20, Right: 8, Bottom: 10}.Layout(gtx, func(gtx C) D {
+	return layout.Inset{Left: ui.Gutter, Right: 4, Bottom: 12}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Alignment: layout.End}.Layout(gtx,
 			layout.Flexed(1, func(gtx C) D {
 				return layout.SW.Layout(gtx, func(gtx C) D {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 						layout.Rigid(func(gtx C) D {
+							return k.Label(gtx, kit.TextStyle{Size: ui.TextLarge, Weight: font.SemiBold, MaxLines: 1}, top.Title())
+						}),
+						layout.Rigid(func(gtx C) D {
 							if sub == "" {
 								return D{}
 							}
 
-							return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: th.TextMuted, Weight: font.Medium, MaxLines: 1}, sub)
-						}),
-						layout.Rigid(func(gtx C) D {
-							return k.Label(gtx, kit.TextStyle{Size: ui.TextLarge, Weight: font.Bold, MaxLines: 1}, top.Title())
+							return layout.Inset{Top: 2}.Layout(gtx, func(gtx C) D {
+								return k.Label(gtx, kit.TextStyle{Size: ui.TextSub, Color: th.TextMuted, MaxLines: 1}, sub)
+							})
 						}),
 					)
 				})
@@ -90,7 +93,6 @@ func (a *App) pushBar(gtx C) D {
 				return ui.IconButton(gtx, k, &a.back, icons.LucideArrowLeft, th.Text)
 			})
 		}),
-		layout.Rigid(ui.Gap(4)),
 		layout.Flexed(1, func(gtx C) D {
 			return k.Label(gtx, kit.TextStyle{Size: ui.TextBar, Weight: font.SemiBold, MaxLines: 1}, a.stack().Top().Title())
 		}),
@@ -102,6 +104,7 @@ func (a *App) pushBar(gtx C) D {
 
 func (a *App) actionButtons(gtx C) D {
 	k := a.kit
+	th := k.Th
 	children := make([]layout.FlexChild, len(a.actions))
 
 	for i, ac := range a.actions {
@@ -109,7 +112,13 @@ func (a *App) actionButtons(gtx C) D {
 			ac.Do()
 		}
 
-		children[i] = layout.Rigid(func(gtx C) D { return ui.IconButton(gtx, k, ac.Click, ac.Icon, k.Th.Accent) })
+		fg := th.Text
+
+		if ac.Primary {
+			fg = th.Accent
+		}
+
+		children[i] = layout.Rigid(func(gtx C) D { return ui.IconButton(gtx, k, ac.Click, ac.Icon, fg) })
 	}
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx, children...)
@@ -137,9 +146,8 @@ func (a *App) tabButton(gtx C, t tab) D {
 	k := a.kit
 	th := k.Th
 	item := tabItems[t]
-	active := t == a.tab
-	on := k.Animated(gtx, kit.Key(&a.tabBtns[t], 0), kit.B2F(active), kit.Normal)
-	fg := kit.Lerp(th.TextMuted, th.Accent, on)
+	on := k.Animated(gtx, kit.Key(&a.tabBtns[t], 0), kit.B2F(t == a.tab), kit.Normal)
+	fg := kit.Lerp(th.TextMuted, th.Text, on)
 	badge := t == tabSessions && len(a.sessions) > 0
 
 	return a.tabBtns[t].Layout(gtx, func(gtx C) D {
@@ -147,32 +155,26 @@ func (a *App) tabButton(gtx C, t tab) D {
 		return layout.Center.Layout(gtx, func(gtx C) D {
 			return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
 				layout.Rigid(func(gtx C) D {
-					size := image.Pt(gtx.Dp(pillWidth), gtx.Dp(pillHeight))
+					size := image.Pt(gtx.Dp(activeWidth), gtx.Dp(activeHeight))
+					r := image.Rectangle{Max: size}
 
 					if on > 0 {
-						kit.RRect(gtx, image.Rectangle{Max: size}, size.Y/2, kit.Fade(kit.Fade(th.Accent, 0.16), on))
+						kit.RRect(gtx, r, gtx.Dp(th.Radius), kit.Fade(th.Selection, on))
 					}
 
 					if badge {
-						side := gtx.Dp(8)
-						x := size.X/2 + gtx.Dp(9)
-						y := gtx.Dp(5)
+						side := gtx.Dp(badgeSize)
+						x := size.X/2 + gtx.Dp(8)
+						y := gtx.Dp(4)
 						kit.RRect(gtx, image.Rect(x, y, x+side, y+side), side/2, th.Accent)
 					}
 
 					gtx.Constraints = layout.Exact(size)
-					return layout.Center.Layout(gtx, func(gtx C) D { return item.icon.Layout(gtx, 22, fg) })
+					return layout.Center.Layout(gtx, func(gtx C) D { return item.icon.Layout(gtx, 20, fg) })
 				}),
 				layout.Rigid(ui.Gap(4)),
 				layout.Rigid(func(gtx C) D {
-					weight := font.Medium
-
-					if active {
-						weight = font.SemiBold
-					}
-
-					c := kit.Lerp(th.TextMuted, th.Text, on)
-					return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: c, Weight: weight, MaxLines: 1}, item.label)
+					return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: fg, MaxLines: 1}, item.label)
 				}),
 			)
 		})

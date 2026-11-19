@@ -9,6 +9,7 @@ import (
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/core/vault"
 	"github.com/northlighthq/boreal/internal/mobile/ui"
 )
@@ -31,6 +32,14 @@ func NewList(h ui.Host) *List {
 }
 
 func (l *List) Title() string { return "Snippets" }
+
+func (l *List) Actions() []ui.Action {
+	if len(l.h.Vault().Snapshot().Snippets) == 0 {
+		return nil
+	}
+
+	return []ui.Action{{Icon: icons.Add, Click: &l.add, Do: func() { l.h.Push(NewEditor(l.h, vault.Snippet{})) }}}
+}
 
 func (l *List) Layout(gtx C) D {
 	k := l.h.Kit()
@@ -67,12 +76,7 @@ func (l *List) Layout(gtx C) D {
 		}
 	}
 
-	return layout.Stack{}.Layout(gtx,
-		layout.Expanded(func(gtx C) D {
-			return ui.Page(gtx, &l.list, func(gtx C) D { return ui.Section(gtx, k, "", rows...) })
-		}),
-		layout.Expanded(func(gtx C) D { return ui.FAB(gtx, k, &l.add, icons.Add, "New snippet") }),
-	)
+	return ui.Page(gtx, &l.list, func(gtx C) D { return ui.Section(gtx, k, "", rows...) })
 }
 
 type Editor struct {
@@ -81,7 +85,6 @@ type Editor struct {
 	label   widget.Editor
 	command widget.Editor
 	save    widget.Clickable
-	saveBar widget.Clickable
 	remove  widget.Clickable
 	list    widget.List
 	tried   bool
@@ -105,15 +108,11 @@ func (e *Editor) Title() string {
 }
 
 func (e *Editor) Actions() []ui.Action {
-	return []ui.Action{{Icon: icons.Check, Click: &e.save, Do: e.submit}}
+	return []ui.Action{{Icon: icons.Check, Click: &e.save, Do: e.submit, Primary: true}}
 }
 
 func (e *Editor) Layout(gtx C) D {
 	k := e.h.Kit()
-
-	if e.saveBar.Clicked(gtx) {
-		e.submit()
-	}
 
 	if e.remove.Clicked(gtx) {
 		e.confirmDelete()
@@ -127,16 +126,38 @@ func (e *Editor) Layout(gtx C) D {
 	}
 
 	children := []ui.W{
-		func(gtx C) D { return ui.Field(gtx, k, &e.label, ui.FieldOpts{Label: "Name", Hint: "Disk usage"}) },
 		func(gtx C) D {
-			return ui.Field(gtx, k, &e.command, ui.FieldOpts{Label: "Command", Hint: "df -h", Mono: true, Invalid: empty, Help: help})
+			return ui.Section(gtx, k, "",
+				func(gtx C) D { return ui.FormRow(gtx, k, "Name", &e.label, ui.FormOpts{Hint: "Disk usage"}) },
+			)
 		},
-		func(gtx C) D { return ui.Button(gtx, k, &e.saveBar, ui.Primary, nil, "Save snippet", true) },
+		func(gtx C) D {
+			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+				layout.Rigid(func(gtx C) D {
+					return ui.Section(gtx, k, "Command",
+						func(gtx C) D { return ui.FormArea(gtx, k, &e.command, ui.FormOpts{Hint: "df -h", Mono: true}) },
+					)
+				}),
+				layout.Rigid(func(gtx C) D {
+					c := k.Th.TextMuted
+
+					if empty {
+						c = k.Th.Danger
+					}
+
+					return layout.Inset{Left: 4, Top: 8}.Layout(gtx, func(gtx C) D {
+						return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: c, MaxLines: 3}, help)
+					})
+				}),
+			)
+		},
 	}
 
 	if e.snippet.ID != "" {
 		children = append(children, func(gtx C) D {
-			return ui.Button(gtx, k, &e.remove, ui.Destructive, icons.Delete, "Delete snippet", true)
+			return ui.Section(gtx, k, "",
+				func(gtx C) D { return ui.ActionRow(gtx, k, &e.remove, icons.Delete, "Delete snippet", ui.Destructive) },
+			)
 		})
 	}
 
