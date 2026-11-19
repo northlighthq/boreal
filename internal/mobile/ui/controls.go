@@ -25,6 +25,7 @@ const (
 	Primary Kind = iota
 	Secondary
 	Destructive
+	Quiet
 )
 
 type FieldOpts struct {
@@ -52,8 +53,8 @@ func Field(gtx C, k *kit.Kit, ed *widget.Editor, o FieldOpts) D {
 
 	if o.Label != "" {
 		children = append(children, layout.Rigid(func(gtx C) D {
-			return layout.Inset{Left: 4, Bottom: 6}.Layout(gtx, func(gtx C) D {
-				return k.Label(gtx, kit.TextStyle{Size: TextSub, Color: th.TextMuted, Weight: font.Medium, MaxLines: 1}, o.Label)
+			return layout.Inset{Bottom: 6}.Layout(gtx, func(gtx C) D {
+				return k.Label(gtx, kit.TextStyle{Size: TextSub, Color: th.TextMuted, MaxLines: 1}, o.Label)
 			})
 		}))
 	}
@@ -68,8 +69,8 @@ func Field(gtx C, k *kit.Kit, ed *widget.Editor, o FieldOpts) D {
 				c = th.Danger
 			}
 
-			return layout.Inset{Left: 4, Top: 6}.Layout(gtx, func(gtx C) D {
-				return k.Label(gtx, kit.TextStyle{Size: TextCaption, Color: c, MaxLines: 3}, o.Help)
+			return layout.Inset{Top: 6}.Layout(gtx, func(gtx C) D {
+				return k.Label(gtx, kit.TextStyle{Size: TextSub - 1, Color: c, MaxLines: 3}, o.Help)
 			})
 		}))
 	}
@@ -86,40 +87,28 @@ func fieldBox(gtx C, k *kit.Kit, ed *widget.Editor, o FieldOpts) D {
 	}
 
 	r := image.Rectangle{Max: size}
-	radius := gtx.Dp(FieldRadius)
+	radius := gtx.Dp(th.Radius)
 	focus := k.Animated(gtx, kit.Key(ed, 0xe1), kit.B2F(gtx.Focused(ed)), kit.Normal)
 	kit.RRect(gtx, r, radius, th.Field)
-	line := kit.Lerp(th.Border, th.Accent, focus)
+	line := kit.Lerp(th.FieldLine, th.TextFaint, focus)
 
 	if o.Invalid {
 		line = th.Danger
 	}
 
-	kit.Border(gtx, r, radius, float32(gtx.Dp(1)), line)
+	kit.Border(gtx, r, radius, 1, line)
 	k.FieldArea(gtx, ed, size)
 	gtx.Constraints = layout.Exact(size)
 
-	return layout.Inset{Left: 14, Right: 8}.Layout(gtx, func(gtx C) D {
+	return layout.Inset{Left: 12, Right: 4}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 			layout.Flexed(1, func(gtx C) D {
-				in := layout.Inset{}
-
-				if !ed.SingleLine {
-					in = layout.Inset{Top: 12, Bottom: 12}
+				if ed.SingleLine {
+					return centerY(gtx, func(gtx C) D { return Editor(gtx, k, ed, o.Hint, o.Mono) })
 				}
 
-				return in.Layout(gtx, func(gtx C) D {
-					align := layout.W
-
-					if !ed.SingleLine {
-						align = layout.NW
-					}
-
-					if ed.SingleLine {
-						return centerY(gtx, func(gtx C) D { return Editor(gtx, k, ed, o.Hint, o.Mono) })
-					}
-
-					return align.Layout(gtx, func(gtx C) D {
+				return layout.Inset{Top: 12, Bottom: 12}.Layout(gtx, func(gtx C) D {
+					return layout.NW.Layout(gtx, func(gtx C) D {
 						gtx.Constraints.Min.X = gtx.Constraints.Max.X
 						return Editor(gtx, k, ed, o.Hint, o.Mono)
 					})
@@ -147,19 +136,21 @@ func Editor(gtx C, k *kit.Kit, ed *widget.Editor, hint string, mono bool) D {
 	st.TextSize = TextBody
 	st.Color = k.Th.Text
 	st.HintColor = k.Th.TextFaint
-	st.SelectionColor = theme.WithAlpha(k.Th.Accent, 0x50)
+	st.SelectionColor = theme.WithAlpha(k.Th.Text, 0x30)
 	return st.Layout(gtx)
 }
 
 func Search(gtx C, k *kit.Kit, ed *widget.Editor, hint string) D {
 	th := k.Th
-	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(46))
+	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(44))
 	r := image.Rectangle{Max: size}
-	kit.RRect(gtx, r, size.Y/2, th.Field)
+	radius := gtx.Dp(th.Radius)
+	kit.RRect(gtx, r, radius, th.Field)
+	kit.Border(gtx, r, radius, 1, th.FieldLine)
 	k.FieldArea(gtx, ed, size)
 	gtx.Constraints = layout.Exact(size)
 
-	return layout.Inset{Left: 16, Right: 16}.Layout(gtx, func(gtx C) D {
+	return layout.Inset{Left: 12, Right: 12}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx C) D { return icons.Search.Layout(gtx, 18, th.TextMuted) }),
 			layout.Rigid(kit.Gap(10)),
@@ -172,13 +163,16 @@ func Search(gtx C, k *kit.Kit, ed *widget.Editor, hint string) D {
 
 func Button(gtx C, k *kit.Kit, clk *widget.Clickable, kind Kind, ic *icons.Icon, label string, enabled bool) D {
 	th := k.Th
-	bg, fg := th.Accent, th.OnAccent
+	bg, fg, line := th.Accent, th.OnAccent, color.NRGBA{}
+	weight := font.Bold
 
 	switch kind {
 	case Secondary:
-		bg, fg = th.Field, th.Text
+		bg, fg, line, weight = color.NRGBA{}, th.Text, th.FieldLine, font.Medium
 	case Destructive:
-		bg, fg = kit.Fade(th.Danger, 0.14), th.Danger
+		bg, fg, line, weight = kit.Fade(th.Danger, 0.12), th.Danger, kit.Fade(th.Danger, 0.5), font.Medium
+	case Quiet:
+		bg, fg, weight = color.NRGBA{}, th.TextMuted, font.Medium
 	}
 
 	if !enabled {
@@ -187,15 +181,28 @@ func Button(gtx C, k *kit.Kit, clk *widget.Clickable, kind Kind, ic *icons.Icon,
 	}
 
 	return clk.Layout(gtx, func(gtx C) D {
-		size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(FieldHeight))
+		size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(ButtonHeight))
+		r := image.Rectangle{Max: size}
+		radius := size.Y / 2
 
 		if clk.Pressed() {
-			bg = kit.Lerp(bg, th.Text, 0.12)
+			bg = kit.Lerp(bg, th.Pressed, 0.35)
+
+			if kind == Primary {
+				bg = th.AccentHover
+			}
 		}
 
-		kit.RRect(gtx, image.Rectangle{Max: size}, gtx.Dp(14), bg)
+		if bg.A > 0 {
+			kit.RRect(gtx, r, radius, bg)
+		}
+
+		if line.A > 0 && enabled {
+			kit.Border(gtx, r, radius, 1, line)
+		}
+
 		gtx.Constraints = layout.Exact(size)
-		return layout.Center.Layout(gtx, func(gtx C) D { return iconLabel(gtx, k, ic, label, fg, font.SemiBold) })
+		return layout.Center.Layout(gtx, func(gtx C) D { return iconLabel(gtx, k, ic, label, fg, weight) })
 	})
 }
 
@@ -206,38 +213,12 @@ func iconLabel(gtx C, k *kit.Kit, ic *icons.Icon, label string, fg color.NRGBA, 
 				return D{}
 			}
 
-			return layout.Inset{Right: 8}.Layout(gtx, func(gtx C) D { return ic.Layout(gtx, 20, fg) })
+			return layout.Inset{Right: 8}.Layout(gtx, func(gtx C) D { return ic.Layout(gtx, 18, fg) })
 		}),
 		layout.Rigid(func(gtx C) D {
 			return k.Label(gtx, kit.TextStyle{Size: TextBody, Color: fg, Weight: w, MaxLines: 1}, label)
 		}),
 	)
-}
-
-func FAB(gtx C, k *kit.Kit, clk *widget.Clickable, ic *icons.Icon, label string) D {
-	th := k.Th
-	gtx.Constraints.Min = gtx.Constraints.Max
-
-	return layout.SE.Layout(gtx, func(gtx C) D {
-		return layout.Inset{Right: Gutter, Bottom: Gutter}.Layout(gtx, func(gtx C) D {
-			return clk.Layout(gtx, func(gtx C) D {
-				rec := op.Record(gtx.Ops)
-				dims := layout.Inset{Left: 18, Right: 22, Top: 16, Bottom: 16}.Layout(gtx, func(gtx C) D {
-					return iconLabel(gtx, k, ic, label, th.OnAccent, font.SemiBold)
-				})
-				call := rec.Stop()
-				bg := th.Accent
-
-				if clk.Pressed() {
-					bg = th.AccentHover
-				}
-
-				k.SurfaceRect(gtx, image.Rectangle{Max: dims.Size}, gtx.Dp(18), bg, true)
-				call.Add(gtx.Ops)
-				return dims
-			})
-		})
-	})
 }
 
 func IconButton(gtx C, k *kit.Kit, clk *widget.Clickable, ic *icons.Icon, fg color.NRGBA) D {
@@ -252,7 +233,7 @@ func IconButton(gtx C, k *kit.Kit, clk *widget.Clickable, ic *icons.Icon, fg col
 		}
 
 		gtx.Constraints = layout.Exact(size)
-		return layout.Center.Layout(gtx, func(gtx C) D { return ic.Layout(gtx, 22, fg) })
+		return layout.Center.Layout(gtx, func(gtx C) D { return ic.Layout(gtx, 20, fg) })
 	})
 }
 
@@ -282,9 +263,11 @@ func (s *Segmented) Layout(gtx C, k *kit.Kit, labels []string) D {
 	}
 
 	s.Changed(gtx)
-	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(44))
+	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(FieldHeight))
 	r := image.Rectangle{Max: size}
-	kit.RRect(gtx, r, gtx.Dp(12), th.Field)
+	radius := gtx.Dp(th.Radius)
+	kit.RRect(gtx, r, radius, th.Field)
+	kit.Border(gtx, r, radius, 1, th.FieldLine)
 	gtx.Constraints = layout.Exact(size)
 	children := make([]layout.FlexChild, len(labels))
 
@@ -295,8 +278,9 @@ func (s *Segmented) Layout(gtx C, k *kit.Kit, labels []string) D {
 				on := k.Animated(gtx, kit.Key(&s.clks[i], 0xe2), kit.B2F(s.Value == i), kit.Normal)
 
 				if on > 0 {
-					in := image.Rectangle{Max: gtx.Constraints.Max}.Inset(gtx.Dp(4))
-					kit.RRect(gtx, in, gtx.Dp(9), kit.Fade(th.Popup, on))
+					in := image.Rectangle{Max: gtx.Constraints.Max}.Inset(gtx.Dp(3))
+					kit.RRect(gtx, in, radius-gtx.Dp(3), kit.Fade(th.Selection, on))
+					kit.Border(gtx, in, radius-gtx.Dp(3), 1, kit.Fade(th.FieldLine, on))
 				}
 
 				return layout.Center.Layout(gtx, func(gtx C) D {

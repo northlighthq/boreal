@@ -15,6 +15,7 @@ import (
 	"github.com/northlighthq/boreal/internal/common/icons"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/core/session"
+	"github.com/northlighthq/boreal/internal/core/sshx"
 	"github.com/northlighthq/boreal/internal/mobile/snippets"
 	"github.com/northlighthq/boreal/internal/mobile/ui"
 )
@@ -117,7 +118,8 @@ func (t *Screen) top(gtx C, st session.State) D {
 	k := t.h.Kit()
 	th := k.Th
 	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(topHeight))
-	kit.Rect(gtx, image.Rectangle{Max: size}, th.Window)
+	kit.Rect(gtx, image.Rectangle{Max: size}, th.Panel)
+	kit.Rect(gtx, image.Rect(0, size.Y-max(gtx.Dp(1)/2, 1), size.X, size.Y), th.Divider)
 	gtx.Constraints = layout.Exact(size)
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
@@ -213,13 +215,13 @@ func (t *Screen) connecting(gtx C) D {
 
 func (t *Screen) failed(gtx C) D {
 	k := t.h.Kit()
-	msg := "The connection was closed."
+	title, msg := "Disconnected", "The connection was closed."
 
 	if err := t.s.Err(); err != nil {
-		msg = err.Error()
+		title, msg = sshx.Explain(err, t.s.Host.Port)
 	}
 
-	return ui.Empty(gtx, k, icons.LucideUnplug, "Couldn't connect", msg,
+	return ui.Empty(gtx, k, icons.LucideUnplug, title, msg,
 		func(gtx C) D { return ui.Button(gtx, k, &t.retry, ui.Primary, icons.Refresh, "Try again", true) },
 		func(gtx C) D { return ui.Button(gtx, k, &t.close, ui.Secondary, nil, "Close session", true) },
 	)

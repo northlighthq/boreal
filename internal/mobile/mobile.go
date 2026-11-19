@@ -93,7 +93,7 @@ func Run() error {
 	if recovered {
 		a.toasts.Info("Your old vault was set aside", "It was protected by this phone's secure storage and can't be opened here. Boreal started a new one.")
 	}
-	shaper, _ := fonts.Load()
+	shaper, _ := fonts.LoadEmbedded()
 	a.kit = kit.New(a.buildTheme(), shaper)
 	a.glyphs, _ = fonts.Glyphs(a.settings.TerminalFont)
 	a.lock = lock.New(a)
@@ -134,7 +134,7 @@ func (a *App) loop() error {
 
 func (a *App) context(ops *op.Ops, e gioapp.FrameEvent) C {
 	ops.Reset()
-	paint.Fill(ops, a.kit.Th.Window)
+	paint.Fill(ops, a.kit.Th.Panel)
 
 	left, top := e.Metric.Dp(e.Insets.Left), e.Metric.Dp(e.Insets.Top)
 	size := image.Pt(e.Size.X-left-e.Metric.Dp(e.Insets.Right), e.Size.Y-top-e.Metric.Dp(e.Insets.Bottom))
@@ -496,7 +496,7 @@ func (a *App) buildTheme() *theme.Theme {
 
 func (a *App) applyBars() {
 	th := a.kit.Th
-	a.win.Option(gioapp.StatusColor(th.Window), gioapp.NavigationColor(th.Panel))
+	a.win.Option(gioapp.StatusColor(th.Panel), gioapp.NavigationColor(th.Panel))
 }
 
 func (a *App) Push(s nav.Screen) {

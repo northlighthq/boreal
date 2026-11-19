@@ -1,7 +1,7 @@
 package terminal
 
 import (
-	"image"
+	"image/color"
 	"strconv"
 	"time"
 
@@ -100,18 +100,11 @@ func (l *List) row(gtx C, k *kit.Kit, s *Session, it *item) D {
 	}
 
 	return ui.Row(gtx, k, &it.open, ui.RowOpts{
-		Lead: func(gtx C) D {
-			dims := ui.Tile(gtx, icons.Terminal, th.TextMuted, th.Hover)
-			side := gtx.Dp(10)
-			off := dims.Size.Sub(image.Pt(side, side))
-			r := image.Rectangle{Min: off, Max: off.Add(image.Pt(side, side))}
-			kit.RRect(gtx, r.Inset(-gtx.Dp(2)), side, th.Panel)
-			kit.RRect(gtx, r, side/2, c)
-			return dims
-		},
+		Lead:     ui.TileFor(k, icons.Terminal, color.NRGBA{}),
 		Title:    s.Host.Title(),
 		Subtitle: label,
-		Trailing: func(gtx C) D { return ui.IconButton(gtx, k, &it.more, icons.LucideMore, th.TextMuted) },
+		Dot:      c,
+		Trailing: func(gtx C) D { return ui.IconButton(gtx, k, &it.more, icons.LucideMore, th.TextFaint) },
 	})
 }
 

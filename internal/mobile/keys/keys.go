@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"gioui.org/font"
 	"gioui.org/io/clipboard"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
@@ -54,6 +53,14 @@ func (l *List) Subtitle() string {
 	return strconv.Itoa(l.count) + " keys"
 }
 
+func (l *List) Actions() []ui.Action {
+	if l.count == 0 {
+		return nil
+	}
+
+	return []ui.Action{{Icon: icons.Add, Click: &l.add, Do: func() { l.h.ShowSheet(addSheet(l.h)) }}}
+}
+
 func (l *List) Layout(gtx C) D {
 	k := l.h.Kit()
 	all := l.h.Vault().Snapshot().Keys
@@ -95,12 +102,7 @@ func (l *List) Layout(gtx C) D {
 		}
 	}
 
-	return layout.Stack{}.Layout(gtx,
-		layout.Expanded(func(gtx C) D {
-			return ui.Page(gtx, &l.list, func(gtx C) D { return ui.Section(gtx, k, "", rows...) })
-		}),
-		layout.Expanded(func(gtx C) D { return ui.FAB(gtx, k, &l.add, icons.Add, "Add key") }),
-	)
+	return ui.Page(gtx, &l.list, func(gtx C) D { return ui.Section(gtx, k, "", rows...) })
 }
 
 func addSheet(h ui.Host) *ui.Sheet {
@@ -153,6 +155,10 @@ func NewGenerate(h ui.Host) *Generate {
 
 func (g *Generate) Title() string { return "New key" }
 
+func (g *Generate) Actions() []ui.Action {
+	return []ui.Action{{Icon: icons.Check, Click: &g.make, Do: g.generate, Primary: true}}
+}
+
 func (g *Generate) generate() {
 	name := strings.TrimSpace(g.name.Text())
 
@@ -178,21 +184,16 @@ func (g *Generate) generate() {
 func (g *Generate) Layout(gtx C) D {
 	k := g.h.Kit()
 
-	if g.make.Clicked(gtx) {
-		g.generate()
-	}
-
 	return ui.Page(gtx, &g.list,
 		func(gtx C) D {
-			return ui.Field(gtx, k, &g.name, ui.FieldOpts{Label: "Name", Hint: "Phone key"})
+			return ui.Section(gtx, k, "",
+				func(gtx C) D { return ui.FormRow(gtx, k, "Name", &g.name, ui.FormOpts{Hint: "Phone key"}) },
+				func(gtx C) D { return ui.FormRow(gtx, k, "Passphrase", &g.pass, ui.FormOpts{Hint: "Optional"}) },
+			)
 		},
 		func(gtx C) D {
-			return ui.Field(gtx, k, &g.pass, ui.FieldOpts{Label: "Passphrase", Hint: "Optional", Help: "Encrypts the key itself. You'll type it when you connect."})
+			return ui.Caption(gtx, k, "Boreal creates an Ed25519 key, the modern default for SSH. A passphrase encrypts the key itself, and you type it when you connect. Add the public key to ~/.ssh/authorized_keys on your servers.")
 		},
-		func(gtx C) D {
-			return ui.Caption(gtx, k, "Boreal creates an Ed25519 key, the modern default for SSH. Add its public key to ~/.ssh/authorized_keys on your servers.")
-		},
-		func(gtx C) D { return ui.Button(gtx, k, &g.make, ui.Primary, nil, "Generate key", true) },
 	)
 }
 
@@ -217,6 +218,10 @@ func NewImport(h ui.Host) *Import {
 
 func (im *Import) Title() string { return "Import key" }
 
+func (im *Import) Actions() []ui.Action {
+	return []ui.Action{{Icon: icons.Check, Click: &im.save, Do: im.submit, Primary: true}}
+}
+
 func (im *Import) Layout(gtx C) D {
 	k := im.h.Kit()
 
@@ -240,25 +245,39 @@ func (im *Import) Layout(gtx C) D {
 		gtx.Execute(clipboard.ReadCmd{Tag: im})
 	}
 
-	if im.save.Clicked(gtx) {
-		im.submit()
-	}
-
 	event.Op(gtx.Ops, im)
 	return ui.Page(gtx, &im.list,
 		func(gtx C) D {
-			return ui.Field(gtx, k, &im.name, ui.FieldOpts{Label: "Name", Hint: "Work laptop key"})
+			return ui.Section(gtx, k, "",
+				func(gtx C) D { return ui.FormRow(gtx, k, "Name", &im.name, ui.FormOpts{Hint: "Work laptop key"}) },
+			)
 		},
 		func(gtx C) D {
-			return ui.Field(gtx, k, &im.data, ui.FieldOpts{Label: "Private key", Hint: "-----BEGIN OPENSSH PRIVATE KEY-----", Mono: true, Invalid: im.err != "", Help: im.err})
+			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+				layout.Rigid(func(gtx C) D {
+					return ui.Section(gtx, k, "Private key",
+						func(gtx C) D {
+							return ui.FormArea(gtx, k, &im.data, ui.FormOpts{Hint: "-----BEGIN OPENSSH PRIVATE KEY-----", Mono: true})
+						},
+						func(gtx C) D { return ui.ActionRow(gtx, k, &im.paste, icons.Paste, "Paste from clipboard", ui.Primary) },
+					)
+				}),
+				layout.Rigid(func(gtx C) D {
+					if im.err == "" {
+						return D{}
+					}
+
+					return layout.Inset{Left: 4, Top: 8}.Layout(gtx, func(gtx C) D {
+						return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: k.Th.Danger, MaxLines: 3}, im.err)
+					})
+				}),
+			)
 		},
 		func(gtx C) D {
-			return ui.Button(gtx, k, &im.paste, ui.Secondary, icons.Paste, "Paste from clipboard", true)
+			return ui.Section(gtx, k, "",
+				func(gtx C) D { return ui.FormRow(gtx, k, "Passphrase", &im.pass, ui.FormOpts{Hint: "If the key has one"}) },
+			)
 		},
-		func(gtx C) D {
-			return ui.Field(gtx, k, &im.pass, ui.FieldOpts{Label: "Passphrase", Hint: "Only if the key has one"})
-		},
-		func(gtx C) D { return ui.Button(gtx, k, &im.save, ui.Primary, nil, "Import key", true) },
 	)
 }
 
@@ -344,23 +363,21 @@ func (d *Detail) Layout(gtx C) D {
 			)
 		},
 		func(gtx C) D {
-			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-				layout.Rigid(func(gtx C) D {
-					return layout.Inset{Left: 4, Bottom: 8}.Layout(gtx, func(gtx C) D {
-						return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: th.TextMuted, Weight: font.SemiBold}, "PUBLIC KEY")
+			return ui.Section(gtx, k, "Public key",
+				func(gtx C) D {
+					return layout.Inset{Left: ui.Gutter, Right: ui.Gutter, Top: 14, Bottom: 14}.Layout(gtx, func(gtx C) D {
+						gtx.Constraints.Min.X = gtx.Constraints.Max.X
+						return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Color: th.TextMuted, Mono: true, MaxLines: 12}, kk.Public)
 					})
-				}),
-				layout.Rigid(func(gtx C) D {
-					return ui.Card(gtx, k, func(gtx C) D {
-						return layout.UniformInset(14).Layout(gtx, func(gtx C) D {
-							return k.Label(gtx, kit.TextStyle{Size: ui.TextCaption, Mono: true, MaxLines: 12}, kk.Public)
-						})
-					})
-				}),
+				},
+				func(gtx C) D { return ui.ActionRow(gtx, k, &d.copy, icons.Copy, "Copy public key", ui.Primary) },
 			)
 		},
-		func(gtx C) D { return ui.Button(gtx, k, &d.copy, ui.Primary, icons.Copy, "Copy public key", true) },
-		func(gtx C) D { return ui.Button(gtx, k, &d.remove, ui.Destructive, icons.Delete, "Delete key", true) },
+		func(gtx C) D {
+			return ui.Section(gtx, k, "",
+				func(gtx C) D { return ui.ActionRow(gtx, k, &d.remove, icons.Delete, "Delete key", ui.Destructive) },
+			)
+		},
 	)
 }
 
