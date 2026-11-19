@@ -33,6 +33,14 @@ func tablerIcon(key string, fill bool) *Icon {
 		panic("icons: no such icon " + key)
 	}
 
+	return pathIcon(d, fill)
+}
+
+func stroke(d string) *Icon {
+	return pathIcon(d, false)
+}
+
+func pathIcon(d string, fill bool) *Icon {
 	segs := parsePath(d)
 
 	if !fill {
