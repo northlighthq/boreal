@@ -123,7 +123,17 @@ func Dial(ctx context.Context, t Target, v *vault.Vault, hooks Hooks, keepAlive 
 	}
 
 	progress("Authenticating…")
+	abort := context.AfterFunc(ctx, func() { conn.Close() })
 	c, chans, reqs, err := ssh.NewClientConn(conn, addr, cfg)
+
+	if !abort() && err == nil {
+		c.Close()
+		err = ctx.Err()
+	}
+
+	if err != nil && ctx.Err() != nil {
+		err = fmt.Errorf("%w: %w", ctx.Err(), err)
+	}
 
 	if err != nil {
 		conn.Close()
