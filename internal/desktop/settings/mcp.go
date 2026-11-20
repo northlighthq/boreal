@@ -6,6 +6,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"gioui.org/io/clipboard"
@@ -43,6 +44,17 @@ type mcpSettings struct {
 	confirming           bool
 	confirmDlg           kit.Dialog
 	confirmOK, cancel    widget.Clickable
+	folderList           []string
+	folderRev            uint64
+	folderOK             bool
+}
+
+func (s *mcpSettings) allFolders(v *vault.Vault) []string {
+	if rev := v.Revision(); !s.folderOK || rev != s.folderRev {
+		s.folderList, s.folderRev, s.folderOK = v.Snapshot().AllFolders(), rev, true
+	}
+
+	return s.folderList
 }
 
 func (s *mcpSettings) folder(name string) *widget.Bool {
@@ -96,7 +108,7 @@ func (s *mcpSettings) save(v *vault.Vault, p vault.MCPPolicy) {
 func (s *mcpSettings) update(a base.Host, gtx C) {
 	v := a.Vault()
 	current := v.MCP()
-	folders := v.Snapshot().AllFolders()
+	folders := s.allFolders(v)
 	changed := false
 
 	for _, b := range []*widget.Bool{&s.enabled, &s.read, &s.write} {
@@ -174,7 +186,7 @@ func (s *mcpSettings) confirm(a base.Host, gtx C) {
 	}
 }
 
-func clientConfig() string {
+var clientConfig = sync.OnceValue(func() string {
 	exe, err := os.Executable()
 
 	if err != nil {
@@ -184,7 +196,7 @@ func clientConfig() string {
 	cfg := map[string]any{"mcpServers": map[string]any{clientConfigKey: map[string]any{"command": exe, "args": []string{borealmcp.Command}}}}
 	b, _ := json.MarshalIndent(cfg, "", "  ")
 	return string(b)
-}
+})
 
 func (d *Dialog) mcpPage(a base.Host, p page) []layout.FlexChild {
 	k := p.k
@@ -218,7 +230,7 @@ func (d *Dialog) mcpPage(a base.Host, p page) []layout.FlexChild {
 	}
 
 	if s.scope.Value == hostsFolders {
-		folders := append([]string{vault.RootFolder}, v.Snapshot().AllFolders()...)
+		folders := append([]string{vault.RootFolder}, s.allFolders(v)...)
 
 		hosts = append(hosts, p.block(func(gtx C) D {
 			rows := make([]layout.FlexChild, 0, len(folders)+1)
