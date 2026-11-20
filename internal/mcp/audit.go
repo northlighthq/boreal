@@ -3,6 +3,7 @@ package mcp
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -13,6 +14,7 @@ import (
 
 const (
 	LogName     = "mcp.log"
+	tailBytes   = 64 << 10
 	maxLogSize  = 1 << 20
 	oldLogName  = "mcp.log.1"
 	logFileMode = 0o600
@@ -86,6 +88,12 @@ func Recent(n int) []Record {
 	}
 
 	defer f.Close()
+
+	if info, err := f.Stat(); err == nil && info.Size() > tailBytes {
+		if _, err := f.Seek(info.Size()-tailBytes, io.SeekStart); err != nil {
+			return nil
+		}
+	}
 
 	var all []Record
 	sc := bufio.NewScanner(f)

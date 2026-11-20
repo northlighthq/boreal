@@ -248,7 +248,9 @@ func (d *Dialog) commit(a base.Host) {
 func (d *Dialog) Layout(gtx C) bool {
 	a := d.h
 	d.sec.update(a, gtx)
-	d.mcp.update(a, gtx)
+	if d.page == pageMCP {
+		d.mcp.update(a, gtx)
+	}
 	k := a.Kit()
 
 	if d.links.Update(gtx) {
