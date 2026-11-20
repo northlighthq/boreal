@@ -2,13 +2,8 @@ package terminal
 
 import (
 	"image"
-	"image/color"
 
-	"gioui.org/f32"
 	"gioui.org/layout"
-	"gioui.org/op"
-	"gioui.org/op/clip"
-	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"github.com/northlighthq/vt/input"
@@ -19,13 +14,15 @@ import (
 )
 
 const (
-	barHeight = unit.Dp(48)
-	chipH     = unit.Dp(34)
-	chipMinW  = unit.Dp(42)
-	chipPadX  = unit.Dp(11)
-	chipGap   = unit.Dp(6)
-	fadeWidth = unit.Dp(32)
-	arrowSize = unit.Dp(17)
+	barHeight  = unit.Dp(50)
+	chipH      = unit.Dp(36)
+	chipGap    = unit.Dp(5)
+	barPadX    = unit.Dp(8)
+	arrowSize  = unit.Dp(17)
+	pageKeys   = 8
+	pageCount  = 2
+	moreLabel  = "···"
+	shortLabel = 3
 )
 
 type barKey struct {
@@ -42,80 +39,79 @@ const (
 	latchAlt
 )
 
-var barKeys = [...]barKey{
-	{label: "Esc", key: input.KeyEscape},
-	{label: "Tab", key: input.KeyTab},
-	{label: "Ctrl", latch: latchCtrl},
-	{label: "Alt", latch: latchAlt},
-	{icon: icons.ArrowLeft, key: input.KeyLeft},
-	{icon: icons.ArrowUp, key: input.KeyUp},
-	{icon: icons.ArrowDown, key: input.KeyDown},
-	{icon: icons.ArrowRight, key: input.KeyRight},
-	{label: "|", text: "|"},
-	{label: "/", text: "/"},
-	{label: "-", text: "-"},
-	{label: "~", text: "~"},
-	{label: "Home", key: input.KeyHome},
-	{label: "End", key: input.KeyEnd},
-	{label: "PgUp", key: input.KeyPageUp},
-	{label: "PgDn", key: input.KeyPageDown},
+var barPages = [pageCount][pageKeys]barKey{
+	{
+		{label: "Esc", key: input.KeyEscape},
+		{label: "Tab", key: input.KeyTab},
+		{label: "Ctrl", latch: latchCtrl},
+		{label: "Alt", latch: latchAlt},
+		{icon: icons.ArrowLeft, key: input.KeyLeft},
+		{icon: icons.ArrowUp, key: input.KeyUp},
+		{icon: icons.ArrowDown, key: input.KeyDown},
+		{icon: icons.ArrowRight, key: input.KeyRight},
+	},
+	{
+		{label: "|", text: "|"},
+		{label: "/", text: "/"},
+		{label: "-", text: "-"},
+		{label: "~", text: "~"},
+		{label: "Home", key: input.KeyHome},
+		{label: "End", key: input.KeyEnd},
+		{label: "PgUp", key: input.KeyPageUp},
+		{label: "PgDn", key: input.KeyPageDown},
+	},
 }
 
 type keyBar struct {
-	clks [len(barKeys)]widget.Clickable
-	list widget.List
+	clks [pageCount][pageKeys]widget.Clickable
+	more widget.Clickable
+	page int
 }
 
 func (b *keyBar) Layout(gtx C, k *kit.Kit, s *Session) D {
 	th := k.Th
 
-	for i := range b.clks {
-		if b.clks[i].Clicked(gtx) {
-			b.press(s, barKeys[i])
+	for p := range b.clks {
+		for i := range b.clks[p] {
+			if b.clks[p][i].Clicked(gtx) {
+				b.press(s, barPages[p][i])
+			}
 		}
+	}
+
+	if b.more.Clicked(gtx) {
+		b.page = (b.page + 1) % pageCount
 	}
 
 	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(barHeight))
 	kit.Rect(gtx, image.Rectangle{Max: size}, th.Panel)
 	kit.Rect(gtx, image.Rect(0, 0, size.X, max(gtx.Dp(1)/2, 1)), th.Divider)
 	gtx.Constraints = layout.Exact(size)
-	b.list.Axis = layout.Horizontal
 
-	layout.Inset{Left: 8, Right: 8}.Layout(gtx, func(gtx C) D {
-		return b.list.Layout(gtx, len(barKeys), func(gtx C, i int) D {
-			in := layout.Inset{Right: chipGap}
+	children := make([]layout.FlexChild, 0, 2*pageKeys+1)
 
-			if i == len(barKeys)-1 {
-				in.Right = 0
-			}
-
-			return in.Layout(gtx, func(gtx C) D {
-				return layout.W.Layout(gtx, func(gtx C) D { return b.chip(gtx, k, s, i) })
-			})
-		})
-	})
-
-	if b.list.Position.BeforeEnd {
-		fade(gtx, size, gtx.Dp(fadeWidth), th.Panel)
+	for i := range pageKeys {
+		bk := barPages[b.page][i]
+		on := (bk.latch == latchCtrl && s.ctrl) || (bk.latch == latchAlt && s.alt)
+		children = append(children,
+			layout.Flexed(1, func(gtx C) D { return b.chip(gtx, k, &b.clks[b.page][i], bk, on) }),
+			layout.Rigid(ui.Gap(chipGap)),
+		)
 	}
+
+	children = append(children, layout.Flexed(1, func(gtx C) D {
+		return b.chip(gtx, k, &b.more, barKey{label: moreLabel}, b.page > 0)
+	}))
+
+	layout.Inset{Left: barPadX, Right: barPadX}.Layout(gtx, func(gtx C) D {
+		return layout.Flex{Alignment: layout.Middle}.Layout(gtx, children...)
+	})
 
 	return D{Size: size}
 }
 
-func fade(gtx C, size image.Point, width int, c color.NRGBA) {
-	x0, x1 := float32(size.X-width), float32(size.X)
-	clear := c
-	clear.A = 0
-	defer clip.Rect{Min: image.Pt(size.X-width, 1), Max: size}.Push(gtx.Ops).Pop()
-	paint.LinearGradientOp{Stop1: f32.Pt(x0, 0), Color1: clear, Stop2: f32.Pt(x1, 0), Color2: c}.Add(gtx.Ops)
-	paint.PaintOp{}.Add(gtx.Ops)
-}
-
-func (b *keyBar) chip(gtx C, k *kit.Kit, s *Session, i int) D {
+func (b *keyBar) chip(gtx C, k *kit.Kit, clk *widget.Clickable, bk barKey, on bool) D {
 	th := k.Th
-	bk := barKeys[i]
-	on := (bk.latch == latchCtrl && s.ctrl) || (bk.latch == latchAlt && s.alt)
-	clk := &b.clks[i]
 
 	return clk.Layout(gtx, func(gtx C) D {
 		bg, fg := th.Selection, th.Text
@@ -124,29 +120,26 @@ func (b *keyBar) chip(gtx C, k *kit.Kit, s *Session, i int) D {
 		case on:
 			bg, fg = th.Accent, th.OnAccent
 		case clk.Pressed():
-			bg = kit.Lerp(th.Selection, th.Text, 0.12)
+			bg = kit.Lerp(th.Selection, th.Text, 0.14)
 		}
 
-		h := gtx.Dp(chipH)
-		gtx.Constraints.Min = image.Pt(gtx.Dp(chipMinW), h)
-		gtx.Constraints.Max.Y = h
-		rec := op.Record(gtx.Ops)
-		dims := layout.Inset{Left: chipPadX, Right: chipPadX}.Layout(gtx, func(gtx C) D {
-			return layout.Center.Layout(gtx, func(gtx C) D {
-				if bk.icon != nil {
-					return bk.icon.Layout(gtx, arrowSize, fg)
-				}
+		size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(chipH))
+		kit.RRect(gtx, image.Rectangle{Max: size}, gtx.Dp(th.RadiusSmall), bg)
+		gtx.Constraints = layout.Exact(size)
 
-				return k.Label(gtx, kit.TextStyle{Size: ui.TextSub, Color: fg, Mono: true, MaxLines: 1}, bk.label)
-			})
+		return layout.Center.Layout(gtx, func(gtx C) D {
+			if bk.icon != nil {
+				return bk.icon.Layout(gtx, arrowSize, fg)
+			}
+
+			ts := ui.TextSub
+
+			if len(bk.label) > shortLabel {
+				ts = ui.TextCaption - 1
+			}
+
+			return k.Label(gtx, kit.TextStyle{Size: ts, Color: fg, Mono: true, MaxLines: 1}, bk.label)
 		})
-		call := rec.Stop()
-		dims.Size.X = max(dims.Size.X, gtx.Dp(chipMinW))
-		r := image.Rectangle{Max: dims.Size}
-		radius := gtx.Dp(th.RadiusSmall)
-		kit.RRect(gtx, r, radius, bg)
-		call.Add(gtx.Ops)
-		return dims
 	})
 }
 
