@@ -5,6 +5,7 @@ import (
 	"image"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"sync"
 	"time"
@@ -511,10 +512,12 @@ func (a *App) Pop() {
 	a.Invalidate()
 }
 
+const androidOS = "android"
+
 func openVault() (*vault.Vault, bool, error) {
 	v, err := vault.Open()
 
-	if !errors.Is(err, vault.ErrNeedUnlock) {
+	if !errors.Is(err, vault.ErrNeedUnlock) || runtime.GOOS != androidOS {
 		return v, false, err
 	}
 
