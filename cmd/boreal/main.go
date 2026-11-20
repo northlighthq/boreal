@@ -10,11 +10,16 @@ import (
 
 	"github.com/northlighthq/boreal/internal/core/launch"
 	boreal "github.com/northlighthq/boreal/internal/desktop"
+	borealmcp "github.com/northlighthq/boreal/internal/mcp"
 	"github.com/northlighthq/boreal/internal/platform/instance"
 )
 
 func main() {
 	args := os.Args[1:]
+
+	if len(args) == 1 && args[0] == borealmcp.Command {
+		os.Exit(borealmcp.Main())
+	}
 
 	if _, ok := launch.Parse(args); ok && instance.Send(args) {
 		return
