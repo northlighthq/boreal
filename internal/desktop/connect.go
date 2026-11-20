@@ -35,20 +35,6 @@ func (a *App) DefaultProfile() shell.Profile {
 	return a.profiles[0]
 }
 
-func (a *App) profileMenu() []kit.MenuItem {
-	items := make([]kit.MenuItem, len(a.profiles))
-
-	for i, p := range a.profiles {
-		items[i] = kit.MenuItem{Label: p.Name, Icon: icons.Terminal}
-
-		if i == 0 {
-			items[i].Shortcut = "Ctrl+Shift+T"
-		}
-	}
-
-	return items
-}
-
 func (a *App) termSettings() termview.Settings {
 	s := a.settings
 	style := vt.CursorBlock

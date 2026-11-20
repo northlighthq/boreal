@@ -2,10 +2,8 @@ package welcome
 
 import (
 	"image"
-	"os"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"gioui.org/layout"
@@ -189,71 +187,6 @@ func (w *Screen) recentRow(a base.Host, gtx C, h vault.Host) D {
 			)
 		})
 	})
-}
-
-func greeting(t time.Time, name string) string {
-	var s string
-
-	switch h := t.Hour(); {
-	case h < 6:
-		if name != "" {
-			return "Up late, " + name + "?"
-		}
-
-		return "Up late?"
-	case h < 13:
-		s = "Good morning"
-	case h < 21:
-		s = "Good afternoon"
-	default:
-		s = "Good evening"
-	}
-
-	if name != "" {
-		s += ", " + name
-	}
-
-	return s
-}
-
-func userName() string {
-	n := strings.TrimSpace(os.Getenv("USERNAME"))
-
-	if n == "" || strings.EqualFold(n, "user") || strings.EqualFold(n, "usuario") {
-		return ""
-	}
-
-	r := []rune(n)
-	return strings.ToUpper(string(r[0])) + string(r[1:])
-}
-
-func summary(a base.Host) string {
-	d := a.Vault().Snapshot()
-	hosts, folders := len(d.Hosts), len(d.AllFolders())
-
-	if hosts == 0 {
-		return "Add your first server or open a local terminal."
-	}
-
-	s := plural(hosts, "saved server", "saved servers")
-
-	if folders > 0 {
-		s += " in " + plural(folders, "folder", "folders")
-	}
-
-	if n := a.Tunnels().Active(); n > 0 {
-		s += " · " + plural(n, "active tunnel", "active tunnels")
-	}
-
-	return s + "."
-}
-
-func plural(n int, one, many string) string {
-	if n == 1 {
-		return "1 " + one
-	}
-
-	return strconv.Itoa(n) + " " + many
 }
 
 func ago(d time.Duration) string {

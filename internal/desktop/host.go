@@ -91,20 +91,6 @@ func (a *App) splitWith(p *Pane, vertical bool) {
 	p.view.Focus()
 }
 
-func (a *App) runTyped(cmd string) {
-	if target, ok := strings.CutPrefix(cmd, "ssh "); ok && a.QuickConnect(strings.TrimSpace(target)) {
-		return
-	}
-
-	a.NewLocalTab(a.DefaultProfile())
-
-	if cmd == "" {
-		return
-	}
-
-	a.sendWhenConnected(a.ws.activePane(), cmd+"\r")
-}
-
 var errRuleWithoutHost = errors.New("this rule's host no longer exists")
 
 func (a *App) newTunnels() *tunnel.Manager {
