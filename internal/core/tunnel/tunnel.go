@@ -95,32 +95,33 @@ func (t *Manager) Active() int {
 }
 
 func (t *Manager) Start(r vault.Forward) {
-	if t.claim(r.ID) {
-		go t.open(r, nil)
+	if st, ok := t.claim(r.ID); ok {
+		go t.open(r, nil, st)
 	}
 }
 
 func (t *Manager) StartOn(r vault.Forward, c *sshx.Client) {
-	if t.claim(r.ID) {
-		go t.open(r, c)
+	if st, ok := t.claim(r.ID); ok {
+		go t.open(r, c, st)
 	}
 }
 
-func (t *Manager) claim(id string) bool {
+func (t *Manager) claim(id string) (*State, bool) {
 	t.mu.Lock()
 
 	if s, ok := t.m[id]; ok && (s.Starting || s.Tunnel != nil) {
 		t.mu.Unlock()
-		return false
+		return nil, false
 	}
 
-	t.m[id] = &State{Starting: true}
+	st := &State{Starting: true}
+	t.m[id] = st
 	t.mu.Unlock()
 	t.changed()
-	return true
+	return st, true
 }
 
-func (t *Manager) open(r vault.Forward, shared *sshx.Client) {
+func (t *Manager) open(r vault.Forward, shared *sshx.Client, claimed *State) {
 	client, err := shared, error(nil)
 
 	if client == nil {
@@ -138,6 +139,21 @@ func (t *Manager) open(r vault.Forward, shared *sshx.Client) {
 	}
 
 	t.mu.Lock()
+
+	if t.m[r.ID] != claimed {
+		t.mu.Unlock()
+
+		if tun != nil {
+			tun.Close()
+		}
+
+		if client != nil && shared == nil {
+			client.Close()
+		}
+
+		return
+	}
+
 	t.m[r.ID] = &State{Tunnel: tun, Client: client, Shared: shared != nil, Err: err}
 	t.mu.Unlock()
 
