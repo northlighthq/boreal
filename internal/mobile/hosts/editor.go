@@ -130,7 +130,7 @@ func (e *Editor) Layout(gtx C) D {
 
 	addrErr := e.tried && strings.TrimSpace(e.address.Text()) == ""
 	portErr := e.portError()
-	saved := e.h.Vault().Snapshot().Keys
+	saved := e.h.Data().Keys
 
 	for _, kk := range saved {
 		if c := e.keyRows[kk.ID]; c != nil && c.Clicked(gtx) {

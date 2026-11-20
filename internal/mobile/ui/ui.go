@@ -39,6 +39,7 @@ const (
 type Host interface {
 	Kit() *kit.Kit
 	Vault() *vault.Vault
+	Data() vault.Data
 	Settings() config.Settings
 	UpdateSettings(s config.Settings)
 	Push(s nav.Screen)

@@ -246,7 +246,7 @@ func (t *Screen) menu() *ui.Sheet {
 }
 
 func (t *Screen) showSnippets() {
-	all := t.h.Vault().Snapshot().Snippets
+	all := t.h.Data().Snippets
 
 	if len(all) == 0 {
 		t.h.Notify("No snippets yet", "Add them in Settings › Snippets.")

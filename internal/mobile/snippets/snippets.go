@@ -34,7 +34,7 @@ func NewList(h ui.Host) *List {
 func (l *List) Title() string { return "Snippets" }
 
 func (l *List) Actions() []ui.Action {
-	if len(l.h.Vault().Snapshot().Snippets) == 0 {
+	if len(l.h.Data().Snippets) == 0 {
 		return nil
 	}
 
@@ -43,7 +43,7 @@ func (l *List) Actions() []ui.Action {
 
 func (l *List) Layout(gtx C) D {
 	k := l.h.Kit()
-	all := l.h.Vault().Snapshot().Snippets
+	all := l.h.Data().Snippets
 
 	if l.add.Clicked(gtx) || l.empty.Clicked(gtx) {
 		l.h.Push(NewEditor(l.h, vault.Snippet{}))

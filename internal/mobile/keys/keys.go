@@ -63,7 +63,7 @@ func (l *List) Actions() []ui.Action {
 
 func (l *List) Layout(gtx C) D {
 	k := l.h.Kit()
-	all := l.h.Vault().Snapshot().Keys
+	all := l.h.Data().Keys
 	l.count = len(all)
 
 	if l.add.Clicked(gtx) || l.empty.Clicked(gtx) {
@@ -384,7 +384,7 @@ func (d *Detail) Layout(gtx C) D {
 func (d *Detail) confirmDelete(kk vault.Key) {
 	used := 0
 
-	for _, h := range d.h.Vault().Snapshot().Hosts {
+	for _, h := range d.h.Data().Hosts {
 		if h.KeyID == kk.ID {
 			used++
 		}
