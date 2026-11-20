@@ -64,6 +64,9 @@ type App struct {
 	settings config.Settings
 	vault    *vault.Vault
 	toasts   toast.Stack
+	data     vault.Data
+	dataRev  uint64
+	dataOK   bool
 
 	stacks  [tabCount]*nav.Stack
 	tab     tab
@@ -152,6 +155,7 @@ func (a *App) frame(gtx C) {
 	a.kit.Redact = a.redactor()
 
 	if a.vault.Locked() {
+		a.forgetData()
 		a.locked = true
 		a.lock.Layout(gtx)
 		a.toasts.Layout(gtx, a.kit)
@@ -513,6 +517,18 @@ func (a *App) Pop() {
 }
 
 const androidOS = "android"
+
+func (a *App) Data() vault.Data {
+	if rev := a.vault.Revision(); !a.dataOK || rev != a.dataRev {
+		a.data, a.dataRev, a.dataOK = a.vault.Snapshot(), rev, true
+	}
+
+	return a.data
+}
+
+func (a *App) forgetData() {
+	a.data, a.dataOK = vault.Data{}, false
+}
 
 func openVault() (*vault.Vault, bool, error) {
 	v, err := vault.Open()

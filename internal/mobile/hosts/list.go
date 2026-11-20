@@ -69,7 +69,7 @@ func (l *List) Actions() []ui.Action {
 
 func (l *List) Layout(gtx C) D {
 	k := l.h.Kit()
-	all := l.h.Vault().Snapshot().Hosts
+	all := l.h.Data().Hosts
 	l.count = len(all)
 
 	if l.add.Clicked(gtx) || l.empty.Clicked(gtx) {
