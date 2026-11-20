@@ -92,7 +92,7 @@ func (r *Root) Layout(gtx C) D {
 					return ui.Row(gtx, k, &r.terminal, ui.RowOpts{Lead: tile(k, icons.Terminal), Title: "Terminal", Value: strconv.Itoa(int(s.FontSize)) + " pt", Chevron: true})
 				},
 				func(gtx C) D {
-					n := len(r.h.Vault().Snapshot().Snippets)
+					n := len(r.h.Data().Snippets)
 					return ui.Row(gtx, k, &r.snippets, ui.RowOpts{Lead: tile(k, icons.Snippet), Title: "Snippets", Value: strconv.Itoa(n), Chevron: true})
 				},
 			)
