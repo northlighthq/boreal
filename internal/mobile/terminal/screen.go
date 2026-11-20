@@ -43,7 +43,6 @@ type Screen struct {
 	retry  widget.Clickable
 	close  widget.Clickable
 	paste  bool
-	status widget.List
 }
 
 func NewScreen(h Host, s *Session) *Screen {

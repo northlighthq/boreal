@@ -22,7 +22,6 @@ type List struct {
 	h     Host
 	list  widget.List
 	items map[*Session]*item
-	hosts widget.Clickable
 	count int
 }
 
