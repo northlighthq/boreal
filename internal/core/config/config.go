@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -135,18 +137,14 @@ func Dir() (string, error) {
 	}
 
 	dir := filepath.Join(base, appDir)
+	private, hasPrivate := privateDir()
 
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	if !exists(dir) && (!hasPrivate || !exists(private)) {
 		os.Rename(filepath.Join(base, legacyDir), dir)
 	}
 
-	if private, ok := privateDir(); ok {
-		if _, err := os.Stat(private); os.IsNotExist(err) {
-			os.MkdirAll(filepath.Dir(private), 0o700)
-			os.Rename(dir, private)
-		}
-
-		dir = private
+	if hasPrivate {
+		dir = movePrivate(dir, private)
 	}
 
 	if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -154,6 +152,30 @@ func Dir() (string, error) {
 	}
 
 	return dir, nil
+}
+
+func exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func movePrivate(dir, private string) string {
+	_, err := os.Stat(private)
+
+	switch {
+	case err == nil:
+		return private
+	case !errors.Is(err, fs.ErrNotExist):
+		return dir
+	case !exists(dir):
+		return private
+	}
+
+	if os.MkdirAll(filepath.Dir(private), 0o700) != nil || os.Rename(dir, private) != nil {
+		return dir
+	}
+
+	return private
 }
 
 func Load() Settings {
