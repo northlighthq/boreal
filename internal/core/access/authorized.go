@@ -27,6 +27,8 @@ const (
 	optNoAgentFwd  = "no-agent-forwarding"
 	optNoX11Fwd    = "no-X11-forwarding"
 	optNoPTY       = "no-pty"
+	optCA          = "cert-authority"
+	optPrincipals  = "principals="
 	commentMarker  = "#"
 	lineSeparator  = "\n"
 	optSeparator   = ","
@@ -40,6 +42,7 @@ var (
 	ErrFrom    = errors.New("each source must be a host name, address or CIDR without spaces, quotes or commas")
 	ErrCommand = errors.New("the command can't contain quotes, backslashes or control characters")
 	ErrExpiry  = errors.New("the expiry must be a future date written as YYYYMMDD or YYYYMMDDHHMM")
+	ErrSeveral = errors.New("this key is on several lines of authorized_keys, so Boreal won't guess which one to change. Edit the file on the server")
 )
 
 type Restrictions struct {
@@ -188,6 +191,17 @@ func Line(key ssh.PublicKey, label string, r Restrictions) string {
 	return line
 }
 
+func certificateLine(opts []string) bool {
+	return slices.ContainsFunc(opts, func(o string) bool {
+		return strings.EqualFold(o, optCA) || strings.HasPrefix(strings.ToLower(o), optPrincipals)
+	})
+}
+
+func userLine(line, fp string) bool {
+	k, _, opts, ok := parseLine(line)
+	return ok && !certificateLine(opts) && ssh.FingerprintSHA256(k) == fp
+}
+
 func Grant(content []byte, key ssh.PublicKey, label string, r Restrictions, now time.Time) ([]byte, bool, error) {
 	if err := r.Validate(now); err != nil {
 		return nil, false, err
@@ -196,21 +210,24 @@ func Grant(content []byte, key ssh.PublicKey, label string, r Restrictions, now 
 	fp := ssh.FingerprintSHA256(key)
 	want := Line(key, label, r)
 	lines := strings.Split(string(content), lineSeparator)
+
+	if matches := slices.IndexFunc(lines, func(l string) bool { return userLine(l, fp) }); matches >= 0 {
+		if slices.ContainsFunc(lines[matches+1:], func(l string) bool { return userLine(l, fp) }) {
+			return nil, false, ErrSeveral
+		}
+	}
+
 	out := make([]string, 0, len(lines)+1)
 	placed := false
 
 	for _, line := range lines {
-		k, _, _, ok := parseLine(line)
-
-		if !ok || ssh.FingerprintSHA256(k) != fp {
+		if !userLine(line, fp) {
 			out = append(out, line)
 			continue
 		}
 
-		if !placed {
-			out = append(out, want)
-			placed = true
-		}
+		out = append(out, want)
+		placed = true
 	}
 
 	if !placed {
@@ -227,10 +244,7 @@ func Grant(content []byte, key ssh.PublicKey, label string, r Restrictions, now 
 
 func Revoke(content []byte, fingerprint string) ([]byte, int) {
 	lines := strings.Split(string(content), lineSeparator)
-	kept := slices.DeleteFunc(slices.Clone(lines), func(line string) bool {
-		k, _, _, ok := parseLine(line)
-		return ok && ssh.FingerprintSHA256(k) == fingerprint
-	})
+	kept := slices.DeleteFunc(slices.Clone(lines), func(line string) bool { return userLine(line, fingerprint) })
 
 	return []byte(strings.Join(kept, lineSeparator)), len(lines) - len(kept)
 }

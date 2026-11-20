@@ -81,7 +81,7 @@ func TestGrantAppendsOnceAndKeepsTheRest(t *testing.T) {
 
 func TestGrantUpdatesRestrictionsInPlace(t *testing.T) {
 	a, b := newKey(t), newKey(t)
-	content := []byte(authorized(b, "") + " old\n" + authorized(a, "") + " laptop\n" + authorized(b, "") + " copy\n")
+	content := []byte(authorized(b, "") + " old\n" + authorized(a, "") + " laptop\n")
 
 	next, changed, err := Grant(content, b, "ci", Restrictions{From: []string{"10.1.2.0/24"}, NoPTY: true}, now)
 
@@ -91,12 +91,39 @@ func TestGrantUpdatesRestrictionsInPlace(t *testing.T) {
 
 	entries := Parse(next)
 
-	if len(entries) != 2 {
-		t.Fatalf("duplicates of the key should collapse into one line: %+v", entries)
+	if len(entries) != 2 || entries[0].Fingerprint != ssh.FingerprintSHA256(b) || len(entries[0].Options) != 2 || entries[0].Line != 1 {
+		t.Fatalf("the line must be updated where it was: %+v", entries)
+	}
+}
+
+func TestGrantRefusesWhenTheKeyIsOnSeveralLines(t *testing.T) {
+	b := newKey(t)
+	content := []byte(authorized(b, `from="10.0.0.0/8" `) + " ci\n" + authorized(b, "") + " copy\n")
+
+	if _, _, err := Grant(content, b, "ci", Restrictions{}, now); !errors.Is(err, ErrSeveral) {
+		t.Fatalf("err = %v, want ErrSeveral", err)
+	}
+}
+
+func TestCertificateAuthorityLinesAreLeftAlone(t *testing.T) {
+	ca := newKey(t)
+	caLine := authorized(ca, `cert-authority,principals="ops" `) + " ops ca"
+	content := []byte(caLine + "\n")
+
+	next, changed, err := Grant(content, ca, "ca as a user key", Restrictions{}, now)
+
+	if err != nil || !changed {
+		t.Fatalf("grant: changed=%v err=%v", changed, err)
 	}
 
-	if entries[0].Fingerprint != ssh.FingerprintSHA256(b) || len(entries[0].Options) != 2 {
-		t.Fatalf("updated entry = %+v", entries[0])
+	if !strings.HasPrefix(string(next), caLine+"\n") || len(Parse(next)) != 2 {
+		t.Fatalf("the CA line must stay and a separate user line be added: %q", next)
+	}
+
+	after, removed := Revoke(next, ssh.FingerprintSHA256(ca))
+
+	if removed != 1 || !strings.Contains(string(after), caLine) {
+		t.Fatalf("revoke must remove the user line only: removed=%d %q", removed, after)
 	}
 }
 
