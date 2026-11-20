@@ -389,7 +389,9 @@ func (s *Security) Layout(gtx C) D {
 
 	rows = append(rows,
 		func(gtx C) D { return ui.FormRow(gtx, k, "New", &s.next, ui.FormOpts{Hint: "At least 10 characters"}) },
-		func(gtx C) D { return ui.FormRow(gtx, k, "Repeat", &s.confirm, ui.FormOpts{Hint: "Same again", Invalid: s.err != ""}) },
+		func(gtx C) D {
+			return ui.FormRow(gtx, k, "Repeat", &s.confirm, ui.FormOpts{Hint: "Same again", Invalid: s.err != ""})
+		},
 	)
 
 	children = append(children, func(gtx C) D {
