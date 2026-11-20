@@ -40,9 +40,9 @@ type Screen struct {
 	kbd  widget.Clickable
 	more widget.Clickable
 
-	retry  widget.Clickable
-	close  widget.Clickable
-	paste  bool
+	retry widget.Clickable
+	close widget.Clickable
+	paste bool
 }
 
 func NewScreen(h Host, s *Session) *Screen {
@@ -237,8 +237,8 @@ func (t *Screen) menu() *ui.Sheet {
 		Items: []ui.SheetItem{
 			{Icon: icons.Paste, Label: "Paste", Do: func() { t.paste = true; t.h.Invalidate() }},
 			{Icon: icons.Snippet, Label: "Run a snippet", Do: t.showSnippets},
-			{Icon: icons.Add, Label: "Larger text", Value: strconv.Itoa(size + 1) + " pt", Do: func() { t.zoom(1) }},
-			{Icon: icons.Minus, Label: "Smaller text", Value: strconv.Itoa(size - 1) + " pt", Do: func() { t.zoom(-1) }},
+			{Icon: icons.Add, Label: "Larger text", Value: strconv.Itoa(size+1) + " pt", Do: func() { t.zoom(1) }},
+			{Icon: icons.Minus, Label: "Smaller text", Value: strconv.Itoa(size-1) + " pt", Do: func() { t.zoom(-1) }},
 			{Icon: icons.Refresh, Label: "Reconnect", Do: func() { t.s.Sess.Reconnect() }},
 			{Icon: icons.LucideUnplug, Label: "Disconnect", Danger: true, Do: func() { t.h.Close(t.s) }},
 		},
