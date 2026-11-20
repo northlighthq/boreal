@@ -158,6 +158,7 @@ type Data struct {
 	Triggers   []Trigger   `json:"triggers,omitempty"`
 	KnownHosts []KnownHost `json:"knownHosts"`
 	Folders    []string    `json:"folders,omitempty"`
+	MCP        MCPPolicy   `json:"mcp,omitzero"`
 }
 
 type Vault struct {
