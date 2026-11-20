@@ -5,6 +5,7 @@ package main
 import (
 	"os"
 
+	"github.com/northlighthq/boreal/internal/core/config"
 	"github.com/northlighthq/boreal/internal/core/launch"
 	"github.com/northlighthq/boreal/internal/desktop"
 	borealmcp "github.com/northlighthq/boreal/internal/mcp"
@@ -27,6 +28,7 @@ func handoff(args []string) bool {
 
 func run(args []string) error {
 	if os.Getenv("BOREAL_MOBILE") != "" {
+		config.UsePreview()
 		return mobile.Run()
 	}
 
