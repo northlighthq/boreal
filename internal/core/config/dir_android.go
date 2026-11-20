@@ -5,10 +5,12 @@ import (
 	"path/filepath"
 )
 
+const filesDir = "files"
+
 func privateDir() (string, bool) {
 	home := os.Getenv("HOME")
 
-	if home == "" {
+	if home == "" || filepath.Base(home) != filesDir {
 		return "", false
 	}
 

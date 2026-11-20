@@ -12,9 +12,14 @@ func TestPreviewUsesItsOwnFolder(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", base)
 	t.Setenv("HOME", base)
 
-	real := filepath.Join(base, appDir)
-	os.MkdirAll(real, 0o700)
-	os.WriteFile(filepath.Join(real, "vault.dat"), []byte("real vault"), 0o600)
+	cfg, err := os.UserConfigDir()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	real := filepath.Join(cfg, appDir, "vault.dat")
+	mustWrite(t, real, "real vault")
 
 	preview = true
 	t.Cleanup(func() { preview = false })
@@ -25,11 +30,11 @@ func TestPreviewUsesItsOwnFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if filepath.Base(dir) != previewDir {
-		t.Fatalf("preview dir = %q, want the %q folder", dir, previewDir)
+	if dir != filepath.Join(cfg, previewDir) {
+		t.Fatalf("preview dir = %q, want %q", dir, filepath.Join(cfg, previewDir))
 	}
 
-	if b, _ := os.ReadFile(filepath.Join(real, "vault.dat")); string(b) != "real vault" {
-		t.Fatal("the real vault was touched")
+	if b, err := os.ReadFile(real); err != nil || string(b) != "real vault" {
+		t.Fatalf("the real vault was touched: %q, %v", b, err)
 	}
 }
