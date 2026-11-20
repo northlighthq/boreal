@@ -11,6 +11,7 @@ type MCPPolicy struct {
 	Enabled  bool     `json:"enabled,omitempty"`
 	Read     bool     `json:"read,omitempty"`
 	Access   bool     `json:"access,omitempty"`
+	Execute  bool     `json:"execute,omitempty"`
 	AllHosts bool     `json:"allHosts,omitempty"`
 	Folders  []string `json:"folders,omitempty"`
 }

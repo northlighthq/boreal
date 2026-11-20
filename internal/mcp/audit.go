@@ -27,6 +27,7 @@ type Record struct {
 	Tool    string    `json:"tool"`
 	Host    string    `json:"host,omitempty"`
 	Key     string    `json:"key,omitempty"`
+	Command string    `json:"command,omitempty"`
 	Outcome string    `json:"outcome"`
 	Error   string    `json:"error,omitempty"`
 }

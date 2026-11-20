@@ -15,6 +15,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/northlighthq/boreal/internal/core/access"
+	"github.com/northlighthq/boreal/internal/core/sshx"
 	"github.com/northlighthq/boreal/internal/core/vault"
 )
 
@@ -51,9 +52,21 @@ type fakeView struct {
 	files  map[string]*fakeFiles
 	dials  []string
 	agent  []string
+	runs   []fakeRun
 }
 
 func (v *fakeView) AgentKeys(vault.Host) []string { return v.agent }
+
+type fakeRun struct {
+	host    string
+	cmd     string
+	timeout time.Duration
+}
+
+func (v *fakeView) Run(_ context.Context, h vault.Host, cmd string, timeout time.Duration) (sshx.RunResult, error) {
+	v.runs = append(v.runs, fakeRun{host: h.ID, cmd: cmd, timeout: timeout})
+	return sshx.RunResult{ExitCode: 0, Stdout: "ran: " + cmd}, nil
+}
 
 func (v *fakeView) Policy() vault.MCPPolicy { return v.policy }
 func (v *fakeView) Data() vault.Data        { return v.data }

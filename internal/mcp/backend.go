@@ -30,6 +30,7 @@ type View interface {
 	Data() vault.Data
 	Files(ctx context.Context, h vault.Host) (access.Files, io.Closer, error)
 	AgentKeys(h vault.Host) []string
+	Run(ctx context.Context, h vault.Host, cmd string, timeout time.Duration) (sshx.RunResult, error)
 }
 
 type Backend func() (View, error)
@@ -122,7 +123,7 @@ func (c closers) Close() error {
 	return nil
 }
 
-func (l *live) Files(ctx context.Context, h vault.Host) (access.Files, io.Closer, error) {
+func (l *live) connect(ctx context.Context, h vault.Host) (*sshx.Client, error) {
 	ctx, cancel := context.WithTimeout(ctx, dialTimeout)
 	defer cancel()
 
@@ -130,18 +131,41 @@ func (l *live) Files(ctx context.Context, h vault.Host) (access.Files, io.Closer
 	t, err := l.target(h, 0)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	c, err := sshx.Dial(ctx, t, l.v, hooks, 0)
 
 	if errors.Is(err, sshx.ErrHostKeyRejected) {
-		return nil, nil, errors.New("this server's key isn't trusted yet. Connect to it once from Boreal and accept its key")
+		return nil, errors.New("this server's key isn't trusted yet. Connect to it once from Boreal and accept its key")
 	}
 
 	if err != nil {
 		title, hint := sshx.Explain(err, h.Port)
-		return nil, nil, errors.New(title + ". " + hint)
+		return nil, errors.New(title + ". " + hint)
+	}
+
+	return c, nil
+}
+
+func (l *live) Run(ctx context.Context, h vault.Host, cmd string, timeout time.Duration) (sshx.RunResult, error) {
+	c, err := l.connect(ctx, h)
+
+	if err != nil {
+		return sshx.RunResult{}, err
+	}
+
+	defer c.Close()
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return c.Run(ctx, cmd, sshx.MaxRunOutput)
+}
+
+func (l *live) Files(ctx context.Context, h vault.Host) (access.Files, io.Closer, error) {
+	c, err := l.connect(ctx, h)
+
+	if err != nil {
+		return nil, nil, err
 	}
 
 	s, err := sshx.OpenSFTP(c)
