@@ -53,7 +53,7 @@ type fakeView struct {
 }
 
 func (v *fakeView) Policy() vault.MCPPolicy { return v.policy }
-func (v *fakeView) Data() vault.Data         { return v.data }
+func (v *fakeView) Data() vault.Data        { return v.data }
 
 func (v *fakeView) Files(_ context.Context, h vault.Host) (access.Files, io.Closer, error) {
 	v.dials = append(v.dials, h.ID)
