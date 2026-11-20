@@ -24,6 +24,8 @@ type Screen struct {
 	h      ui.Host
 	pass   widget.Editor
 	unlock widget.Clickable
+	reveal widget.Clickable
+	shown  bool
 	err    string
 	focus  bool
 }
@@ -54,6 +56,15 @@ func (s *Screen) Layout(gtx C) D {
 		s.try()
 	}
 
+	if s.reveal.Clicked(gtx) {
+		s.shown = !s.shown
+		s.pass.Mask = '•'
+
+		if s.shown {
+			s.pass.Mask = 0
+		}
+	}
+
 	if s.focus {
 		s.focus = false
 		gtx.Execute(key.FocusCmd{Tag: &s.pass})
@@ -81,7 +92,18 @@ func (s *Screen) Layout(gtx C) D {
 				layout.Rigid(ui.Gap(28)),
 				layout.Rigid(func(gtx C) D {
 					gtx.Constraints.Min.X = gtx.Constraints.Max.X
-					return ui.Field(gtx, k, &s.pass, ui.FieldOpts{Hint: "Master password", Invalid: s.err != "", Help: s.err})
+					ic := icons.Visibility
+
+					if s.shown {
+						ic = icons.VisibilityOff
+					}
+
+					return ui.Field(gtx, k, &s.pass, ui.FieldOpts{
+						Hint:     "Master password",
+						Invalid:  s.err != "",
+						Help:     s.err,
+						Trailing: func(gtx C) D { return ui.IconButton(gtx, k, &s.reveal, ic, th.TextMuted) },
+					})
 				}),
 				layout.Rigid(ui.Gap(14)),
 				layout.Rigid(func(gtx C) D {
