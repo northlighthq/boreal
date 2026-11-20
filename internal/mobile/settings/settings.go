@@ -302,6 +302,7 @@ func (t *Terminal) Layout(gtx C) D {
 	}
 
 	return ui.Page(gtx, &t.list,
+		func(gtx C) D { return termPreview(gtx, k, s) },
 		func(gtx C) D {
 			return ui.Section(gtx, k, "Text",
 				func(gtx C) D {
@@ -309,7 +310,7 @@ func (t *Terminal) Layout(gtx C) D {
 						Title: "Text size",
 						Trailing: func(gtx C) D {
 							return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-								layout.Rigid(func(gtx C) D { return ui.IconButton(gtx, k, &t.small, icons.Close, th.Text) }),
+								layout.Rigid(func(gtx C) D { return ui.IconButton(gtx, k, &t.small, icons.Minus, th.Text) }),
 								layout.Rigid(func(gtx C) D {
 									gtx.Constraints.Min.X = gtx.Dp(36)
 									return layout.Center.Layout(gtx, func(gtx C) D {
