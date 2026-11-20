@@ -2,43 +2,21 @@ package settings
 
 import (
 	"fmt"
-	"image"
 	"strconv"
 	"strings"
+	"time"
 
-	"gioui.org/font"
-	"gioui.org/io/pointer"
 	"gioui.org/layout"
-	"gioui.org/unit"
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/common/fonts"
-	"github.com/northlighthq/boreal/internal/common/icons"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/theme"
 	"github.com/northlighthq/boreal/internal/core/config"
-	"github.com/northlighthq/boreal/internal/core/sshx"
 	"github.com/northlighthq/boreal/internal/desktop/base"
 	"github.com/northlighthq/boreal/internal/desktop/dialogs"
 	"github.com/northlighthq/boreal/internal/platform/urlhandler"
 )
-
-const settingsLabelWidth = unit.Dp(170)
-
-var settingsPages = []struct {
-	title string
-	icon  *icons.Icon
-}{
-	{"Appearance", icons.Tune},
-	{"Terminal", icons.Terminal},
-	{"Triggers", icons.LucideBell},
-	{"SSH", icons.Lock},
-	{"Security", icons.Shield},
-	{"Assistants", icons.CPU},
-	{"Data", icons.Download},
-	{"Keyboard shortcuts", icons.Keyboard},
-	{"About", icons.Info},
-}
 
 var cursorStyles = []string{config.CursorBlock, config.CursorBar, config.CursorUnderline}
 
@@ -70,14 +48,16 @@ var keymap = [][2]string{
 }
 
 type Dialog struct {
-	h     base.Host
-	sec   security
-	ai    assistants
-	trig  triggers
-	about about
-	s     config.Settings
-	page  int
-	dlg   kit.Dialog
+	h       base.Host
+	sec     security
+	mcp     mcpSettings
+	agent   string
+	agentAt time.Time
+	trig    triggers
+	about   about
+	s       config.Settings
+	page    int
+	dlg     kit.Dialog
 
 	pages       []widget.Clickable
 	theme       kit.Select
@@ -268,7 +248,7 @@ func (d *Dialog) commit(a base.Host) {
 func (d *Dialog) Layout(gtx C) bool {
 	a := d.h
 	d.sec.update(a, gtx)
-	d.ai.update(a, gtx)
+	d.mcp.update(a, gtx)
 	k := a.Kit()
 
 	if d.links.Update(gtx) {
@@ -298,7 +278,7 @@ func (d *Dialog) Layout(gtx C) bool {
 		}
 	}
 
-	return k.Dialog(gtx, &d.dlg, kit.DialogOpts{
+	closed := k.Dialog(gtx, &d.dlg, kit.DialogOpts{
 		Title: "Settings",
 		Width: 820,
 		Body: func(gtx C) D {
@@ -306,13 +286,7 @@ func (d *Dialog) Layout(gtx C) bool {
 			gtx.Constraints.Min.Y, gtx.Constraints.Max.Y = h, h
 			return layout.Flex{}.Layout(gtx,
 				layout.Rigid(func(gtx C) D { return d.sidebar(a, gtx) }),
-				layout.Rigid(kit.Gap(16)),
-				layout.Rigid(func(gtx C) D {
-					size := image.Pt(gtx.Dp(1), gtx.Constraints.Min.Y)
-					kit.Rect(gtx, image.Rectangle{Max: size}, a.Kit().Th.Divider)
-					return D{Size: size}
-				}),
-				layout.Rigid(kit.Gap(28)),
+				layout.Rigid(kit.Gap(32)),
 				layout.Flexed(1, func(gtx C) D {
 					return d.list.Layout(gtx, 1, func(gtx C, _ int) D { return d.content(a, gtx) })
 				}),
@@ -324,234 +298,12 @@ func (d *Dialog) Layout(gtx C) bool {
 			func(gtx C) D { return k.Button(gtx, &d.ok, kit.Primary, nil, "OK") },
 		),
 	})
-}
 
-func (d *Dialog) sidebar(a base.Host, gtx C) D {
-	k := a.Kit()
-	th := a.Kit().Th
-	w := gtx.Dp(190)
-	gtx.Constraints.Min.X, gtx.Constraints.Max.X = w, w
-
-	children := make([]layout.FlexChild, len(settingsPages))
-
-	for i, pg := range settingsPages {
-		children[i] = layout.Rigid(func(gtx C) D {
-			return d.pages[i].Layout(gtx, func(gtx C) D {
-				h := gtx.Dp(30)
-				size := image.Pt(w, h)
-
-				if d.page == i {
-					kit.RRect(gtx, image.Rectangle{Max: size}, gtx.Dp(th.RadiusSmall), th.Selection)
-				} else if d.pages[i].Hovered() {
-					kit.RRect(gtx, image.Rectangle{Max: size}, gtx.Dp(th.RadiusSmall), th.Hover)
-				}
-
-				gtx.Constraints = layout.Exact(size)
-				layout.Inset{Left: 10}.Layout(gtx, func(gtx C) D {
-					return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-						layout.Rigid(func(gtx C) D {
-							col := th.TextFaint
-
-							if d.page == i {
-								col = th.Accent
-							}
-
-							return pg.icon.Layout(gtx, 16, col)
-						}),
-						layout.Rigid(kit.Gap(8)),
-						layout.Rigid(func(gtx C) D {
-							gtx.Constraints.Min.Y = h
-							return layout.W.Layout(gtx, func(gtx C) D {
-								col := th.TextMuted
-
-								if d.page == i {
-									col = th.Text
-								}
-
-								return k.Label(gtx, kit.TextStyle{Color: col}, pg.title)
-							})
-						}),
-					)
-				})
-				kit.Cursor(gtx, size, pointer.CursorPointer)
-				return D{Size: size}
-			})
-		})
+	if d.mcp.confirming {
+		d.mcp.confirm(a, gtx)
 	}
 
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
-}
-
-func (d *Dialog) content(a base.Host, gtx C) D {
-	k := a.Kit()
-	th := a.Kit().Th
-
-	row := func(label string, w layout.Widget) layout.FlexChild {
-		return layout.Rigid(func(gtx C) D {
-			return layout.Inset{Bottom: 14}.Layout(gtx, func(gtx C) D {
-				return k.FormRow(gtx, label, settingsLabelWidth, w)
-			})
-		})
-	}
-	narrow := func(ed *widget.Editor, hint string) layout.Widget {
-		return func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Dp(100)
-			gtx.Constraints.Max.X = gtx.Dp(100)
-			return k.Field(gtx, ed, kit.FieldOpts{Hint: hint})
-		}
-	}
-	left := func(w layout.Widget) layout.Widget {
-		return func(gtx C) D {
-			return layout.W.Layout(gtx, w)
-		}
-	}
-	header := layout.Rigid(func(gtx C) D {
-		return layout.Inset{Bottom: 18}.Layout(gtx, func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeLarge, Weight: font.Medium}, settingsPages[d.page].title)
-		})
-	})
-
-	var children []layout.FlexChild
-
-	switch d.page {
-	case 0:
-		children = []layout.FlexChild{
-			header,
-			row("Theme", func(gtx C) D {
-				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(280))
-				return k.Select(gtx, &d.theme, theme.Labels)
-			}),
-			row("Accent color", left(func(gtx C) D { return d.swatches(a, gtx) })),
-			row("Density", left(func(gtx C) D { return k.Segmented(gtx, &d.density, []string{"Compact", "Normal", "Comfortable"}) })),
-			row("Corners", left(func(gtx C) D { return k.Segmented(gtx, &d.corners, []string{"Sharp", "Normal", "Round"}) })),
-			row("Tabs", left(func(gtx C) D { return k.Segmented(gtx, &d.tabStyle, []string{"Classic", "Pill", "Underline"}) })),
-			row("Tab icons", left(func(gtx C) D { return k.Toggle(gtx, &d.tabIcons) })),
-			row("Tab activity", left(func(gtx C) D { return k.Toggle(gtx, &d.tabActivity) })),
-			row("Host icons", left(func(gtx C) D {
-				return k.Segmented(gtx, &d.hostIcon, []string{"Operating system", "Terminal"})
-			})),
-			layout.Rigid(func(gtx C) D {
-				if hostIconModes[d.hostIcon.Value] != config.HostIconsOS {
-					return D{}
-				}
-
-				return layout.Inset{Bottom: 14}.Layout(gtx, func(gtx C) D {
-					return k.FormRow(gtx, "Host icon colors", settingsLabelWidth, left(func(gtx C) D {
-						return k.Segmented(gtx, &d.hostTint, []string{"Color", "Monochrome"})
-					}))
-				})
-			}),
-			row("Terminal colors", func(gtx C) D {
-				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(280))
-				return k.Select(gtx, &d.scheme, theme.Schemes())
-			}),
-			row("Interface font", left(func(gtx C) D { return k.Muted(gtx, "Geist") })),
-			row("Terminal font", func(gtx C) D {
-				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(280))
-				return k.Select(gtx, &d.termFont, fonts.TerminalFonts)
-			}),
-			row("Hide IP addresses", left(func(gtx C) D {
-				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &d.hideIPs) }),
-					layout.Rigid(kit.Gap(12)),
-					layout.Rigid(func(gtx C) D {
-						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted}, "For screenshots and streaming")
-					}),
-				)
-			})),
-		}
-	case 1:
-		names := make([]string, len(a.Profiles()))
-
-		for i, p := range a.Profiles() {
-			names[i] = p.Name
-		}
-
-		children = []layout.FlexChild{
-			header,
-			row("Default shell", func(gtx C) D {
-				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(280))
-				return k.Select(gtx, &d.shell, names)
-			}),
-			row("Font size", left(narrow(&d.fontSize, "13"))),
-			row("Line height", left(narrow(&d.lineHeight, "1.2"))),
-			row("Cursor", left(func(gtx C) D { return k.Segmented(gtx, &d.cur, []string{"Block", "Bar", "Underline"}) })),
-			row("Blinking cursor", left(func(gtx C) D { return k.Toggle(gtx, &d.blink) })),
-			row("Copy on select", left(func(gtx C) D { return k.Toggle(gtx, &d.copySel) })),
-			row("Programs can copy", left(func(gtx C) D { return k.Segmented(gtx, &d.clip, []string{"Ask", "Allow", "Block"}) })),
-			row("Reopen tabs on start", left(func(gtx C) D { return k.Toggle(gtx, &d.restore) })),
-			row("Font ligatures", left(func(gtx C) D { return k.Toggle(gtx, &d.ligs) })),
-			row("Highlight output", left(func(gtx C) D {
-				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &d.hl) }),
-					layout.Rigid(kit.Gap(12)),
-					layout.Rigid(func(gtx C) D {
-						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted}, "IPs, URLs, paths, dates and errors")
-					}),
-				)
-			})),
-			row("Scrollback lines", left(narrow(&d.scrollback, "10000"))),
-			row("Leave out of broadcast", func(gtx C) D {
-				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(280))
-				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return k.Field(gtx, &d.skipTags, kit.FieldOpts{Hint: "prod, production"}) }),
-					layout.Rigid(kit.Gap(6)),
-					layout.Rigid(func(gtx C) D {
-						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted}, "Hosts with these tags start excluded. Click a pane's label to include it anyway.")
-					}),
-				)
-			}),
-		}
-	case 2:
-		children = append([]layout.FlexChild{header}, d.triggersPage(a, gtx)...)
-	case 3:
-		agent := "Not detected (start the “OpenSSH Authentication Agent” service or Pageant)"
-
-		if path, ok := sshx.AgentPath(""); ok {
-			agent = "Found " + sshx.AgentName(path)
-		}
-
-		children = []layout.FlexChild{
-			header,
-			row("Keep-alive (seconds)", left(narrow(&d.keepAlive, "30"))),
-			row("Confirm on close", left(func(gtx C) D { return k.Toggle(gtx, &d.confirm) })),
-			row("SSH agent", left(func(gtx C) D { return k.Muted(gtx, agent) })),
-			row("Open ssh:// links", left(func(gtx C) D {
-				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return k.Toggle(gtx, &d.links) }),
-					layout.Rigid(kit.Gap(12)),
-					layout.Rigid(func(gtx C) D {
-						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, "ssh:// and sftp:// links open in Boreal. If another app keeps opening them, choose Boreal in Windows Settings › Default apps.")
-					}),
-				)
-			})),
-		}
-	case 4:
-		children = append([]layout.FlexChild{header}, d.securityPage(a, gtx, row, left)...)
-	case 5:
-		children = append([]layout.FlexChild{header}, d.assistantsPage(a, gtx, row, left)...)
-	case 6:
-		children = append([]layout.FlexChild{header}, d.dataPage(a, row)...)
-	case 8:
-		children = d.aboutPage(a, gtx)
-	case 7:
-		children = []layout.FlexChild{header}
-
-		for _, km := range keymap {
-			children = append(children, layout.Rigid(func(gtx C) D {
-				return layout.Inset{Bottom: 8}.Layout(gtx, func(gtx C) D {
-					return layout.Flex{}.Layout(gtx,
-						layout.Flexed(1, func(gtx C) D { return k.Text(gtx, km[0]) }),
-						layout.Rigid(func(gtx C) D {
-							return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Mono: true, Size: th.TextSizeSmall}, km[1])
-						}),
-					)
-				})
-			}))
-		}
-	}
-
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
+	return closed
 }
 
 func vaultSummary(a base.Host) string {

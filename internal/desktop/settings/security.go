@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"gioui.org/font"
 	"gioui.org/layout"
 	"gioui.org/widget"
 
@@ -113,98 +112,70 @@ func (s *security) update(a base.Host, gtx C) {
 	}
 }
 
-func (d *Dialog) securityPage(a base.Host, gtx C, row func(string, layout.Widget) layout.FlexChild, left func(layout.Widget) layout.Widget) []layout.FlexChild {
-	k := a.Kit()
+func (d *Dialog) securityPage(a base.Host, p page) []layout.FlexChild {
+	k := p.k
 	th := k.Th
 	s := &d.sec
 	v := a.Vault()
 	has := v.HasPassword()
-
-	muted := func(text string) layout.Widget {
-		return func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, text)
-		}
-	}
-
-	field := func(ed *widget.Editor, hint string) layout.Widget {
-		return func(gtx C) D {
-			gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(320))
-			return k.Field(gtx, ed, kit.FieldOpts{Icon: icons.Lock, Hint: hint})
-		}
-	}
-
-	toggle := func(b *widget.Bool, text string) layout.Widget {
-		return left(func(gtx C) D {
-			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(func(gtx C) D { return k.Toggle(gtx, b) }),
-				layout.Rigid(kit.Gap(12)),
-				layout.Rigid(muted(text)),
-			)
-		})
-	}
-
-	section := func(title string) layout.FlexChild {
-		return layout.Rigid(func(gtx C) D {
-			return layout.Inset{Top: 10, Bottom: 14}.Layout(gtx, func(gtx C) D { return k.SectionTitle(gtx, title) })
-		})
-	}
-
 	helloRow := a.HelloAvailable() && v.OSUnlock()
 	canLock := has || helloRow && s.hello.Value
 
-	children := []layout.FlexChild{section("Lock")}
+	var lock []layout.Widget
 
 	if helloRow {
-		children = append(children, row("Windows Hello", toggle(&s.hello, "Ask for Windows Hello to open and unlock Boreal")))
+		lock = append(lock, p.item("Windows Hello", "Ask for Windows Hello to open and unlock Boreal.", p.toggle(&s.hello)))
 
 		if !has {
-			children = append(children, row("", muted("Windows Hello locks Boreal's window, but programs running as you could still read the vault. Set a master password to encrypt it with something only you know.")))
+			lock = append(lock, p.note("Windows Hello locks Boreal's window, but programs running as you could still read the vault. Set a master password to encrypt it with something only you know.", th.Warning))
 		}
 	}
 
 	if canLock {
-		children = append(children,
-			row("Lock automatically", func(gtx C) D {
-				gtx.Constraints.Max.X = min(gtx.Constraints.Max.X, gtx.Dp(220))
-				return k.Select(gtx, &s.lockAfter, lockAfterLabels)
-			}),
-			row("", toggle(&s.lockOnSystem, "Also lock when "+vault.OSName+" locks the session")),
-			row("", left(func(gtx C) D {
-				return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock now  ·  Ctrl+Shift+L")
-			})),
+		lock = append(lock,
+			p.item("Lock automatically", "After this long without using Boreal.", p.choose(&s.lockAfter, lockAfterLabels)),
+			p.item("Lock with "+vault.OSName, "Also lock when "+vault.OSName+" locks the session.", p.toggle(&s.lockOnSystem)),
+			p.item("Lock now", "Ctrl+Shift+L", func(gtx C) D { return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock") }),
 		)
-	}
-
-	if !canLock {
-		children = append(children, row("", muted("Boreal stays unlocked. Turn on Windows Hello or set a master password to lock it.")))
+	} else {
+		lock = append(lock, p.note("Boreal stays unlocked. Turn on Windows Hello or set a master password to lock it.", th.TextMuted))
 	}
 
 	status := "Not set. The vault opens with your " + vault.OSOwner + " only."
 
 	if has {
-		status = "Set."
+		status = "Set. Boreal asks for it when it opens."
 	}
 
-	children = append(children,
-		section("Master password"),
-		row("Storage", muted("Encrypted with XChaCha20-Poly1305 in %AppData%\\Boreal. "+vaultSummary(a))),
-		row("Master password", muted(status)),
-	)
+	vaultRows := []layout.Widget{
+		p.item("Storage", "Encrypted with XChaCha20-Poly1305 in %AppData%\\Boreal. "+vaultSummary(a), nil),
+		p.item("Master password", status, nil),
+	}
 
 	if has {
-		children = append(children, row("Current password", field(&s.current, "Current master password")))
+		vaultRows = append(vaultRows, p.item("Unlock with "+vault.OSName, "Open the vault on this PC without typing the password.", p.toggle(&s.osUnlock)))
 	}
 
-	label := "Set password"
+	title, label := "Set a master password", "Set password"
 
 	if has {
-		label = "Change password"
+		title, label = "Change the master password", "Change password"
 	}
 
-	children = append(children,
-		row("New password", field(&s.next, fmt.Sprintf("At least %d characters", minMasterPassword))),
-		row("Repeat it", field(&s.confirm, "New password again")),
-		row("", left(func(gtx C) D {
+	pass := func(ed *widget.Editor, hint string) layout.Widget {
+		return p.width(wideField, func(gtx C) D { return k.Field(gtx, ed, kit.FieldOpts{Icon: icons.Lock, Hint: hint}) })
+	}
+
+	var change []layout.Widget
+
+	if has {
+		change = append(change, p.item("Current password", "", pass(&s.current, "Current master password")))
+	}
+
+	change = append(change,
+		p.item("New password", fmt.Sprintf("At least %d characters.", minMasterPassword), pass(&s.next, "New password")),
+		p.item("Repeat it", "", pass(&s.confirm, "New password again")),
+		p.block(func(gtx C) D {
 			buttons := []layout.FlexChild{
 				layout.Rigid(func(gtx C) D { return k.Button(gtx, &s.setPassword, kit.Secondary, icons.Key, label) }),
 			}
@@ -212,77 +183,63 @@ func (d *Dialog) securityPage(a base.Host, gtx C, row func(string, layout.Widget
 			if has {
 				buttons = append(buttons,
 					layout.Rigid(kit.Gap(8)),
-					layout.Rigid(func(gtx C) D { return k.Button(gtx, &s.remove, kit.Danger, nil, "Remove") }),
+					layout.Rigid(func(gtx C) D { return k.Button(gtx, &s.remove, kit.Danger, nil, "Remove password") }),
+				)
+			}
+
+			if s.message != "" {
+				c := th.TextMuted
+
+				if s.failed {
+					c = th.Danger
+				}
+
+				buttons = append(buttons,
+					layout.Rigid(kit.Gap(14)),
+					layout.Flexed(1, func(gtx C) D {
+						return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: c, MaxLines: 2}, s.message)
+					}),
 				)
 			}
 
 			return layout.Flex{Alignment: layout.Middle}.Layout(gtx, buttons...)
-		})),
+		}),
 	)
 
-	if s.message != "" {
-		color := th.TextMuted
-
-		if s.failed {
-			color = th.Danger
-		}
-
-		children = append(children, row("", func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: color, MaxLines: 2}, s.message)
-		}))
+	children := []layout.FlexChild{
+		p.header(settingsPages[pageSecurity].title),
+		p.group("Lock", lock...),
+		p.group("Vault", vaultRows...),
+		p.group(title, change...),
 	}
-
-	if has {
-		children = append(children, row("Unlock with "+vault.OSName, toggle(&s.osUnlock, "Open the vault on this PC without typing the password")))
-	}
-
-	children = append(children,
-		section("Known hosts"),
-		row("OpenSSH known_hosts", toggle(&s.readKnown, "Trust servers already in ~/.ssh/known_hosts and respect its @revoked lines")),
-		row("", toggle(&s.writeKnown, "Add the server keys you accept to ~/.ssh/known_hosts too")),
-	)
 
 	if n := v.SavedPassphrases(); n > 0 {
-		children = append(children, row("Key passphrases", left(func(gtx C) D {
-			return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-				layout.Rigid(muted(fmt.Sprintf("%d keys keep their passphrase in the vault.", n))),
-				layout.Rigid(kit.Gap(12)),
-				layout.Rigid(func(gtx C) D { return k.Button(gtx, &s.forget, kit.Secondary, nil, "Forget them") }),
-			)
-		})))
+		children = append(children, p.group("Key passphrases",
+			p.item(fmt.Sprintf("%d keys keep their passphrase in the vault", n), "Forget them to be asked each time you connect.", func(gtx C) D {
+				return k.Button(gtx, &s.forget, kit.Secondary, nil, "Forget them")
+			}),
+		))
 	}
 
 	return children
 }
 
-func (d *Dialog) dataPage(a base.Host, row func(string, layout.Widget) layout.FlexChild) []layout.FlexChild {
-	k := a.Kit()
-	th := k.Th
+func (d *Dialog) dataPage(p page) []layout.FlexChild {
+	k := p.k
 	s := &d.sec
 
-	item := func(clk *widget.Clickable, ic *icons.Icon, title, text string) layout.FlexChild {
-		return layout.Rigid(func(gtx C) D {
-			return layout.Inset{Bottom: 22}.Layout(gtx, func(gtx C) D {
-				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-					layout.Flexed(1, func(gtx C) D {
-						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-							layout.Rigid(func(gtx C) D { return k.Label(gtx, kit.TextStyle{Weight: font.Medium}, title) }),
-							layout.Rigid(kit.Gap(4)),
-							layout.Rigid(func(gtx C) D {
-								return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, text)
-							}),
-						)
-					}),
-					layout.Rigid(kit.Gap(24)),
-					layout.Rigid(func(gtx C) D { return k.Button(gtx, clk, kit.Secondary, ic, title+"…") }),
-				)
-			})
-		})
+	action := func(clk *widget.Clickable, ic *icons.Icon, label string) layout.Widget {
+		return func(gtx C) D { return k.Button(gtx, clk, kit.Secondary, ic, label) }
 	}
 
 	return []layout.FlexChild{
-		item(&s.export, icons.Upload, "Export", "Save hosts, keys, snippets and more to a .boreal file encrypted with a password of your choice. Passwords are left out unless you include them."),
-		item(&s.imp, icons.Download, "Import", "Add the contents of a .boreal or .platty file to this vault. Nothing is deleted, and host keys you already trust are kept."),
-		item(&s.sshConfig, icons.File, "SSH config", "Write your hosts in ~/.ssh/config format, without passwords or keys, to use them with other tools."),
+		p.header(settingsPages[pageData].title),
+		p.group("Backup",
+			p.item("Export", "Save hosts, keys, snippets and more to a .boreal file encrypted with a password of your choice. Passwords are left out unless you include them.", action(&s.export, icons.Upload, "Export…")),
+			p.item("Import", "Add the contents of a .boreal or .platty file to this vault. Nothing is deleted, and host keys you already trust are kept.", action(&s.imp, icons.Download, "Import…")),
+		),
+		p.group("Other tools",
+			p.item("SSH config", "Write your hosts in ~/.ssh/config format, without passwords or keys, to use them with other tools.", action(&s.sshConfig, icons.File, "Export…")),
+		),
 	}
 }
