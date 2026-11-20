@@ -31,10 +31,19 @@ const (
 	confirmWidth    = 460
 )
 
-const mcpWarning = "Any AI client or program that can run Boreal as your user will be able to start its MCP server and use what you allow next: read your hosts, keys and snippets, and change which keys can sign in to your servers.\n\nOnly turn it on if you trust the clients you connect. Passwords and private keys are never shared, and you can turn it off at any time."
+const (
+	askEnable = iota + 1
+	askExecute
+)
+
+const mcpWarning = "Any AI client or program that can run Boreal as your user will be able to start its MCP server and use what you allow next: read your hosts, keys and snippets, change which keys can sign in to your servers, and run commands on them.\n\nOnly turn it on if you trust the clients you connect. Passwords and private keys are never shared, and you can turn it off at any time."
+
+const execWarning = "MCP clients will be able to run any command on the hosts below as the user Boreal signs in with, including commands that change or delete things.\n\nEach command is logged, stopped after its time limit and never gets a terminal. Only allow it for clients you trust, and share as few hosts as you can."
 
 type mcpSettings struct {
 	enabled, read, write widget.Bool
+	exec                 widget.Bool
+	ask                  int
 	scope                kit.Segmented
 	folders              map[string]*widget.Bool
 	copy                 widget.Clickable
@@ -73,7 +82,7 @@ func (s *mcpSettings) folder(name string) *widget.Bool {
 }
 
 func (s *mcpSettings) sync(p vault.MCPPolicy, folders []string) {
-	s.enabled.Value, s.read.Value, s.write.Value = p.Enabled, p.Read, p.Access
+	s.enabled.Value, s.read.Value, s.write.Value, s.exec.Value = p.Enabled, p.Read, p.Access, p.Execute
 	s.scope.Value = hostsFolders
 
 	if p.AllHosts {
@@ -86,7 +95,7 @@ func (s *mcpSettings) sync(p vault.MCPPolicy, folders []string) {
 }
 
 func (s *mcpSettings) policy(folders []string) vault.MCPPolicy {
-	p := vault.MCPPolicy{Enabled: s.enabled.Value, Read: s.read.Value, Access: s.write.Value, AllHosts: s.scope.Value == hostsAll}
+	p := vault.MCPPolicy{Enabled: s.enabled.Value, Read: s.read.Value, Access: s.write.Value, Execute: s.exec.Value, AllHosts: s.scope.Value == hostsAll}
 
 	for _, f := range append([]string{vault.RootFolder}, folders...) {
 		if s.folder(f).Value {
@@ -111,7 +120,7 @@ func (s *mcpSettings) update(a base.Host, gtx C) {
 	folders := s.allFolders(v)
 	changed := false
 
-	for _, b := range []*widget.Bool{&s.enabled, &s.read, &s.write} {
+	for _, b := range []*widget.Bool{&s.enabled, &s.read, &s.write, &s.exec} {
 		if b.Update(gtx) {
 			changed = true
 		}
@@ -129,7 +138,9 @@ func (s *mcpSettings) update(a base.Host, gtx C) {
 
 	switch {
 	case changed && s.enabled.Value && !current.Enabled:
-		s.confirming = true
+		s.confirming, s.ask = true, askEnable
+	case changed && s.exec.Value && !current.Execute:
+		s.confirming, s.ask = true, askExecute
 	case changed:
 		s.save(v, s.policy(folders))
 	}
@@ -149,9 +160,22 @@ func (s *mcpSettings) update(a base.Host, gtx C) {
 func (s *mcpSettings) confirm(a base.Host, gtx C) {
 	k := a.Kit()
 
+	title, body, action := "Turn on MCP?", mcpWarning, "Turn on MCP"
+
+	if s.ask == askExecute {
+		title, body, action = "Let MCP clients run commands?", execWarning, "Allow commands"
+	}
+
 	if s.confirmOK.Clicked(gtx) {
 		p := a.Vault().MCP()
-		p.Enabled = true
+
+		switch s.ask {
+		case askExecute:
+			p.Execute = true
+		default:
+			p.Enabled = true
+		}
+
 		s.save(a.Vault(), p)
 		s.confirming = false
 		return
@@ -163,7 +187,7 @@ func (s *mcpSettings) confirm(a base.Host, gtx C) {
 	}
 
 	closed := k.Dialog(gtx, &s.confirmDlg, kit.DialogOpts{
-		Title: "Turn on MCP?",
+		Title: title,
 		Width: confirmWidth,
 		Body: func(gtx C) D {
 			return layout.Flex{Alignment: layout.Start}.Layout(gtx,
@@ -171,13 +195,13 @@ func (s *mcpSettings) confirm(a base.Host, gtx C) {
 					return layout.Inset{Right: 12, Top: 2}.Layout(gtx, func(gtx C) D { return icons.Shield.Layout(gtx, 20, k.Th.Warning) })
 				}),
 				layout.Flexed(1, func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Color: k.Th.TextMuted, MaxLines: 12}, mcpWarning)
+					return k.Label(gtx, kit.TextStyle{Color: k.Th.TextMuted, MaxLines: 12}, body)
 				}),
 			)
 		},
 		Footer: kit.Buttons(
 			func(gtx C) D { return k.Button(gtx, &s.cancel, kit.Ghost, nil, "Cancel") },
-			func(gtx C) D { return k.Button(gtx, &s.confirmOK, kit.Danger, nil, "Turn on MCP") },
+			func(gtx C) D { return k.Button(gtx, &s.confirmOK, kit.Danger, nil, action) },
 		),
 	})
 
@@ -281,6 +305,10 @@ func (d *Dialog) mcpPage(a base.Host, p page) []layout.FlexChild {
 
 		desc, c := r.Time.Local().Format(timeLayout), th.TextMuted
 
+		if r.Command != "" {
+			desc += " · " + r.Command
+		}
+
 		if r.Outcome != borealmcp.OutcomeOK {
 			desc, c = desc+" · "+r.Error, th.Danger
 		}
@@ -292,6 +320,7 @@ func (d *Dialog) mcpPage(a base.Host, p page) []layout.FlexChild {
 		p.group("Permissions",
 			p.item("Read", "List hosts, keys and snippets, and see which keys each host accepts.", p.toggle(&s.read)),
 			p.item("Change access", "Add and remove keys in a host's authorized_keys. Boreal backs the file up first and never removes the key it signs in with.", p.toggle(&s.write)),
+			p.itemColor("Run commands", "Run any command or snippet on the hosts below, without a terminal and with a time limit. Every command is logged.", th.Warning, p.toggle(&s.exec)),
 		),
 		p.group("Hosts", hosts...),
 		p.group("Connect a client",

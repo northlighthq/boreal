@@ -9,7 +9,8 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 - Settings › MCP chooses what clients may do (read, change access) and which folders of hosts they can reach, shows the configuration to paste into the client and lists their recent calls.
 - Tools list hosts, keys and snippets, show which keys each host's authorized_keys accepts, and add or remove a key with optional limits: source addresses, a single command, an expiry date, no forwarding or no terminal.
 - Passwords, private keys, passphrases and proxy commands are never shared. Clients only reach servers whose key you already trusted, back up authorized_keys before each change, and can't remove the key Boreal signs in with.
-- Every call is written to mcp.log in Boreal's folder.
+- With "Run commands" allowed, which asks for confirmation first, clients can run a command or a saved snippet on a shared host and get its exit code and output. Commands run without a terminal, stop after their time limit (30 seconds by default, 5 minutes at most) and return at most 64 KB of output per stream.
+- Every call, including each command run, is written to mcp.log in Boreal's folder.
 
 ### Security
 - When the system keyring isn't available, Boreal asks for a master password instead of saving the vault key unprotected.
