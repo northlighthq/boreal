@@ -275,7 +275,9 @@ func (im *Import) Layout(gtx C) D {
 		},
 		func(gtx C) D {
 			return ui.Section(gtx, k, "",
-				func(gtx C) D { return ui.FormRow(gtx, k, "Passphrase", &im.pass, ui.FormOpts{Hint: "If the key has one"}) },
+				func(gtx C) D {
+					return ui.FormRow(gtx, k, "Passphrase", &im.pass, ui.FormOpts{Hint: "If the key has one"})
+				},
 			)
 		},
 	)

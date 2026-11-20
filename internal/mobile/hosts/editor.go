@@ -144,7 +144,9 @@ func (e *Editor) Layout(gtx C) D {
 			func(gtx C) D {
 				return ui.FormRow(gtx, k, "Address", &e.address, ui.FormOpts{Hint: "server.example.com", Mono: true, Invalid: addrErr})
 			},
-			func(gtx C) D { return ui.FormRow(gtx, k, "Port", &e.port, ui.FormOpts{Hint: "22", Mono: true, Invalid: portErr}) },
+			func(gtx C) D {
+				return ui.FormRow(gtx, k, "Port", &e.port, ui.FormOpts{Hint: "22", Mono: true, Invalid: portErr})
+			},
 			func(gtx C) D { return ui.FormRow(gtx, k, "Username", &e.user, ui.FormOpts{Hint: "root", Mono: true}) },
 		)
 	}
