@@ -116,10 +116,10 @@ type workspace struct {
 	tabs   []*Tab
 	active int
 
-	menu    kit.Menu
-	recent  []string
-	shown   *Tab
-	swap    kit.Anim
+	menu   kit.Menu
+	recent []string
+	shown  *Tab
+	swap   kit.Anim
 }
 
 func (w *workspace) current() *Tab {

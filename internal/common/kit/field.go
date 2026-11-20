@@ -19,7 +19,6 @@ import (
 	"github.com/northlighthq/boreal/internal/common/theme"
 )
 
-
 type FieldOpts struct {
 	Hint     string
 	Icon     *icons.Icon
