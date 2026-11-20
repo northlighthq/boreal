@@ -8,6 +8,7 @@ import (
 
 const (
 	appDir       = "Boreal"
+	previewDir   = "Boreal Mobile Preview"
 	legacyDir    = "Platty"
 	settingsFile = "settings.json"
 )
@@ -115,11 +116,22 @@ func Defaults() Settings {
 	}
 }
 
+var preview bool
+
+func UsePreview() {
+	preview = true
+}
+
 func Dir() (string, error) {
 	base, err := os.UserConfigDir()
 
 	if err != nil {
 		return "", err
+	}
+
+	if preview {
+		dir := filepath.Join(base, previewDir)
+		return dir, os.MkdirAll(dir, 0o700)
 	}
 
 	dir := filepath.Join(base, appDir)

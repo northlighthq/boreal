@@ -67,7 +67,8 @@ there carry `//go:build linux && !android`.
 ## Running it
 
 ```sh
-# Desktop window with the mobile UI, for quick iteration
+# Desktop window with the mobile UI, for quick iteration. It keeps its data in its own
+# "Boreal Mobile Preview" folder, so it never opens or changes the desktop vault.
 BOREAL_MOBILE=1 go run ./cmd/boreal
 
 # APK for a device or the emulator
