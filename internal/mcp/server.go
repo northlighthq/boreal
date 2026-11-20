@@ -20,7 +20,7 @@ import (
 const (
 	serverName   = "boreal"
 	maxAudit     = 25
-	settingsPath = "Boreal › Settings › Assistants"
+	settingsPath = "Boreal › Settings › MCP"
 
 	toolListHosts    = "list_hosts"
 	toolListKeys     = "list_keys"
@@ -36,7 +36,7 @@ var (
 	errOff       = errors.New("MCP is turned off. It can only be turned on in " + settingsPath)
 	errNoRead    = errors.New("reading hosts and keys isn't allowed. It can be allowed in " + settingsPath)
 	errNoAccess  = errors.New("changing which keys can sign in isn't allowed. It can be allowed in " + settingsPath)
-	errNoScope   = errors.New("no hosts are shared with assistants. Choose them in " + settingsPath)
+	errNoScope   = errors.New("no hosts are shared over MCP. Choose them in " + settingsPath)
 	errOneKey    = errors.New("give either key (a key saved in Boreal) or publicKey, not both")
 	errNoKey     = errors.New("give key (a key saved in Boreal) or publicKey")
 	errLockout   = errors.New("this is the key Boreal signs in to this host with. Revoking it would lock Boreal out, so change the host's key in Boreal first")
@@ -100,7 +100,7 @@ func (s *Server) MCP() *mcp.Server {
 	closed := false
 	destructive := true
 
-	mcp.AddTool(srv, &mcp.Tool{Name: toolListHosts, Description: "List the SSH hosts saved in Boreal that are shared with assistants. Passwords, proxy commands and startup commands are never included.", Annotations: readOnly}, s.listHosts)
+	mcp.AddTool(srv, &mcp.Tool{Name: toolListHosts, Description: "List the SSH hosts saved in Boreal that are shared over MCP. Passwords, proxy commands and startup commands are never included.", Annotations: readOnly}, s.listHosts)
 	mcp.AddTool(srv, &mcp.Tool{Name: toolListKeys, Description: "List the SSH keys saved in Boreal: label, type and fingerprint. Private keys and passphrases are never included.", Annotations: readOnly}, s.listKeys)
 	mcp.AddTool(srv, &mcp.Tool{Name: toolPublicKey, Description: "Get the public key of a key saved in Boreal, in authorized_keys format.", Annotations: readOnly}, s.publicKey)
 	mcp.AddTool(srv, &mcp.Tool{Name: toolListSnippets, Description: "List the command snippets saved in Boreal.", Annotations: readOnly}, s.listSnippets)
@@ -346,7 +346,7 @@ func findHost(v View, ref string) (vault.Host, error) {
 
 	switch len(found) {
 	case 0:
-		return vault.Host{}, fmt.Errorf("there's no host %q shared with assistants", ref)
+		return vault.Host{}, fmt.Errorf("there's no host %q shared over MCP", ref)
 	case 1:
 		return found[0], nil
 	}

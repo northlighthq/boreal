@@ -4,11 +4,11 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 
 ## Unreleased
 
-### Assistants (MCP)
-- Assistants like Claude can use Boreal through the Model Context Protocol with `boreal mcp`. It's off until you turn it on in Settings › Assistants, and an imported file can never turn it on.
-- Settings › Assistants chooses what they may do (read, change access) and which folders of hosts they can reach, shows the config to paste into the assistant and lists their recent calls.
+### MCP
+- MCP clients can use Boreal through the Model Context Protocol with `boreal mcp`. It's off until you turn it on in Settings › MCP, which warns before it does, and an imported file can never turn it on.
+- Settings › MCP chooses what clients may do (read, change access) and which folders of hosts they can reach, shows the configuration to paste into the client and lists their recent calls.
 - Tools list hosts, keys and snippets, show which keys each host's authorized_keys accepts, and add or remove a key with optional limits: source addresses, a single command, an expiry date, no forwarding or no terminal.
-- Passwords, private keys, passphrases and proxy commands are never shared. Assistants only reach servers whose key you already trusted, back up authorized_keys before each change, and can't remove the key Boreal signs in with.
+- Passwords, private keys, passphrases and proxy commands are never shared. Clients only reach servers whose key you already trusted, back up authorized_keys before each change, and can't remove the key Boreal signs in with.
 - Every call is written to mcp.log in Boreal's folder.
 
 ### Security

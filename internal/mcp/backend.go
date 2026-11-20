@@ -21,7 +21,7 @@ const (
 
 var (
 	ErrNoVault  = errors.New("Boreal isn't set up on this computer yet. Open Boreal once first")
-	ErrPassword = errors.New("Boreal's vault is protected by a master password, which an assistant can't enter. Unlock it with Windows in Boreal › Settings › Security to use MCP")
+	ErrPassword = errors.New("Boreal's vault is protected by a master password, which an MCP client can't type. Unlock it with Windows in Boreal › Settings › Security to use MCP")
 )
 
 type View interface {
