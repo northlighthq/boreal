@@ -28,6 +28,9 @@ type Tunnel struct {
 	listener net.Listener
 	wg       sync.WaitGroup
 	closed   chan struct{}
+	once     sync.Once
+	mu       sync.Mutex
+	active   map[net.Conn]struct{}
 	conns    atomic.Int64
 	up       atomic.Int64
 	down     atomic.Int64
@@ -49,15 +52,45 @@ func (t *Tunnel) Traffic() Traffic {
 	return Traffic{Conns: int(t.conns.Load()), Up: t.up.Load(), Down: t.down.Load()}
 }
 
-func (t *Tunnel) Close() error {
+func (t *Tunnel) markClosed() {
+	t.once.Do(func() { close(t.closed) })
+}
+
+func (t *Tunnel) track(c net.Conn) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	select {
 	case <-t.closed:
-		return nil
+		return false
 	default:
 	}
 
-	close(t.closed)
+	if t.active == nil {
+		t.active = map[net.Conn]struct{}{}
+	}
+
+	t.active[c] = struct{}{}
+	return true
+}
+
+func (t *Tunnel) untrack(c net.Conn) {
+	t.mu.Lock()
+	delete(t.active, c)
+	t.mu.Unlock()
+}
+
+func (t *Tunnel) Close() error {
+	t.markClosed()
 	err := t.listener.Close()
+
+	t.mu.Lock()
+
+	for c := range t.active {
+		c.Close()
+	}
+
+	t.mu.Unlock()
 	t.wg.Wait()
 	return err
 }
@@ -107,18 +140,19 @@ func (t *Tunnel) accept(c *Client, dial func() (net.Conn, error)) {
 		in, err := t.listener.Accept()
 
 		if err != nil {
-			select {
-			case <-t.closed:
-			default:
-				close(t.closed)
-			}
+			t.markClosed()
+			return
+		}
 
+		if !t.track(in) {
+			in.Close()
 			return
 		}
 
 		t.wg.Add(1)
 		go func() {
 			defer t.wg.Done()
+			defer t.untrack(in)
 			defer in.Close()
 
 			var out net.Conn
@@ -135,6 +169,12 @@ func (t *Tunnel) accept(c *Client, dial func() (net.Conn, error)) {
 			}
 
 			defer out.Close()
+
+			if !t.track(out) {
+				return
+			}
+
+			defer t.untrack(out)
 			t.conns.Add(1)
 			defer t.conns.Add(-1)
 
