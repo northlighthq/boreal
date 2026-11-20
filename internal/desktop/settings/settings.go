@@ -34,6 +34,7 @@ var settingsPages = []struct {
 	{"Triggers", icons.LucideBell},
 	{"SSH", icons.Lock},
 	{"Security", icons.Shield},
+	{"Assistants", icons.CPU},
 	{"Data", icons.Download},
 	{"Keyboard shortcuts", icons.Keyboard},
 	{"About", icons.Info},
@@ -71,6 +72,7 @@ var keymap = [][2]string{
 type Dialog struct {
 	h     base.Host
 	sec   security
+	ai    assistants
 	trig  triggers
 	about about
 	s     config.Settings
@@ -266,6 +268,7 @@ func (d *Dialog) commit(a base.Host) {
 func (d *Dialog) Layout(gtx C) bool {
 	a := d.h
 	d.sec.update(a, gtx)
+	d.ai.update(a, gtx)
 	k := a.Kit()
 
 	if d.links.Update(gtx) {
@@ -526,10 +529,12 @@ func (d *Dialog) content(a base.Host, gtx C) D {
 	case 4:
 		children = append([]layout.FlexChild{header}, d.securityPage(a, gtx, row, left)...)
 	case 5:
-		children = append([]layout.FlexChild{header}, d.dataPage(a, row)...)
-	case 7:
-		children = d.aboutPage(a, gtx)
+		children = append([]layout.FlexChild{header}, d.assistantsPage(a, gtx, row, left)...)
 	case 6:
+		children = append([]layout.FlexChild{header}, d.dataPage(a, row)...)
+	case 8:
+		children = d.aboutPage(a, gtx)
+	case 7:
 		children = []layout.FlexChild{header}
 
 		for _, km := range keymap {
