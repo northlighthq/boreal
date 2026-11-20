@@ -50,7 +50,10 @@ type fakeView struct {
 	data   vault.Data
 	files  map[string]*fakeFiles
 	dials  []string
+	agent  []string
 }
+
+func (v *fakeView) AgentKeys(vault.Host) []string { return v.agent }
 
 func (v *fakeView) Policy() vault.MCPPolicy { return v.policy }
 func (v *fakeView) Data() vault.Data        { return v.data }
@@ -346,5 +349,53 @@ func TestEveryCallIsLogged(t *testing.T) {
 
 	if last.Tool != toolRevokeAccess || last.Outcome != OutcomeFail || last.Host != "web" || last.Key == "" {
 		t.Fatalf("last record = %+v", last)
+	}
+}
+
+func TestGrantRefusesToRestrictTheKeyBorealSignsInWith(t *testing.T) {
+	f := setup(t, withAccess)
+	text, isErr := f.call(t, toolGrantAccess, map[string]any{"host": "web", "key": "own", "restrictions": map[string]any{"command": "true"}})
+
+	if !isErr || !strings.Contains(text, "Changing its restrictions") {
+		t.Fatalf("grant on the sign-in key = %v %q", isErr, text)
+	}
+
+	if len(f.view.dials) != 0 {
+		t.Fatal("the host was contacted while refusing")
+	}
+}
+
+func TestAgentKeysOfAnAgentHostAreProtected(t *testing.T) {
+	f := setup(t, vault.MCPPolicy{Enabled: true, Read: true, Access: true, AllHosts: true})
+	f.view.data.Hosts[1].Auth = vault.AuthAgent
+	f.view.agent = []string{ssh.FingerprintSHA256(f.team)}
+
+	text, isErr := f.call(t, toolRevokeAccess, map[string]any{"host": "db", "key": "team"})
+
+	if !isErr || !strings.Contains(text, "lock Boreal out") {
+		t.Fatalf("revoke of an agent key on an agent host = %v %q", isErr, text)
+	}
+}
+
+func TestKeysOfOtherHostsWithTheSameLoginAreProtected(t *testing.T) {
+	f := setup(t, withAccess)
+	twin := vault.Host{ID: "twin", Label: "web-01 as deploy", Address: "10.0.0.1", Port: 22, Username: "deploy", Auth: vault.AuthKey, KeyID: "team", Group: "Other"}
+	f.view.data.Hosts = append(f.view.data.Hosts, twin)
+
+	text, isErr := f.call(t, toolRevokeAccess, map[string]any{"host": "web", "key": "team"})
+
+	if !isErr || !strings.Contains(text, "lock Boreal out") {
+		t.Fatalf("revoke of a key another saved host signs in with = %v %q", isErr, text)
+	}
+}
+
+func TestUnsharedJumpHostsStayHidden(t *testing.T) {
+	f := setup(t, readOnly)
+	f.view.data.Hosts[0].JumpID = "db"
+
+	text, isErr := f.call(t, toolListHosts, map[string]any{})
+
+	if isErr || strings.Contains(text, "db-01") || strings.Contains(text, `"jump"`) {
+		t.Fatalf("an unshared jump host leaked: %q", text)
 	}
 }

@@ -20,14 +20,16 @@ const (
 )
 
 var (
-	ErrNoVault  = errors.New("Boreal isn't set up on this computer yet. Open Boreal once first")
-	ErrPassword = errors.New("Boreal's vault is protected by a master password, which an MCP client can't type. Unlock it with Windows in Boreal › Settings › Security to use MCP")
+	ErrNoVault      = errors.New("Boreal isn't set up on this computer yet. Open Boreal once first")
+	errUnsharedJump = errors.New("this host connects through a jump host that isn't shared over MCP. Share its folder too, or remove the jump host")
+	ErrPassword     = errors.New("Boreal's vault is protected by a master password, which an MCP client can't type. Unlock it with Windows in Boreal › Settings › Security to use MCP")
 )
 
 type View interface {
 	Policy() vault.MCPPolicy
 	Data() vault.Data
 	Files(ctx context.Context, h vault.Host) (access.Files, io.Closer, error)
+	AgentKeys(h vault.Host) []string
 }
 
 type Backend func() (View, error)
@@ -66,7 +68,23 @@ func (l *live) Policy() vault.MCPPolicy { return l.v.MCP() }
 
 func (l *live) Data() vault.Data { return l.v.Snapshot() }
 
-func (l *live) target(h vault.Host, depth int) sshx.Target {
+func (l *live) AgentKeys(h vault.Host) []string {
+	info, err := sshx.InspectAgent(h.Agent)
+
+	if err != nil {
+		return nil
+	}
+
+	out := make([]string, 0, len(info.Keys))
+
+	for _, k := range info.Keys {
+		out = append(out, k.Fingerprint)
+	}
+
+	return out
+}
+
+func (l *live) target(h vault.Host, depth int) (sshx.Target, error) {
 	t := sshx.Target{Host: h}
 
 	if h.Auth == vault.AuthKey && h.KeyID != "" {
@@ -77,12 +95,21 @@ func (l *live) target(h vault.Host, depth int) sshx.Target {
 
 	if h.JumpID != "" && h.JumpID != h.ID && depth < maxJumpDepth {
 		if j, ok := l.v.Host(h.JumpID); ok {
-			jt := l.target(j, depth+1)
+			if !l.v.MCP().Allows(j) {
+				return t, errUnsharedJump
+			}
+
+			jt, err := l.target(j, depth+1)
+
+			if err != nil {
+				return t, err
+			}
+
 			t.Jump = &jt
 		}
 	}
 
-	return t
+	return t, nil
 }
 
 type closers []io.Closer
@@ -100,7 +127,13 @@ func (l *live) Files(ctx context.Context, h vault.Host) (access.Files, io.Closer
 	defer cancel()
 
 	hooks := sshx.Hooks{KnownHosts: sshx.SystemHosts{Read: l.settings.SystemKnownHosts}}
-	c, err := sshx.Dial(ctx, l.target(h, 0), l.v, hooks, 0)
+	t, err := l.target(h, 0)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	c, err := sshx.Dial(ctx, t, l.v, hooks, 0)
 
 	if errors.Is(err, sshx.ErrHostKeyRejected) {
 		return nil, nil, errors.New("this server's key isn't trusted yet. Connect to it once from Boreal and accept its key")

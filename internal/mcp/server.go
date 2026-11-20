@@ -20,6 +20,7 @@ import (
 const (
 	serverName   = "boreal"
 	maxAudit     = 25
+	defaultPort  = 22
 	settingsPath = "Boreal › Settings › MCP"
 
 	toolListHosts    = "list_hosts"
@@ -40,6 +41,7 @@ var (
 	errOneKey    = errors.New("give either key (a key saved in Boreal) or publicKey, not both")
 	errNoKey     = errors.New("give key (a key saved in Boreal) or publicKey")
 	errLockout   = errors.New("this is the key Boreal signs in to this host with. Revoking it would lock Boreal out, so change the host's key in Boreal first")
+	errOwnKey    = errors.New("this is the key Boreal signs in to this host with. Changing its restrictions could lock Boreal out, so change it on the server instead")
 	errNoLabel   = errors.New("give a label for this public key, like the person or machine it belongs to")
 	errRevokeArg = errors.New("give key (a key saved in Boreal) or fingerprint")
 )
@@ -147,14 +149,14 @@ func shared(v View) []vault.Host {
 	return out
 }
 
-func hostOut(h vault.Host, d vault.Data) HostOut {
+func hostOut(h vault.Host, d vault.Data, p vault.MCPPolicy) HostOut {
 	o := HostOut{ID: h.ID, Label: h.Title(), Address: h.Address, Port: h.Port, User: h.Username, Folder: h.Group, Tags: h.Tags, OS: h.OS, Auth: h.Auth}
 
 	if o.Port == 0 {
 		o.Port = 22
 	}
 
-	if i := slices.IndexFunc(d.Hosts, func(x vault.Host) bool { return x.ID == h.JumpID }); i >= 0 {
+	if i := slices.IndexFunc(d.Hosts, func(x vault.Host) bool { return x.ID == h.JumpID }); i >= 0 && p.Allows(d.Hosts[i]) {
 		o.Jump = d.Hosts[i].Title()
 	}
 
@@ -193,7 +195,7 @@ func (s *Server) doListHosts(in ListHostsIn) (ListHostsOut, error) {
 			continue
 		}
 
-		out.Hosts = append(out.Hosts, hostOut(h, d))
+		out.Hosts = append(out.Hosts, hostOut(h, d, v.Policy()))
 	}
 
 	return out, nil
@@ -543,6 +545,10 @@ func (s *Server) doGrant(ctx context.Context, in GrantIn) (GrantOut, error) {
 
 	out := GrantOut{Host: h.Title(), Fingerprint: ssh.FingerprintSHA256(pub), Line: access.Line(pub, label, in.Restrictions)}
 
+	if slices.Contains(protected(v, v.Data(), h), out.Fingerprint) {
+		return out, errOwnKey
+	}
+
 	if err := in.Restrictions.Validate(s.now()); err != nil {
 		return out, err
 	}
@@ -586,17 +592,38 @@ type RevokeOut struct {
 	Removed     int    `json:"removed"`
 }
 
-func protected(d vault.Data, h vault.Host) []string {
-	var out []string
-
-	if h.Auth == vault.AuthKey && h.KeyID != "" {
-		if i := slices.IndexFunc(d.Keys, func(k vault.Key) bool { return k.ID == h.KeyID }); i >= 0 {
-			out = append(out, fingerprint(d.Keys[i]))
-		}
+func portOf(h vault.Host) int {
+	if h.Port <= 0 {
+		return defaultPort
 	}
 
-	if h.AgentKey != "" {
-		out = append(out, h.AgentKey)
+	return h.Port
+}
+
+func sameLogin(a, b vault.Host) bool {
+	return a.ID == b.ID || strings.EqualFold(a.Address, b.Address) && portOf(a) == portOf(b) && a.Username == b.Username
+}
+
+func protected(v View, d vault.Data, h vault.Host) []string {
+	var out []string
+
+	for _, x := range d.Hosts {
+		if !sameLogin(x, h) {
+			continue
+		}
+
+		if x.Auth == vault.AuthKey && x.KeyID != "" {
+			if i := slices.IndexFunc(d.Keys, func(k vault.Key) bool { return k.ID == x.KeyID }); i >= 0 {
+				out = append(out, fingerprint(d.Keys[i]))
+			}
+		}
+
+		switch {
+		case x.AgentKey != "":
+			out = append(out, x.AgentKey)
+		case x.Auth == vault.AuthAgent:
+			out = append(out, v.AgentKeys(x)...)
+		}
 	}
 
 	return out
@@ -641,7 +668,7 @@ func (s *Server) doRevoke(ctx context.Context, in RevokeIn) (RevokeOut, error) {
 
 	out := RevokeOut{Host: h.Title(), Fingerprint: fp}
 
-	if slices.Contains(protected(d, h), fp) {
+	if slices.Contains(protected(v, d, h), fp) {
 		return out, errLockout
 	}
 
