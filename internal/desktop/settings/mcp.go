@@ -37,7 +37,7 @@ const (
 	askWriteFiles
 )
 
-const mcpWarning = "Any AI client or program that can run Boreal as your user will be able to start its MCP server and use what you allow next: read your hosts, keys and snippets, change which keys can sign in to your servers, run commands and work with files on them.\n\nOnly turn it on if you trust the clients you connect. Passwords and private keys are never shared, and you can turn it off at any time."
+const mcpWarning = "Any AI client or program that can run Boreal as your user will be able to start its MCP server and use what you allow next: read your hosts, keys and snippets, change which keys can sign in to your servers, run commands, work with files and start tunnels on them.\n\nOnly turn it on if you trust the clients you connect. Passwords and private keys are never shared, and you can turn it off at any time."
 
 const execWarning = "MCP clients will be able to run any command on the hosts below as the user Boreal signs in with, including commands that change or delete things.\n\nEach command is logged, stopped after its time limit and never gets a terminal. Only allow it for clients you trust, and share as few hosts as you can."
 
@@ -46,6 +46,7 @@ const writeWarning = "MCP clients will be able to create and replace files on th
 type mcpSettings struct {
 	enabled, read, write widget.Bool
 	exec, files, writes  widget.Bool
+	tunnels              widget.Bool
 	ask                  int
 	scope                kit.Segmented
 	folders              map[string]*widget.Bool
@@ -86,7 +87,7 @@ func (s *mcpSettings) folder(name string) *widget.Bool {
 
 func (s *mcpSettings) sync(p vault.MCPPolicy, folders []string) {
 	s.enabled.Value, s.read.Value, s.write.Value, s.exec.Value = p.Enabled, p.Read, p.Access, p.Execute
-	s.files.Value, s.writes.Value = p.Files, p.Files && p.WriteFiles
+	s.files.Value, s.writes.Value, s.tunnels.Value = p.Files, p.Files && p.WriteFiles, p.Tunnels
 	s.scope.Value = hostsFolders
 
 	if p.AllHosts {
@@ -99,7 +100,7 @@ func (s *mcpSettings) sync(p vault.MCPPolicy, folders []string) {
 }
 
 func (s *mcpSettings) policy(folders []string) vault.MCPPolicy {
-	p := vault.MCPPolicy{Enabled: s.enabled.Value, Read: s.read.Value, Access: s.write.Value, Execute: s.exec.Value, Files: s.files.Value, WriteFiles: s.files.Value && s.writes.Value, AllHosts: s.scope.Value == hostsAll}
+	p := vault.MCPPolicy{Enabled: s.enabled.Value, Read: s.read.Value, Access: s.write.Value, Execute: s.exec.Value, Files: s.files.Value, WriteFiles: s.files.Value && s.writes.Value, Tunnels: s.tunnels.Value, AllHosts: s.scope.Value == hostsAll}
 
 	for _, f := range append([]string{vault.RootFolder}, folders...) {
 		if s.folder(f).Value {
@@ -124,7 +125,7 @@ func (s *mcpSettings) update(a base.Host, gtx C) {
 	folders := s.allFolders(v)
 	changed := false
 
-	for _, b := range []*widget.Bool{&s.enabled, &s.read, &s.write, &s.exec, &s.files, &s.writes} {
+	for _, b := range []*widget.Bool{&s.enabled, &s.read, &s.write, &s.exec, &s.files, &s.writes, &s.tunnels} {
 		if b.Update(gtx) {
 			changed = true
 		}
@@ -324,6 +325,10 @@ func (d *Dialog) mcpPage(a base.Host, p page) []layout.FlexChild {
 			desc += " · " + r.Path
 		}
 
+		if r.Tunnel != "" {
+			desc += " · " + r.Tunnel
+		}
+
 		if r.Outcome != borealmcp.OutcomeOK {
 			desc, c = desc+" · "+r.Error, th.Danger
 		}
@@ -341,6 +346,8 @@ func (d *Dialog) mcpPage(a base.Host, p page) []layout.FlexChild {
 	if s.files.Value {
 		perms = append(perms, p.itemColor("Write files", "Create and replace files, never in ~/.ssh. A file is only replaced when the client asks to, and every path is logged.", th.Warning, p.toggle(&s.writes)))
 	}
+
+	perms = append(perms, p.item("Start tunnels", "Start and stop the tunnels saved for the hosts below, only those that listen on this computer. They stop after their time limit, when the client disconnects or when you turn this off.", p.toggle(&s.tunnels)))
 
 	return append(children,
 		p.group("Permissions", perms...),
