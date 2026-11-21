@@ -34,15 +34,18 @@ const (
 const (
 	askEnable = iota + 1
 	askExecute
+	askWriteFiles
 )
 
-const mcpWarning = "Any AI client or program that can run Boreal as your user will be able to start its MCP server and use what you allow next: read your hosts, keys and snippets, change which keys can sign in to your servers, and run commands on them.\n\nOnly turn it on if you trust the clients you connect. Passwords and private keys are never shared, and you can turn it off at any time."
+const mcpWarning = "Any AI client or program that can run Boreal as your user will be able to start its MCP server and use what you allow next: read your hosts, keys and snippets, change which keys can sign in to your servers, run commands and work with files on them.\n\nOnly turn it on if you trust the clients you connect. Passwords and private keys are never shared, and you can turn it off at any time."
 
 const execWarning = "MCP clients will be able to run any command on the hosts below as the user Boreal signs in with, including commands that change or delete things.\n\nEach command is logged, stopped after its time limit and never gets a terminal. Only allow it for clients you trust, and share as few hosts as you can."
 
+const writeWarning = "MCP clients will be able to create and replace files on the hosts below as the user Boreal signs in with. Changing files like ~/.bashrc, crontabs or service settings can make a server run commands, so this is as powerful as allowing commands.\n\nBoreal never writes in ~/.ssh or authorized_keys, only replaces a file when asked to and logs every path. Only allow it for clients you trust."
+
 type mcpSettings struct {
 	enabled, read, write widget.Bool
-	exec                 widget.Bool
+	exec, files, writes  widget.Bool
 	ask                  int
 	scope                kit.Segmented
 	folders              map[string]*widget.Bool
@@ -83,6 +86,7 @@ func (s *mcpSettings) folder(name string) *widget.Bool {
 
 func (s *mcpSettings) sync(p vault.MCPPolicy, folders []string) {
 	s.enabled.Value, s.read.Value, s.write.Value, s.exec.Value = p.Enabled, p.Read, p.Access, p.Execute
+	s.files.Value, s.writes.Value = p.Files, p.Files && p.WriteFiles
 	s.scope.Value = hostsFolders
 
 	if p.AllHosts {
@@ -95,7 +99,7 @@ func (s *mcpSettings) sync(p vault.MCPPolicy, folders []string) {
 }
 
 func (s *mcpSettings) policy(folders []string) vault.MCPPolicy {
-	p := vault.MCPPolicy{Enabled: s.enabled.Value, Read: s.read.Value, Access: s.write.Value, Execute: s.exec.Value, AllHosts: s.scope.Value == hostsAll}
+	p := vault.MCPPolicy{Enabled: s.enabled.Value, Read: s.read.Value, Access: s.write.Value, Execute: s.exec.Value, Files: s.files.Value, WriteFiles: s.files.Value && s.writes.Value, AllHosts: s.scope.Value == hostsAll}
 
 	for _, f := range append([]string{vault.RootFolder}, folders...) {
 		if s.folder(f).Value {
@@ -120,7 +124,7 @@ func (s *mcpSettings) update(a base.Host, gtx C) {
 	folders := s.allFolders(v)
 	changed := false
 
-	for _, b := range []*widget.Bool{&s.enabled, &s.read, &s.write, &s.exec} {
+	for _, b := range []*widget.Bool{&s.enabled, &s.read, &s.write, &s.exec, &s.files, &s.writes} {
 		if b.Update(gtx) {
 			changed = true
 		}
@@ -141,6 +145,8 @@ func (s *mcpSettings) update(a base.Host, gtx C) {
 		s.confirming, s.ask = true, askEnable
 	case changed && s.exec.Value && !current.Execute:
 		s.confirming, s.ask = true, askExecute
+	case changed && s.files.Value && s.writes.Value && !(current.Files && current.WriteFiles):
+		s.confirming, s.ask = true, askWriteFiles
 	case changed:
 		s.save(v, s.policy(folders))
 	}
@@ -162,8 +168,11 @@ func (s *mcpSettings) confirm(a base.Host, gtx C) {
 
 	title, body, action := "Turn on MCP?", mcpWarning, "Turn on MCP"
 
-	if s.ask == askExecute {
+	switch s.ask {
+	case askExecute:
 		title, body, action = "Let MCP clients run commands?", execWarning, "Allow commands"
+	case askWriteFiles:
+		title, body, action = "Let MCP clients write files?", writeWarning, "Allow writing"
 	}
 
 	if s.confirmOK.Clicked(gtx) {
@@ -172,6 +181,8 @@ func (s *mcpSettings) confirm(a base.Host, gtx C) {
 		switch s.ask {
 		case askExecute:
 			p.Execute = true
+		case askWriteFiles:
+			p.Files, p.WriteFiles = true, true
 		default:
 			p.Enabled = true
 		}
@@ -309,6 +320,10 @@ func (d *Dialog) mcpPage(a base.Host, p page) []layout.FlexChild {
 			desc += " · " + r.Command
 		}
 
+		if r.Path != "" {
+			desc += " · " + r.Path
+		}
+
 		if r.Outcome != borealmcp.OutcomeOK {
 			desc, c = desc+" · "+r.Error, th.Danger
 		}
@@ -316,12 +331,19 @@ func (d *Dialog) mcpPage(a base.Host, p page) []layout.FlexChild {
 		activity = append(activity, p.itemColor(title, desc, c, nil))
 	}
 
+	perms := []layout.Widget{
+		p.item("Read", "List hosts, keys and snippets, and see which keys each host accepts.", p.toggle(&s.read)),
+		p.item("Change access", "Add and remove keys in a host's authorized_keys. Boreal backs the file up first and never removes the key it signs in with.", p.toggle(&s.write)),
+		p.itemColor("Run commands", "Run any command or snippet on the hosts below, without a terminal and with a time limit. Every command is logged.", th.Warning, p.toggle(&s.exec)),
+		p.item("Read files", "Browse folders and read files on the hosts below over SFTP.", p.toggle(&s.files)),
+	}
+
+	if s.files.Value {
+		perms = append(perms, p.itemColor("Write files", "Create and replace files, never in ~/.ssh. A file is only replaced when the client asks to, and every path is logged.", th.Warning, p.toggle(&s.writes)))
+	}
+
 	return append(children,
-		p.group("Permissions",
-			p.item("Read", "List hosts, keys and snippets, and see which keys each host accepts.", p.toggle(&s.read)),
-			p.item("Change access", "Add and remove keys in a host's authorized_keys. Boreal backs the file up first and never removes the key it signs in with.", p.toggle(&s.write)),
-			p.itemColor("Run commands", "Run any command or snippet on the hosts below, without a terminal and with a time limit. Every command is logged.", th.Warning, p.toggle(&s.exec)),
-		),
+		p.group("Permissions", perms...),
 		p.group("Hosts", hosts...),
 		p.group("Connect a client",
 			p.note("Add this to your MCP client's configuration:", th.TextMuted),
