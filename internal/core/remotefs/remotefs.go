@@ -319,6 +319,29 @@ func split(p string) (string, []string) {
 	return root, parts
 }
 
+func drivePath(t string) bool {
+	if len(t) < 3 || t[1] != ':' || (t[2] != '\\' && t[2] != '/') {
+		return false
+	}
+
+	c := t[0] | 0x20
+	return c >= 'a' && c <= 'z'
+}
+
+func windowsTarget(t string) string {
+	d := t
+
+	for _, prefix := range []string{`\\?\`, `\??\`} {
+		d = strings.TrimPrefix(d, prefix)
+	}
+
+	if !drivePath(d) {
+		return t
+	}
+
+	return "/" + strings.ReplaceAll(d, `\`, "/")
+}
+
 func (r remote) resolve(p string) (string, error) {
 	abs, err := r.c.RealPath(p)
 
@@ -359,6 +382,8 @@ func (r remote) resolve(p string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+
+		target = windowsTarget(target)
 
 		if !path.IsAbs(target) {
 			target = path.Join(cur, target)

@@ -199,8 +199,23 @@ func TestWriteRefusesLinksIntoSSH(t *testing.T) {
 		t.Fatalf("something was written in .ssh: %v", entries)
 	}
 
-	if w, err := f.Write("sub/ok.txt", []byte("fine"), false); err != nil || w.Path != filepath.ToSlash(filepath.Join(home, "sub", "ok.txt")) {
+	if w, err := f.Write("sub/ok.txt", []byte("fine"), false); err != nil || !strings.HasSuffix(w.Path, "/sub/ok.txt") {
 		t.Fatalf("normal write = %+v, %v", w, err)
+	}
+
+	if b, _ := os.ReadFile(filepath.Join(home, "sub", "ok.txt")); string(b) != "fine" {
+		t.Fatalf("normal write left %q", b)
+	}
+
+	os.Mkdir(filepath.Join(home, "data"), 0o755)
+	os.Symlink(filepath.Join(home, "data"), filepath.Join(home, "datalink"))
+
+	if _, err := f.Write("datalink/ok.txt", []byte("via link"), false); err != nil {
+		t.Fatalf("write through a link to a normal folder: %v", err)
+	}
+
+	if b, _ := os.ReadFile(filepath.Join(home, "data", "ok.txt")); string(b) != "via link" {
+		t.Fatalf("write through a link left %q", b)
 	}
 
 	os.WriteFile(filepath.Join(home, "real.txt"), []byte("real"), 0o644)
@@ -208,6 +223,27 @@ func TestWriteRefusesLinksIntoSSH(t *testing.T) {
 
 	if _, err := f.Write("alias.txt", []byte("x"), true); !errors.Is(err, ErrLink) {
 		t.Fatalf("overwriting a link: %v", err)
+	}
+}
+
+func TestWindowsLinkTargets(t *testing.T) {
+	cases := map[string]string{
+		`C:\Users\me\.ssh`: "/C:/Users/me/.ssh",
+		`c:/Users/me`:      "/c:/Users/me",
+		`\\?\D:\data`:      "/D:/data",
+		`\??\C:\x`:         "/C:/x",
+		`/home/me/.ssh`:    "/home/me/.ssh",
+		`../.ssh`:          "../.ssh",
+		`weird\name`:       `weird\name`,
+		`\\?\not-a-drive`:  `\\?\not-a-drive`,
+		`1:\x`:             `1:\x`,
+		`C:relative`:       "C:relative",
+	}
+
+	for in, want := range cases {
+		if got := windowsTarget(in); got != want {
+			t.Errorf("windowsTarget(%q) = %q, want %q", in, got, want)
+		}
 	}
 }
 
