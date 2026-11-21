@@ -6,13 +6,14 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 
 ### MCP
 - MCP clients can use Boreal through the Model Context Protocol with `boreal mcp`. It's off until you turn it on in Settings › MCP, which warns before it does, and an imported file can never turn it on.
-- Settings › MCP chooses what clients may do (read, change access, run commands, read and write files) and which folders of hosts they can reach, shows the configuration to paste into the client and lists their recent calls.
+- Settings › MCP chooses what clients may do (read, change access, run commands, read and write files, start tunnels) and which folders of hosts they can reach, shows the configuration to paste into the client and lists their recent calls.
 - Tools list hosts, keys and snippets, show which keys each host's authorized_keys accepts, and add or remove a key with optional limits: source addresses, a single command, an expiry date, no forwarding or no terminal.
 - Passwords, private keys, passphrases and proxy commands are never shared. Clients only reach servers whose key you already trusted, back up authorized_keys before each change, and can't remove the key Boreal signs in with.
 - With "Run commands" allowed, which asks for confirmation first, clients can run a command or a saved snippet on a shared host and get its exit code and output. Commands run without a terminal, stop after their time limit (30 seconds by default, 5 minutes at most) and return at most 64 KB of output per stream.
 - With "Read files" allowed, clients can list folders and read files on a shared host over SFTP, in parts for large files. With "Write files" also allowed, which asks for confirmation first, they can create files of up to 1 MB and replace one only when they ask to. Files are swapped in whole and keep their permissions, and nothing in ~/.ssh or named authorized_keys can be written, even through a link.
+- With "Start tunnels" allowed, clients can start and stop the tunnels saved for shared hosts, only those that listen on this computer. They stop after their time limit (an hour by default, 8 hours at most), when the client disconnects and within seconds of turning the permission off.
 - If a server's key changed since Boreal last connected, clients are told so and Boreal doesn't connect.
-- Every call, including each command run and file path, is written to mcp.log in Boreal's folder.
+- Every call, including each command run, file path and tunnel, is written to mcp.log in Boreal's folder.
 
 ### Security
 - When the system keyring isn't available, Boreal asks for a master password instead of saving the vault key unprotected.
