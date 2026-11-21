@@ -14,6 +14,7 @@ type MCPPolicy struct {
 	Execute    bool     `json:"execute,omitempty"`
 	Files      bool     `json:"files,omitempty"`
 	WriteFiles bool     `json:"writeFiles,omitempty"`
+	Tunnels    bool     `json:"tunnels,omitempty"`
 	AllHosts   bool     `json:"allHosts,omitempty"`
 	Folders    []string `json:"folders,omitempty"`
 }

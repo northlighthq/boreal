@@ -3,9 +3,11 @@ package mcp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/northlighthq/boreal/internal/core/access"
@@ -52,6 +54,7 @@ type View interface {
 	AgentKeys(h vault.Host) []string
 	Run(ctx context.Context, h vault.Host, cmd string, timeout time.Duration) (sshx.RunResult, error)
 	Browse(ctx context.Context, h vault.Host) (remotefs.FS, io.Closer, error)
+	Forward(ctx context.Context, h vault.Host, f vault.Forward) (Tunnel, error)
 }
 
 type Backend func() (View, error)
@@ -215,4 +218,59 @@ func (l *live) Browse(ctx context.Context, h vault.Host) (remotefs.FS, io.Closer
 	}
 
 	return remotefs.New(s.Client), closers{c, s}, nil
+}
+
+type liveTunnel struct {
+	*sshx.Tunnel
+	c    *sshx.Client
+	done chan struct{}
+	once sync.Once
+}
+
+func (t *liveTunnel) Done() <-chan struct{} { return t.done }
+
+func (t *liveTunnel) Close() error {
+	err := t.Tunnel.Close()
+	t.c.Close()
+	t.once.Do(func() { close(t.done) })
+	return err
+}
+
+func (l *live) Forward(ctx context.Context, h vault.Host, f vault.Forward) (Tunnel, error) {
+	c, err := l.connect(ctx, h)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tun, err := sshx.StartForward(c, f)
+
+	if err != nil {
+		c.Close()
+		return nil, fmt.Errorf("couldn't start the tunnel: %w", err)
+	}
+
+	t := &liveTunnel{Tunnel: tun, c: c, done: make(chan struct{})}
+
+	go func() {
+		select {
+		case <-tun.Done():
+		case <-wait(c):
+		}
+
+		t.Close()
+	}()
+
+	return t, nil
+}
+
+func wait(c *sshx.Client) <-chan struct{} {
+	done := make(chan struct{})
+
+	go func() {
+		c.Wait()
+		close(done)
+	}()
+
+	return done
 }

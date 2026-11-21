@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -48,14 +49,17 @@ type nopCloser struct{}
 func (nopCloser) Close() error { return nil }
 
 type fakeView struct {
-	policy vault.MCPPolicy
-	data   vault.Data
-	files  map[string]*fakeFiles
-	dials  []string
-	agent  []string
-	runs   []fakeRun
-	fs     remotefs.FS
-	browse []string
+	mu       sync.Mutex
+	forwards []string
+	open     []*fakeTunnel
+	policy   vault.MCPPolicy
+	data     vault.Data
+	files    map[string]*fakeFiles
+	dials    []string
+	agent    []string
+	runs     []fakeRun
+	fs       remotefs.FS
+	browse   []string
 }
 
 func (v *fakeView) Browse(_ context.Context, h vault.Host) (remotefs.FS, io.Closer, error) {
@@ -76,8 +80,18 @@ func (v *fakeView) Run(_ context.Context, h vault.Host, cmd string, timeout time
 	return sshx.RunResult{ExitCode: 0, Stdout: "ran: " + cmd}, nil
 }
 
-func (v *fakeView) Policy() vault.MCPPolicy { return v.policy }
-func (v *fakeView) Data() vault.Data        { return v.data }
+func (v *fakeView) Policy() vault.MCPPolicy {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	return v.policy
+}
+
+func (v *fakeView) setPolicy(p vault.MCPPolicy) {
+	v.mu.Lock()
+	v.policy = p
+	v.mu.Unlock()
+}
+func (v *fakeView) Data() vault.Data { return v.data }
 
 func (v *fakeView) Files(_ context.Context, h vault.Host) (access.Files, io.Closer, error) {
 	v.dials = append(v.dials, h.ID)
@@ -109,6 +123,7 @@ type fixture struct {
 	view   *fakeView
 	log    *memLog
 	client *mcp.ClientSession
+	srv    *Server
 	own    ssh.PublicKey
 	team   ssh.PublicKey
 }
@@ -128,6 +143,11 @@ func setup(t *testing.T, p vault.MCPPolicy) *fixture {
 			{ID: "team", Label: "Teammate", Type: "ssh-ed25519", Public: teamLine, Private: secretPrivate},
 		},
 		Snippets: []vault.Snippet{{ID: "s", Label: "Disk", Command: "df -h"}},
+		Forwards: []vault.Forward{
+			{ID: "pg", Label: "Postgres", HostID: "web", Kind: vault.ForwardLocal, BindPort: 15432, DestHost: "localhost", DestPort: 5432},
+			{ID: "lan", Label: "Public web", HostID: "web", Kind: vault.ForwardLocal, BindAddr: "0.0.0.0", BindPort: 8080, DestHost: "localhost", DestPort: 80},
+			{ID: "dbf", Label: "Private db", HostID: "db", Kind: vault.ForwardLocal, BindPort: 15433, DestHost: "localhost", DestPort: 5432},
+		},
 	}
 
 	f := &fixture{
@@ -142,6 +162,8 @@ func setup(t *testing.T, p vault.MCPPolicy) *fixture {
 
 	srv := New(func() (View, error) { return f.view, nil }, f.log)
 	srv.now = func() time.Time { return time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC) }
+	f.srv = srv
+	t.Cleanup(srv.Close)
 	st, ct := mcp.NewInMemoryTransports()
 	ctx := context.Background()
 

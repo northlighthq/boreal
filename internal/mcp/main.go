@@ -37,7 +37,10 @@ func Main() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	if err := New(Live, log).MCP().Run(ctx, &mcp.StdioTransport{}); err != nil && ctx.Err() == nil {
+	srv := New(Live, log)
+	defer srv.Close()
+
+	if err := srv.MCP().Run(ctx, &mcp.StdioTransport{}); err != nil && ctx.Err() == nil {
 		fmt.Fprintln(os.Stderr, logPrefix+err.Error())
 		return 1
 	}

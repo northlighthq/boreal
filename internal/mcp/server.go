@@ -50,10 +50,11 @@ type Server struct {
 	backend Backend
 	log     Recorder
 	now     func() time.Time
+	tun     tunnels
 }
 
 func New(b Backend, log Recorder) *Server {
-	return &Server{backend: b, log: log, now: time.Now}
+	return &Server{backend: b, log: log, now: time.Now, tun: tunnels{minute: time.Minute, recheck: tunnelRecheck, quit: make(chan struct{})}}
 }
 
 type tier int
@@ -64,6 +65,7 @@ const (
 	tierExecute
 	tierFiles
 	tierWriteFiles
+	tierTunnels
 )
 
 func (s *Server) load(t tier) (View, error) {
@@ -88,6 +90,8 @@ func (s *Server) load(t tier) (View, error) {
 		return nil, errNoFiles
 	case t == tierWriteFiles && !p.WriteFiles:
 		return nil, errNoWrite
+	case t == tierTunnels && !p.Tunnels:
+		return nil, errNoTunnels
 	case !p.Scoped():
 		return nil, errNoScope
 	}
@@ -122,6 +126,7 @@ func (s *Server) MCP() *mcp.Server {
 
 	s.addExec(srv)
 	s.addFiles(srv)
+	s.addTunnels(srv)
 	return srv
 }
 
