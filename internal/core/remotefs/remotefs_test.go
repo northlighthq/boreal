@@ -287,13 +287,21 @@ func TestProtectedNames(t *testing.T) {
 		{"/C:/Users/me/.ssh /config", true, ErrProtected},
 		{"/C:/Users/me/.ssh::$INDEX_ALLOCATION/config", true, ErrProtected},
 		{"/C:/ProgramData/ssh/administrators_authorized_keys", true, ErrProtected},
-		{"/C:/Users/me/SSH~1/config", true, ErrShortName},
+		{"/C:/Users/RUNNER~1/app/config", true, nil},
 		{"/C:/Users/me/app/config.json", true, nil},
 	}
 
 	for _, c := range cases {
 		if got := protected(c.path, c.win); got != c.want {
 			t.Errorf("protected(%q, win=%v) = %v, want %v", c.path, c.win, got, c.want)
+		}
+	}
+}
+
+func TestShortNamesOnlyComeFromTheClient(t *testing.T) {
+	for p, want := range map[string]bool{"SSH~1/config": true, "app/RUNNER~2/x": true, "app/config~": false, "app/file.txt": false} {
+		if got := shortNamed(p); got != want {
+			t.Errorf("shortNamed(%q) = %v, want %v", p, got, want)
 		}
 	}
 }

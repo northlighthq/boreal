@@ -231,10 +231,6 @@ func protected(p string, win bool) error {
 			}
 
 			part = strings.TrimRight(part, ". ")
-
-			if shortName.MatchString(part) {
-				return ErrShortName
-			}
 		}
 
 		if part == sshDir || strings.Contains(part, keysName) {
@@ -243,6 +239,10 @@ func protected(p string, win bool) error {
 	}
 
 	return nil
+}
+
+func shortNamed(p string) bool {
+	return slices.ContainsFunc(strings.FieldsFunc(p, separator), shortName.MatchString)
 }
 
 func (r remote) windows() bool {
@@ -269,6 +269,10 @@ func (r remote) Write(p string, data []byte, overwrite bool) (Written, error) {
 
 	if err := protected(p, win); err != nil {
 		return Written{}, err
+	}
+
+	if win && shortNamed(p) {
+		return Written{}, ErrShortName
 	}
 
 	base := path.Base(p)
