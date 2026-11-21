@@ -269,3 +269,55 @@ func TestWriteRejectsBadTargets(t *testing.T) {
 
 	leftovers(t, home)
 }
+
+func TestProtectedNames(t *testing.T) {
+	cases := []struct {
+		path string
+		win  bool
+		want error
+	}{
+		{"/home/me/.ssh/config", false, ErrProtected},
+		{"/home/me/app/authorized_keys2", false, ErrProtected},
+		{"/etc/ssh/administrators_authorized_keys", false, ErrProtected},
+		{`/home/me/sub\..\.ssh/x`, false, ErrProtected},
+		{"/home/me/app/config", false, nil},
+		{"/home/me/.ssh./config", false, nil},
+		{"/home/me/file~1.txt", false, nil},
+		{"/C:/Users/me/.SSH./config", true, ErrProtected},
+		{"/C:/Users/me/.ssh /config", true, ErrProtected},
+		{"/C:/Users/me/.ssh::$INDEX_ALLOCATION/config", true, ErrProtected},
+		{"/C:/ProgramData/ssh/administrators_authorized_keys", true, ErrProtected},
+		{"/C:/Users/me/SSH~1/config", true, ErrShortName},
+		{"/C:/Users/me/app/config.json", true, nil},
+	}
+
+	for _, c := range cases {
+		if got := protected(c.path, c.win); got != c.want {
+			t.Errorf("protected(%q, win=%v) = %v, want %v", c.path, c.win, got, c.want)
+		}
+	}
+}
+
+func TestWriteRefusesWindowsAliasesOfSSH(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("only a Windows SFTP server treats these names as .ssh")
+	}
+
+	f, home := pair(t)
+	os.Mkdir(filepath.Join(home, ".ssh"), 0o700)
+	os.Mkdir(filepath.Join(home, "sub"), 0o755)
+
+	for _, p := range []string{`sub\..\.ssh\config`, `.ssh.\config`, `.ssh \config`, `sub/..\.ssh/rc`, `SSH~1\config`} {
+		if _, err := f.Write(p, []byte("evil"), true); err == nil {
+			t.Fatalf("%s was written", p)
+		}
+	}
+
+	if entries, _ := os.ReadDir(filepath.Join(home, ".ssh")); len(entries) != 0 {
+		t.Fatalf("something was written in .ssh: %v", entries)
+	}
+
+	if w, err := f.Write(`sub\ok.txt`, []byte("fine"), false); err != nil || !strings.HasSuffix(w.Path, "/sub/ok.txt") {
+		t.Fatalf("backslash path on Windows = %+v, %v", w, err)
+	}
+}

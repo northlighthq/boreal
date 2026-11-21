@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ const (
 	newMode    = 0o644
 	tmpPrefix  = ".boreal-tmp-"
 	sshDir     = ".ssh"
-	keysPrefix = "authorized_keys"
+	keysName   = "authorized_keys"
 	maxHops    = 40
 )
 
@@ -44,7 +45,9 @@ var (
 	ErrSpecial   = errors.New("this path isn't a regular file, so Boreal won't overwrite it")
 	ErrProtected = errors.New("Boreal won't write SSH sign-in files (anything in ~/.ssh or named authorized_keys). Use grant_access and revoke_access to change who can sign in")
 	ErrTooBig    = fmt.Errorf("the content is larger than %d KB", MaxWrite>>10)
+	ErrShortName = errors.New("Boreal won't write to a path with a Windows short name like SSH~1. Use the full folder and file names")
 	errLoop      = errors.New("the path goes through too many links")
+	shortName    = regexp.MustCompile(`~[0-9]`)
 )
 
 type Entry struct {
@@ -216,17 +219,44 @@ func (r remote) Read(p string, offset int64, limit int) (File, error) {
 	return out, nil
 }
 
-func protected(p string) bool {
-	for part := range strings.SplitSeq(strings.ToLower(p), "/") {
-		if part == sshDir || strings.HasPrefix(part, keysPrefix) {
-			return true
+func separator(r rune) bool {
+	return r == '/' || r == '\\'
+}
+
+func protected(p string, win bool) error {
+	for _, part := range strings.FieldsFunc(strings.ToLower(p), separator) {
+		if win {
+			if i := strings.IndexByte(part, ':'); i > 0 {
+				part = part[:i]
+			}
+
+			part = strings.TrimRight(part, ". ")
+
+			if shortName.MatchString(part) {
+				return ErrShortName
+			}
+		}
+
+		if part == sshDir || strings.Contains(part, keysName) {
+			return ErrProtected
 		}
 	}
 
-	return false
+	return nil
+}
+
+func (r remote) windows() bool {
+	home, err := r.c.RealPath(".")
+	return err == nil && strings.HasPrefix(home, "/") && driveRoot(home[1:])
 }
 
 func (r remote) Write(p string, data []byte, overwrite bool) (Written, error) {
+	win := r.windows()
+
+	if win {
+		p = strings.ReplaceAll(p, `\`, "/")
+	}
+
 	p, err := clean(p)
 
 	if err != nil {
@@ -237,8 +267,8 @@ func (r remote) Write(p string, data []byte, overwrite bool) (Written, error) {
 		return Written{}, ErrTooBig
 	}
 
-	if protected(p) {
-		return Written{}, ErrProtected
+	if err := protected(p, win); err != nil {
+		return Written{}, err
 	}
 
 	base := path.Base(p)
@@ -247,7 +277,7 @@ func (r remote) Write(p string, data []byte, overwrite bool) (Written, error) {
 		return Written{}, ErrIsDir
 	}
 
-	dir, err := r.resolve(path.Dir(p))
+	dir, err := r.resolve(path.Dir(p), win)
 
 	if errors.Is(err, errLoop) {
 		return Written{}, err
@@ -263,8 +293,8 @@ func (r remote) Write(p string, data []byte, overwrite bool) (Written, error) {
 
 	target := path.Join(dir, base)
 
-	if protected(target) {
-		return Written{}, ErrProtected
+	if err := protected(target, win); err != nil {
+		return Written{}, err
 	}
 
 	mode, created := fs.FileMode(newMode), false
@@ -319,13 +349,17 @@ func split(p string) (string, []string) {
 	return root, parts
 }
 
-func drivePath(t string) bool {
-	if len(t) < 3 || t[1] != ':' || (t[2] != '\\' && t[2] != '/') {
-		return false
-	}
-
-	c := t[0] | 0x20
+func letter(b byte) bool {
+	c := b | 0x20
 	return c >= 'a' && c <= 'z'
+}
+
+func drivePath(t string) bool {
+	return len(t) >= 3 && letter(t[0]) && t[1] == ':' && (t[2] == '\\' || t[2] == '/')
+}
+
+func driveRoot(t string) bool {
+	return len(t) == 2 && letter(t[0]) && t[1] == ':' || drivePath(t)
 }
 
 func windowsTarget(t string) string {
@@ -342,7 +376,7 @@ func windowsTarget(t string) string {
 	return "/" + strings.ReplaceAll(d, `\`, "/")
 }
 
-func (r remote) resolve(p string) (string, error) {
+func (r remote) resolve(p string, win bool) (string, error) {
 	abs, err := r.c.RealPath(p)
 
 	if err != nil {
@@ -384,6 +418,10 @@ func (r remote) resolve(p string) (string, error) {
 		}
 
 		target = windowsTarget(target)
+
+		if win {
+			target = strings.ReplaceAll(target, `\`, "/")
+		}
 
 		if !path.IsAbs(target) {
 			target = path.Join(cur, target)
