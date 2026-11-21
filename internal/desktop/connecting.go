@@ -89,10 +89,6 @@ func (a *App) paneOverlay(gtx C, p *Pane) {
 	}
 }
 
-func layoutAt(gtx C, at image.Point) op.TransformStack {
-	return op.Offset(at).Push(gtx.Ops)
-}
-
 func (a *App) connectingView(gtx C, p *Pane, t float64, opacity float32) {
 	k := a.kit
 	th := a.th()

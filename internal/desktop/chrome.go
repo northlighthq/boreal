@@ -41,8 +41,6 @@ type chrome struct {
 	tipOff     *kit.Row
 	sideToggle widget.Clickable
 	home       kit.Row
-	newTerm    kit.Row
-	profiles   widget.Clickable
 	settings   kit.Row
 	upgrade    kit.Row
 
@@ -425,32 +423,6 @@ func (c *chrome) handleNav(a *App, gtx C) {
 			a.tools.toggleIndex(a, i)
 		}
 	}
-}
-
-func (c *chrome) navRow(a *App, gtx C, r *kit.Row, ic *icons.Icon, label string, active bool, trailing layout.Widget) D {
-	return c.navRowStyled(a, gtx, r, ic, label, active, active, trailing)
-}
-
-func (c *chrome) navRowStyled(a *App, gtx C, r *kit.Row, ic *icons.Icon, label string, active, lit bool, trailing layout.Widget) D {
-	k := a.kit
-	th := a.th()
-	hv := k.Hover(gtx, kit.Key(r, 9), r.Hovered())
-	fg := kit.Lerp(kit.Lerp(th.TextMuted, th.Text, hv), th.Text, kit.B2F(lit))
-
-	return k.Row(gtx, r, kit.RowOpts{Selected: active, Focused: true}, func(gtx C) D {
-		return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-			layout.Rigid(func(gtx C) D { return ic.Layout(gtx, 18, fg) }),
-			layout.Rigid(kit.Gap(12)),
-			layout.Flexed(1, func(gtx C) D { return k.Label(gtx, kit.TextStyle{Color: fg}, label) }),
-			layout.Rigid(func(gtx C) D {
-				if trailing == nil {
-					return D{}
-				}
-
-				return trailing(gtx)
-			}),
-		)
-	})
 }
 
 func (c *chrome) card(a *App, gtx C) D {

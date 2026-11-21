@@ -19,8 +19,6 @@ import (
 	"github.com/northlighthq/boreal/internal/common/theme"
 )
 
-const focusRing = unit.Dp(3)
-
 type FieldOpts struct {
 	Hint     string
 	Icon     *icons.Icon

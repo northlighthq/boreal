@@ -18,7 +18,6 @@ import (
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/termview"
 	"github.com/northlighthq/boreal/internal/core/session"
-	"github.com/northlighthq/boreal/internal/desktop/welcome"
 )
 
 const (
@@ -117,11 +116,10 @@ type workspace struct {
 	tabs   []*Tab
 	active int
 
-	profile widget.Clickable
-	menu    kit.Menu
-	recent  []string
-	shown   *Tab
-	swap    kit.Anim
+	menu   kit.Menu
+	recent []string
+	shown  *Tab
+	swap   kit.Anim
 }
 
 func (w *workspace) current() *Tab {
@@ -515,26 +513,6 @@ func (w *workspace) update(a *App, gtx C) {
 			w.focusActive()
 		}
 	}
-}
-
-func (w *workspace) newTabMenu(a *App) []kit.MenuItem {
-	items := a.profileMenu()
-	w.recent = w.recent[:0]
-
-	hosts := welcome.RecentHosts(a.vault, 6)
-
-	if len(hosts) == 0 {
-		return items
-	}
-
-	items = append(items, kit.Separator())
-
-	for _, h := range hosts {
-		items = append(items, kit.MenuItem{Label: h.Title(), Icon: icons.Hosts, Shortcut: h.Address})
-		w.recent = append(w.recent, h.ID)
-	}
-
-	return items
 }
 
 func (w *workspace) layoutNode(a *App, gtx C, t *Tab, n *node, origin image.Point) D {

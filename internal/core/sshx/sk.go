@@ -75,8 +75,9 @@ func parseSK(pemData []byte) (skKey, error) {
 	}
 
 	p := &reader{b: priv}
+	check1, check2 := p.u32(), p.u32()
 
-	if p.u32() != p.u32() {
+	if check1 != check2 {
 		return skKey{}, errSKMalformed
 	}
 

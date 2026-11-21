@@ -22,7 +22,6 @@ type Row struct {
 	clk       widget.Clickable
 	lastClick time.Time
 	secondary bool
-	menuAt    image.Point
 }
 
 type RowEvents struct {

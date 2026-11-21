@@ -54,7 +54,9 @@ type Job struct {
 	done   atomic.Int64
 	files  atomic.Int64
 	state  atomic.Int32
+	errMu  sync.Mutex
 	err    error
+	closed sync.Once
 	cancel context.CancelFunc
 	ctx    context.Context
 	onDone func(*Job)
@@ -73,7 +75,28 @@ func (j *Job) State() State {
 }
 
 func (j *Job) Err() error {
+	j.errMu.Lock()
+	defer j.errMu.Unlock()
 	return j.err
+}
+
+type errCloser interface {
+	CloseWithError(err error) error
+}
+
+func (j *Job) closeWriter(err error) {
+	if j.Writer == nil {
+		return
+	}
+
+	j.closed.Do(func() {
+		if ec, ok := j.Writer.(errCloser); ok && err != nil {
+			ec.CloseWithError(err)
+			return
+		}
+
+		j.Writer.Close()
+	})
 }
 
 func (j *Job) Finished() bool {
@@ -227,7 +250,10 @@ func (q *Queue) run(j *Job) {
 }
 
 func (j *Job) finish(s State, err error) {
+	j.errMu.Lock()
 	j.err = err
+	j.errMu.Unlock()
+	j.closeWriter(err)
 	j.state.Store(int32(s))
 
 	if j.onDone != nil {
@@ -373,7 +399,6 @@ func (j *Job) download() error {
 		j.total.Store(info.Size())
 
 		if j.Writer != nil {
-			defer j.Writer.Close()
 			return j.downloadTo(j.Remote, j.Writer)
 		}
 
