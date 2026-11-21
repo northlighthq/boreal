@@ -23,7 +23,26 @@ var (
 	ErrNoVault      = errors.New("Boreal isn't set up on this computer yet. Open Boreal once first")
 	errUnsharedJump = errors.New("this host connects through a jump host that isn't shared over MCP. Share its folder too, or remove the jump host")
 	ErrPassword     = errors.New("Boreal's vault is protected by a master password, which an MCP client can't type. Unlock it with Windows in Boreal › Settings › Security to use MCP")
+	errNewHostKey   = errors.New("this server's key isn't trusted yet. Connect to it once from Boreal and accept its key")
+	errHostKeyMoved = errors.New("this server's key changed since Boreal last connected, which can mean someone is pretending to be it. Boreal didn't connect. Connect from Boreal, check the new key and accept it only if you expected the change")
 )
+
+type keyCheck struct {
+	changed bool
+}
+
+func (k *keyCheck) reject(i sshx.HostKeyInfo) bool {
+	k.changed = k.changed || i.Changed
+	return false
+}
+
+func (k *keyCheck) err() error {
+	if k.changed {
+		return errHostKeyMoved
+	}
+
+	return errNewHostKey
+}
 
 type View interface {
 	Policy() vault.MCPPolicy
@@ -127,7 +146,8 @@ func (l *live) connect(ctx context.Context, h vault.Host) (*sshx.Client, error) 
 	ctx, cancel := context.WithTimeout(ctx, dialTimeout)
 	defer cancel()
 
-	hooks := sshx.Hooks{KnownHosts: sshx.SystemHosts{Read: l.settings.SystemKnownHosts}}
+	var keys keyCheck
+	hooks := sshx.Hooks{ConfirmHostKey: keys.reject, KnownHosts: sshx.SystemHosts{Read: l.settings.SystemKnownHosts}}
 	t, err := l.target(h, 0)
 
 	if err != nil {
@@ -137,7 +157,7 @@ func (l *live) connect(ctx context.Context, h vault.Host) (*sshx.Client, error) 
 	c, err := sshx.Dial(ctx, t, l.v, hooks, 0)
 
 	if errors.Is(err, sshx.ErrHostKeyRejected) {
-		return nil, errors.New("this server's key isn't trusted yet. Connect to it once from Boreal and accept its key")
+		return nil, keys.err()
 	}
 
 	if err != nil {
