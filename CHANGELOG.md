@@ -2,7 +2,7 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## 0.1.1-beta.8 (2026-11-21)
 
 ### MCP
 - MCP clients can use Boreal through the Model Context Protocol with `boreal mcp`. It's off until you turn it on in Settings › MCP, which warns before it does, and an imported file can never turn it on.
