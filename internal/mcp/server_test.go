@@ -15,6 +15,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/northlighthq/boreal/internal/core/access"
+	"github.com/northlighthq/boreal/internal/core/remotefs"
 	"github.com/northlighthq/boreal/internal/core/sshx"
 	"github.com/northlighthq/boreal/internal/core/vault"
 )
@@ -53,6 +54,13 @@ type fakeView struct {
 	dials  []string
 	agent  []string
 	runs   []fakeRun
+	fs     remotefs.FS
+	browse []string
+}
+
+func (v *fakeView) Browse(_ context.Context, h vault.Host) (remotefs.FS, io.Closer, error) {
+	v.browse = append(v.browse, h.ID)
+	return v.fs, nopCloser{}, nil
 }
 
 func (v *fakeView) AgentKeys(vault.Host) []string { return v.agent }

@@ -62,6 +62,8 @@ const (
 	tierRead tier = iota
 	tierAccess
 	tierExecute
+	tierFiles
+	tierWriteFiles
 )
 
 func (s *Server) load(t tier) (View, error) {
@@ -82,6 +84,10 @@ func (s *Server) load(t tier) (View, error) {
 		return nil, errNoAccess
 	case t == tierExecute && !p.Execute:
 		return nil, errNoExecute
+	case (t == tierFiles || t == tierWriteFiles) && !p.Files:
+		return nil, errNoFiles
+	case t == tierWriteFiles && !p.WriteFiles:
+		return nil, errNoWrite
 	case !p.Scoped():
 		return nil, errNoScope
 	}
@@ -115,6 +121,7 @@ func (s *Server) MCP() *mcp.Server {
 	mcp.AddTool(srv, &mcp.Tool{Name: toolRevokeAccess, Description: "Stop a key from signing in to a host by removing it from the host's ~/.ssh/authorized_keys. Refuses to remove the key Boreal itself signs in with. Boreal backs up the file first.", Annotations: &mcp.ToolAnnotations{IdempotentHint: true, DestructiveHint: &destructive, OpenWorldHint: &closed}}, s.revokeAccess)
 
 	s.addExec(srv)
+	s.addFiles(srv)
 	return srv
 }
 

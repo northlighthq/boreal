@@ -10,6 +10,7 @@ import (
 
 	"github.com/northlighthq/boreal/internal/core/access"
 	"github.com/northlighthq/boreal/internal/core/config"
+	"github.com/northlighthq/boreal/internal/core/remotefs"
 	"github.com/northlighthq/boreal/internal/core/sshx"
 	"github.com/northlighthq/boreal/internal/core/vault"
 )
@@ -50,6 +51,7 @@ type View interface {
 	Files(ctx context.Context, h vault.Host) (access.Files, io.Closer, error)
 	AgentKeys(h vault.Host) []string
 	Run(ctx context.Context, h vault.Host, cmd string, timeout time.Duration) (sshx.RunResult, error)
+	Browse(ctx context.Context, h vault.Host) (remotefs.FS, io.Closer, error)
 }
 
 type Backend func() (View, error)
@@ -196,4 +198,21 @@ func (l *live) Files(ctx context.Context, h vault.Host) (access.Files, io.Closer
 	}
 
 	return access.Remote(s.Client), closers{c, s}, nil
+}
+
+func (l *live) Browse(ctx context.Context, h vault.Host) (remotefs.FS, io.Closer, error) {
+	c, err := l.connect(ctx, h)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	s, err := sshx.OpenSFTP(c)
+
+	if err != nil {
+		c.Close()
+		return nil, nil, errors.New("the server doesn't offer SFTP, which Boreal needs to work with files")
+	}
+
+	return remotefs.New(s.Client), closers{c, s}, nil
 }

@@ -8,12 +8,14 @@ import (
 const RootFolder = "/"
 
 type MCPPolicy struct {
-	Enabled  bool     `json:"enabled,omitempty"`
-	Read     bool     `json:"read,omitempty"`
-	Access   bool     `json:"access,omitempty"`
-	Execute  bool     `json:"execute,omitempty"`
-	AllHosts bool     `json:"allHosts,omitempty"`
-	Folders  []string `json:"folders,omitempty"`
+	Enabled    bool     `json:"enabled,omitempty"`
+	Read       bool     `json:"read,omitempty"`
+	Access     bool     `json:"access,omitempty"`
+	Execute    bool     `json:"execute,omitempty"`
+	Files      bool     `json:"files,omitempty"`
+	WriteFiles bool     `json:"writeFiles,omitempty"`
+	AllHosts   bool     `json:"allHosts,omitempty"`
+	Folders    []string `json:"folders,omitempty"`
 }
 
 func (p MCPPolicy) Allows(h Host) bool {
