@@ -128,8 +128,11 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.1.0" "ndk;28.2.13676358" > /dev/null
           echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
 
+      - name: Linux libraries
+        run: sudo apt-get update && sudo apt-get install -y gcc pkg-config libwayland-dev libx11-dev libx11-xcb-dev libxkbcommon-x11-dev libgles2-mesa-dev libegl1-mesa-dev libffi-dev libxcursor-dev libvulkan-dev
+
       - name: Mobile tests
-        run: go test ./internal/mobile/... ./internal/common/termview/...
+        run: go test ./internal/mobile/... ./internal/common/termview/... ./packaging/android/...
 
       - name: Build the APK
         shell: pwsh
