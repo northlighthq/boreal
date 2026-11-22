@@ -477,7 +477,13 @@ func (v *View) VisibleText() string {
 	first := f.TopLine
 	last := f.TopLine + f.Rows - 1
 	text := v.backend.Terminal().TextRange(vt.Pos{Line: first}, vt.Pos{Line: last, Col: f.Cols - 1})
-	return strings.TrimRight(text, " \n")
+	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
+
+	for i, l := range lines {
+		lines[i] = strings.TrimRight(l, " \t\x00")
+	}
+
+	return strings.TrimRight(strings.Join(lines, "\n"), "\n")
 }
 
 func (v *View) selectAll() {
