@@ -376,6 +376,7 @@ func (a *App) UpdateSettings(s config.Settings) {
 func (a *App) Connect(h vault.Host) {
 	go a.vault.TouchHost(h.ID)
 
+	var t *terminal.Session
 	s := session.New(session.Options{
 		Kind:       session.SSH,
 		Target:     a.target(h, 0),
@@ -391,11 +392,21 @@ func (a *App) Connect(h vault.Host) {
 		OnConnect: func(c *sshx.Client) {
 			go a.detectOS(h.ID, c)
 		},
+		Refresh: func() (sshx.Target, string, bool) {
+			fresh, ok := a.vault.Host(h.ID)
+
+			if !ok || t == nil {
+				return sshx.Target{}, "", false
+			}
+
+			t.Host = fresh
+			return a.target(fresh, 0), fresh.Title(), true
+		},
 	})
 
 	view := termview.New(s, a.kit, a.glyphs, a.termSettings())
-	view.OnPaste = func(text string) bool { return a.guardPaste(view, h.Title(), text) }
-	t := terminal.NewSession(s, view, h)
+	view.OnPaste = func(text string) bool { return a.guardPaste(view, t.Host.Title(), text) }
+	t = terminal.NewSession(s, view, h)
 	a.sessions = append(a.sessions, t)
 	a.Open(t)
 }
