@@ -51,6 +51,23 @@ if (-not (Get-Command javac -ErrorAction SilentlyContinue)) {
     $env:PATH = (Join-Path $jdk "bin") + [IO.Path]::PathSeparator + $env:PATH
 }
 
+$buildTools = Get-ChildItem (Join-Path $env:ANDROID_HOME "build-tools") -Directory | Sort-Object { [version]($_.Name -replace "[^0-9.].*$", "") } | Select-Object -Last 1
+$androidJar = Join-Path (Join-Path (Join-Path $env:ANDROID_HOME "platforms") "android-$TargetSdk") "android.jar"
+
+if (-not (Test-Path $androidJar)) {
+    $androidJar = Get-ChildItem (Join-Path $env:ANDROID_HOME "platforms") -Directory | Sort-Object { [int]($_.Name -replace "\D", "") } | Select-Object -Last 1 | ForEach-Object { Join-Path $_.FullName "android.jar" }
+}
+
+function Find-Tool([string]$name) {
+    $tool = Get-ChildItem $buildTools.FullName -File | Where-Object { $_.BaseName -eq $name } | Sort-Object { $_.Extension -eq "" } | Select-Object -First 1
+
+    if (-not $tool) {
+        throw "$name not found in $($buildTools.FullName)"
+    }
+
+    return $tool.FullName
+}
+
 if (-not (Get-Command gogio -ErrorAction SilentlyContinue)) {
     go install gioui.org/cmd/gogio@v0.10.3
 }
@@ -88,19 +105,57 @@ if (-not $SignKey) {
     }
 }
 
-$gogioArgs += @("-signkey", $SignKey, "-signpass", $SignPass)
+$gogioArgs += @("-signkey", $SignKey, "-signpass", $SignPass, "-work")
 
 Push-Location $root
+$work = $null
 
 try {
-    gogio @gogioArgs ./cmd/boreal
+    $ErrorActionPreference = "Continue"
+    $log = gogio @gogioArgs ./cmd/boreal 2>&1 | ForEach-Object { "$_" }
+    $code = $LASTEXITCODE
+    $line = $log | Where-Object { $_ -match "^WORKDIR=" } | Select-Object -First 1
+
+    if ($line) {
+        $work = $line.Substring("WORKDIR=".Length).Trim()
+    }
+
+    if ($code -ne 0) {
+        $log | Write-Host
+        throw "gogio failed"
+    }
+
+    if (-not $work -or -not (Test-Path $work)) {
+        throw "gogio did not report its work directory"
+    }
+
+    $unsigned = Join-Path $work "boreal-unsigned.apk"
+    $aligned = Join-Path $work "boreal-aligned.apk"
+    go run ./packaging/android/relink -work $work -aapt2 (Find-Tool "aapt2") -androidjar $androidJar -o $unsigned
 
     if ($LASTEXITCODE -ne 0) {
-        throw "gogio failed"
+        throw "relink failed"
+    }
+
+    & (Find-Tool "zipalign") -f 4 $unsigned $aligned
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "zipalign failed"
+    }
+
+    & (Find-Tool "apksigner") sign --ks-pass "pass:$SignPass" --ks $SignKey --out $out $aligned
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "apksigner failed"
     }
 }
 finally {
+    $ErrorActionPreference = "Stop"
     Pop-Location
+
+    if ($work -and (Test-Path $work)) {
+        Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Write-Host $out
