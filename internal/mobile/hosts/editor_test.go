@@ -55,3 +55,49 @@ func TestKeepsAgent(t *testing.T) {
 		t.Fatal("only agent hosts keep the agent")
 	}
 }
+
+func TestValidation(t *testing.T) {
+	e := NewEditor(nil, vault.Host{})
+	e.address.SetText("db.example.com")
+
+	if e.addressError() || e.userError() {
+		t.Fatal("a plain address and empty user are fine")
+	}
+
+	e.address.SetText("db example.com")
+
+	if !e.addressError() {
+		t.Fatal("an address with a space is invalid")
+	}
+
+	e.user.SetText("ad user")
+
+	if !e.userError() {
+		t.Fatal("a username with a space is invalid")
+	}
+
+	saved := []vault.Key{{ID: "k1"}}
+	e.auth.Value = authKey
+
+	if !e.keyError(saved) {
+		t.Fatal("key sign-in needs a chosen key")
+	}
+
+	e.keyID = "gone"
+
+	if !e.keyError(saved) {
+		t.Fatal("a deleted key doesn't count as chosen")
+	}
+
+	e.keyID = "k1"
+
+	if e.keyError(saved) {
+		t.Fatal("a saved key is a valid choice")
+	}
+
+	e.auth.Value = authPassword
+
+	if e.keyError(nil) {
+		t.Fatal("password sign-in needs no key")
+	}
+}

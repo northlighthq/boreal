@@ -2,8 +2,10 @@ package hosts
 
 import (
 	"image/color"
+	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"gioui.org/io/key"
 	"gioui.org/widget"
@@ -128,9 +130,11 @@ func (e *Editor) Layout(gtx C) D {
 		e.authSet = true
 	}
 
-	addrErr := e.tried && strings.TrimSpace(e.address.Text()) == ""
-	portErr := e.portError()
 	saved := e.h.Data().Keys
+	addrErr := e.tried && e.addressError()
+	portErr := e.portError()
+	userErr := e.userError()
+	keyErr := e.tried && e.keyError(saved)
 
 	for _, kk := range saved {
 		if c := e.keyRows[kk.ID]; c != nil && c.Clicked(gtx) {
@@ -147,7 +151,9 @@ func (e *Editor) Layout(gtx C) D {
 			func(gtx C) D {
 				return ui.FormRow(gtx, k, "Port", &e.port, ui.FormOpts{Hint: "22", Mono: true, Invalid: portErr})
 			},
-			func(gtx C) D { return ui.FormRow(gtx, k, "Username", &e.user, ui.FormOpts{Hint: "root", Mono: true}) },
+			func(gtx C) D {
+				return ui.FormRow(gtx, k, "Username", &e.user, ui.FormOpts{Hint: "root", Mono: true, Invalid: userErr})
+			},
 		)
 	}
 
@@ -185,6 +191,12 @@ func (e *Editor) Layout(gtx C) D {
 		children = append(children, func(gtx C) D { return ui.Caption(gtx, k, "Enter the server's address or name.") })
 	case portErr:
 		children = append(children, func(gtx C) D { return ui.Caption(gtx, k, "Use a port between 1 and 65535.") })
+	case userErr:
+		children = append(children, func(gtx C) D { return ui.Caption(gtx, k, "Usernames can't contain spaces.") })
+	}
+
+	if keyErr {
+		signIn = append(signIn, func(gtx C) D { return ui.Caption(gtx, k, "Choose the key this host signs in with.") })
 	}
 
 	children = append(children,
@@ -258,11 +270,28 @@ func (e *Editor) portError() bool {
 	return err != nil || n < 1 || n > 65535
 }
 
+func (e *Editor) addressError() bool {
+	a := strings.TrimSpace(e.address.Text())
+	return a == "" || strings.ContainsFunc(a, unicode.IsSpace)
+}
+
+func (e *Editor) userError() bool {
+	return strings.ContainsFunc(strings.TrimSpace(e.user.Text()), unicode.IsSpace)
+}
+
+func (e *Editor) keyError(saved []vault.Key) bool {
+	if e.keepsAgent() || e.auth.Value != authKey {
+		return false
+	}
+
+	return !slices.ContainsFunc(saved, func(k vault.Key) bool { return k.ID == e.keyID })
+}
+
 func (e *Editor) submit() {
 	e.tried = true
 	addr := strings.TrimSpace(e.address.Text())
 
-	if addr == "" || e.portError() {
+	if e.addressError() || e.portError() || e.userError() || e.keyError(e.h.Data().Keys) {
 		return
 	}
 
