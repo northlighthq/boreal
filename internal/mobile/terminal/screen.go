@@ -84,7 +84,7 @@ func (t *Screen) Layout(gtx C) D {
 		t.s.Sess.Reconnect()
 	}
 
-	if t.close.Clicked(gtx) {
+	if t.close.Clicked(gtx) || t.cancel.Clicked(gtx) {
 		t.h.Close(t.s)
 	}
 
@@ -231,6 +231,11 @@ func (t *Screen) connecting(gtx C) D {
 					})
 				}))
 			}
+
+			rows = append(rows,
+				layout.Rigid(ui.Gap(18)),
+				layout.Rigid(func(gtx C) D { return ui.Button(gtx, k, &t.cancel, ui.Secondary, nil, "Cancel", true) }),
+			)
 
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx, rows...)
 		})
