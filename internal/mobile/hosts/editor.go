@@ -52,13 +52,13 @@ type Editor struct {
 
 func NewEditor(h ui.Host, host vault.Host) *Editor {
 	e := &Editor{h: h, host: host, isNew: host.ID == "", keyID: host.KeyID, keyRows: map[string]*widget.Clickable{}}
-	ui.SetupField(&e.label, key.HintText, false)
+	ui.SetupField(&e.label, key.HintAny, false)
 	ui.SetupField(&e.address, key.HintURL, false)
 	ui.SetupField(&e.port, key.HintNumeric, false)
 	ui.SetupField(&e.user, key.HintEmail, false)
 	ui.SetupField(&e.password, key.HintPassword, true)
-	ui.SetupField(&e.folder, key.HintText, false)
-	ui.SetupField(&e.startup, key.HintText, false)
+	ui.SetupField(&e.folder, key.HintAny, false)
+	ui.SetupField(&e.startup, key.HintPassword, false)
 
 	e.label.SetText(host.Label)
 	e.address.SetText(host.Address)

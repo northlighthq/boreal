@@ -147,7 +147,7 @@ type Generate struct {
 
 func NewGenerate(h ui.Host) *Generate {
 	g := &Generate{h: h}
-	ui.SetupField(&g.name, key.HintText, false)
+	ui.SetupField(&g.name, key.HintAny, false)
 	ui.SetupField(&g.pass, key.HintPassword, true)
 	g.name.SetText("Phone key")
 	return g
@@ -210,9 +210,9 @@ type Import struct {
 
 func NewImport(h ui.Host) *Import {
 	im := &Import{h: h}
-	ui.SetupField(&im.name, key.HintText, false)
+	ui.SetupField(&im.name, key.HintAny, false)
 	ui.SetupField(&im.pass, key.HintPassword, true)
-	im.data.InputHint = key.HintText
+	im.data.InputHint = key.HintPassword
 	return im
 }
 

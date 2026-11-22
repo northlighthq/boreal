@@ -42,7 +42,7 @@ type List struct {
 
 func NewList(h ui.Host) *List {
 	l := &List{h: h, rows: map[string]*rowState{}}
-	ui.SetupField(&l.search, key.HintText, false)
+	ui.SetupField(&l.search, key.HintAny, false)
 	return l
 }
 

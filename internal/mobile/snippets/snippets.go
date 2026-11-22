@@ -92,7 +92,7 @@ type Editor struct {
 
 func NewEditor(h ui.Host, s vault.Snippet) *Editor {
 	e := &Editor{h: h, snippet: s}
-	ui.SetupField(&e.label, key.HintText, false)
+	ui.SetupField(&e.label, key.HintAny, false)
 	e.command.InputHint = key.HintPassword
 	e.label.SetText(s.Label)
 	e.command.SetText(s.Command)
