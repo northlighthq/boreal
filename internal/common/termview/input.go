@@ -486,6 +486,14 @@ func (v *View) copySelection(gtx layout.Context) {
 	gtx.Execute(clipboard.WriteCmd{Type: mimeText, Data: io.NopCloser(strings.NewReader(text))})
 }
 
+func (v *View) VisibleText() string {
+	f := &v.frame
+	first := f.TopLine
+	last := f.TopLine + f.Rows - 1
+	text := v.backend.Terminal().TextRange(vt.Pos{Line: first}, vt.Pos{Line: last, Col: f.Cols - 1})
+	return strings.TrimRight(text, " \n")
+}
+
 func (v *View) selectAll() {
 	f := &v.frame
 	first := f.TopLine + f.Offset - f.Scrollback
