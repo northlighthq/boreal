@@ -3,7 +3,9 @@ package terminal
 import (
 	"image"
 	"image/color"
+	"io"
 	"strconv"
+	"strings"
 
 	"gioui.org/font"
 	"gioui.org/io/clipboard"
@@ -89,6 +91,15 @@ func (t *Screen) Layout(gtx C) D {
 	if t.paste {
 		t.paste = false
 		gtx.Execute(clipboard.ReadCmd{Tag: t.s.View})
+	}
+
+	if t.copy {
+		t.copy = false
+
+		if text := t.s.View.VisibleText(); text != "" {
+			gtx.Execute(clipboard.WriteCmd{Type: mimeText, Data: io.NopCloser(strings.NewReader(text))})
+			t.h.Notify("Copied", "The text on screen is on the clipboard.")
+		}
 	}
 
 	size := gtx.Constraints.Max
@@ -249,6 +260,7 @@ func (t *Screen) menu() *ui.Sheet {
 		Subtitle: hosts.Target(t.s.Host),
 		Items: []ui.SheetItem{
 			{Icon: icons.Paste, Label: "Paste", Do: func() { t.paste = true; t.h.Invalidate() }},
+			{Icon: icons.Copy, Label: "Copy screen", Do: func() { t.copy = true; t.h.Invalidate() }},
 			{Icon: icons.Snippet, Label: "Run a snippet", Do: t.showSnippets},
 			{Icon: icons.Add, Label: "Larger text", Value: strconv.Itoa(size+1) + " pt", Do: func() { t.zoom(1) }},
 			{Icon: icons.Minus, Label: "Smaller text", Value: strconv.Itoa(size-1) + " pt", Do: func() { t.zoom(-1) }},
