@@ -55,6 +55,8 @@ func (t *Screen) Title() string { return t.s.Host.Title() }
 
 func (t *Screen) FullScreen() bool { return true }
 
+func (t *Screen) Refocus() { t.s.View.Focus() }
+
 func (t *Screen) Layout(gtx C) D {
 	k := t.h.Kit()
 	th := k.Th

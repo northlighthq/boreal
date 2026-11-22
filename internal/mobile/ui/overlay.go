@@ -33,6 +33,20 @@ type Sheet struct {
 	appear   kit.Anim
 	closing  bool
 	chosen   func()
+	grabbed  bool
+}
+
+func holdKeys(gtx C, tag event.Tag, grabbed *bool) {
+	for {
+		if _, ok := gtx.Event(key.FocusFilter{Target: tag}, key.Filter{Focus: tag, Name: ""}); !ok {
+			break
+		}
+	}
+
+	if !*grabbed {
+		*grabbed = true
+		gtx.Execute(key.FocusCmd{Tag: tag})
+	}
 }
 
 func (s *Sheet) Dismiss() {
@@ -45,6 +59,8 @@ func (s *Sheet) Layout(gtx C, k *kit.Kit) bool {
 	if len(s.clks) != len(s.Items) {
 		s.clks = make([]widget.Clickable, len(s.Items))
 	}
+
+	holdKeys(gtx, s, &s.grabbed)
 
 	for i := range s.clks {
 		if s.clks[i].Clicked(gtx) && !s.closing {
