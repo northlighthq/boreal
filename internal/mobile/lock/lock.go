@@ -72,6 +72,7 @@ func (s *Screen) Layout(gtx C) D {
 	if s.focus {
 		s.focus = false
 		gtx.Execute(key.FocusCmd{Tag: &s.pass})
+		gtx.Execute(key.SoftKeyboardCmd{Show: true})
 	}
 
 	gtx.Constraints.Min = gtx.Constraints.Max
