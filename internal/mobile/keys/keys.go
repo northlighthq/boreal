@@ -192,7 +192,7 @@ func (g *Generate) Layout(gtx C) D {
 			)
 		},
 		func(gtx C) D {
-			return ui.Caption(gtx, k, "Boreal creates an Ed25519 key, the modern default for SSH. A passphrase encrypts the key itself, and you type it when you connect. Add the public key to ~/.ssh/authorized_keys on your servers.")
+			return ui.Caption(gtx, k, "Boreal creates an Ed25519 key, the modern default for SSH. A passphrase encrypts the key itself, so it stays protected if you export it. Boreal keeps it in your vault and uses it for you. Add the public key to ~/.ssh/authorized_keys on your servers.")
 		},
 	)
 }
