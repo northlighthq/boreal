@@ -347,6 +347,21 @@ func (a *App) dialog() *ui.Dialog {
 }
 
 func (a *App) prune() {
+	if rev := a.vault.Revision(); rev != a.hostsRev && !a.vault.Locked() {
+		a.hostsRev = rev
+
+		for _, s := range slices.Clone(a.sessions) {
+			h, ok := a.vault.Host(s.Host.ID)
+
+			if !ok {
+				a.Close(s)
+				continue
+			}
+
+			s.Host = h
+		}
+	}
+
 	for _, s := range a.sessions {
 		select {
 		case <-s.Sess.Done():
