@@ -113,7 +113,7 @@ func (k *Kit) FieldArea(gtx C, ed *widget.Editor, size image.Point) {
 			break
 		}
 
-		if e, ok := ev.(pointer.Event); ok && e.Buttons.Contain(pointer.ButtonPrimary) {
+		if e, ok := ev.(pointer.Event); ok && (e.Source == pointer.Touch || e.Buttons.Contain(pointer.ButtonPrimary)) {
 			gtx.Execute(key.FocusCmd{Tag: ed})
 			ed.SetCaret(ed.Len(), ed.Len())
 		}
