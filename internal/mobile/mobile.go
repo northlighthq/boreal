@@ -82,6 +82,13 @@ type App struct {
 	setup    *lock.Setup
 	locked   bool
 	blur     bool
+	shown    nav.Screen
+	hostsRev uint64
+	kept     int
+	view     uintptr
+	asked    bool
+	focused  bool
+	hiddenAt time.Time
 	now      time.Time
 }
 
@@ -203,6 +210,11 @@ func (a *App) screen(gtx C) {
 	_, full := top.(ui.FullScreen)
 	a.actions = nil
 
+	if top != a.shown {
+		a.shown = top
+		a.refocus()
+	}
+
 	if ac, ok := top.(ui.Actionable); ok {
 		a.actions = ac.Actions()
 	}
@@ -231,12 +243,14 @@ func (a *App) overlays(gtx C) {
 
 	if s := a.sheet; s != nil && s.Layout(gtx, a.kit) && a.sheet == s {
 		a.sheet = nil
+		a.refocus()
 	}
 
 	if d := a.dialog(); d != nil && d.Layout(gtx, a.kit) {
 		a.mu.Lock()
 		a.dialogs = slices.DeleteFunc(a.dialogs, func(x *ui.Dialog) bool { return x == d })
 		a.mu.Unlock()
+		a.refocus()
 		a.Invalidate()
 	}
 }
@@ -293,6 +307,16 @@ func (a *App) goBack() {
 		a.Pop()
 	default:
 		a.selectTab(tabHosts)
+	}
+}
+
+func (a *App) refocus() {
+	if a.sheet != nil || a.dialog() != nil {
+		return
+	}
+
+	if f, ok := a.stack().Top().(ui.Focusable); ok {
+		f.Refocus()
 	}
 }
 

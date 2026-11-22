@@ -66,6 +66,10 @@ type FullScreen interface {
 	FullScreen() bool
 }
 
+type Focusable interface {
+	Refocus()
+}
+
 type Subtitled interface {
 	Subtitle() string
 }
