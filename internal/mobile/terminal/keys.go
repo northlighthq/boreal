@@ -20,7 +20,7 @@ const (
 	barPadX    = unit.Dp(8)
 	arrowSize  = unit.Dp(17)
 	pageKeys   = 8
-	pageCount  = 2
+	pageCount  = 4
 	moreLabel  = "···"
 	shortLabel = 3
 )
@@ -59,6 +59,26 @@ var barPages = [pageCount][pageKeys]barKey{
 		{label: "End", key: input.KeyEnd},
 		{label: "PgUp", key: input.KeyPageUp},
 		{label: "PgDn", key: input.KeyPageDown},
+	},
+	{
+		{label: "F1", key: input.KeyF1},
+		{label: "F2", key: input.KeyF2},
+		{label: "F3", key: input.KeyF3},
+		{label: "F4", key: input.KeyF4},
+		{label: "F5", key: input.KeyF5},
+		{label: "F6", key: input.KeyF6},
+		{label: "F7", key: input.KeyF7},
+		{label: "F8", key: input.KeyF8},
+	},
+	{
+		{label: "F9", key: input.KeyF9},
+		{label: "F10", key: input.KeyF10},
+		{label: "F11", key: input.KeyF11},
+		{label: "F12", key: input.KeyF12},
+		{label: "Ins", key: input.KeyInsert},
+		{label: "Del", key: input.KeyDelete},
+		{label: "^C", text: "\x03"},
+		{label: "^D", text: "\x04"},
 	},
 }
 
