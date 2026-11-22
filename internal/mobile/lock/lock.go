@@ -36,6 +36,10 @@ func New(h ui.Host) *Screen {
 	return s
 }
 
+func (s *Screen) Refocus() {
+	s.focus = true
+}
+
 func (s *Screen) Layout(gtx C) D {
 	k := s.h.Kit()
 	th := k.Th
