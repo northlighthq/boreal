@@ -445,7 +445,7 @@ func (s *Security) apply(has, remove bool) {
 
 	if !remove {
 		if err := s.h.Vault().SetOSUnlock(false); err != nil {
-			s.h.Notify("Couldn't require the password", err.Error())
+			s.h.Notify("Couldn't require the password", ui.Sentence(err))
 			return
 		}
 	}

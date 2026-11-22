@@ -173,7 +173,7 @@ func (g *Generate) generate() {
 	}
 
 	if err != nil {
-		g.h.Notify("Couldn't create the key", err.Error())
+		g.h.Notify("Couldn't create the key", ui.Sentence(err))
 		return
 	}
 
@@ -300,7 +300,7 @@ func (im *Import) submit() {
 	kk, err = im.h.Vault().SaveKey(kk)
 
 	if err != nil {
-		im.h.Notify("Couldn't save the key", err.Error())
+		im.h.Notify("Couldn't save the key", ui.Sentence(err))
 		return
 	}
 
@@ -410,7 +410,7 @@ func (d *Detail) confirmDelete(kk vault.Key) {
 			}
 
 			if err := d.h.Vault().DeleteKey(kk.ID); err != nil {
-				d.h.Notify("Couldn't delete the key", err.Error())
+				d.h.Notify("Couldn't delete the key", ui.Sentence(err))
 				return
 			}
 

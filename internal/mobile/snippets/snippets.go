@@ -177,7 +177,7 @@ func (e *Editor) submit() {
 	s.Command = cmd
 
 	if _, err := e.h.Vault().SaveSnippet(s); err != nil {
-		e.h.Notify("Couldn't save the snippet", err.Error())
+		e.h.Notify("Couldn't save the snippet", ui.Sentence(err))
 		return
 	}
 
@@ -196,7 +196,7 @@ func (e *Editor) confirmDelete() {
 			}
 
 			if err := e.h.Vault().DeleteSnippet(e.snippet.ID); err != nil {
-				e.h.Notify("Couldn't delete the snippet", err.Error())
+				e.h.Notify("Couldn't delete the snippet", ui.Sentence(err))
 				return
 			}
 
