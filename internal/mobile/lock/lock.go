@@ -2,10 +2,12 @@ package lock
 
 import (
 	"image"
+	"time"
 
 	"gioui.org/font"
 	"gioui.org/io/key"
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/text"
 	"gioui.org/widget"
 
@@ -28,7 +30,15 @@ type Screen struct {
 	shown  bool
 	err    string
 	focus  bool
+
+	keyboardUntil time.Time
+	keyboardNext  time.Time
 }
+
+const (
+	keyboardRetry = 1500 * time.Millisecond
+	keyboardStep  = 250 * time.Millisecond
+)
 
 func New(h ui.Host) *Screen {
 	s := &Screen{h: h, focus: true}
@@ -71,8 +81,14 @@ func (s *Screen) Layout(gtx C) D {
 
 	if s.focus {
 		s.focus = false
+		s.keyboardUntil = gtx.Now.Add(keyboardRetry)
 		gtx.Execute(key.FocusCmd{Tag: &s.pass})
+	}
+
+	if gtx.Now.Before(s.keyboardUntil) && s.pass.Len() == 0 && !gtx.Now.Before(s.keyboardNext) {
+		s.keyboardNext = gtx.Now.Add(keyboardStep)
 		gtx.Execute(key.SoftKeyboardCmd{Show: true})
+		gtx.Execute(op.InvalidateCmd{At: s.keyboardNext})
 	}
 
 	gtx.Constraints.Min = gtx.Constraints.Max
