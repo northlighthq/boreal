@@ -466,6 +466,7 @@ func (v *View) send(p []byte) {
 	}
 
 	v.offset = 0
+	v.fling = flingState{}
 	v.sel.clear()
 	v.touchInput()
 	v.backend.Send(p)
