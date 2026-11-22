@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -92,6 +93,14 @@ type App struct {
 	now      time.Time
 }
 
+func sessionsText(n int) string {
+	if n == 1 {
+		return "1 SSH session open"
+	}
+
+	return strconv.Itoa(n) + " SSH sessions open"
+}
+
 func Run() error {
 	v, recovered, err := openVault()
 
@@ -132,6 +141,7 @@ func (a *App) loop() error {
 				s.Sess.Close()
 			}
 
+			a.keepSessions(0)
 			return e.Err
 		case gioapp.ConfigEvent:
 			switch {
@@ -358,6 +368,8 @@ func (a *App) dialog() *ui.Dialog {
 }
 
 func (a *App) prune() {
+	defer a.syncKeep()
+
 	if rev := a.vault.Revision(); rev != a.hostsRev && !a.vault.Locked() {
 		a.hostsRev = rev
 
@@ -400,6 +412,13 @@ func (a *App) lockIfAway(now time.Time) {
 	}
 
 	a.sheet = nil
+}
+
+func (a *App) syncKeep() {
+	if n := len(a.sessions); n != a.kept {
+		a.kept = n
+		a.keepSessions(n)
+	}
 }
 
 func (a *App) Kit() *kit.Kit                 { return a.kit }
