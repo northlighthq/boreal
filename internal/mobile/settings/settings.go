@@ -345,6 +345,7 @@ type Security struct {
 	save    widget.Clickable
 	remove  widget.Clickable
 	err     string
+	bad     *widget.Editor
 }
 
 func NewSecurity(h ui.Host) *Security {
@@ -384,13 +385,17 @@ func (s *Security) Layout(gtx C) D {
 	rows := []ui.W{}
 
 	if has {
-		rows = append(rows, func(gtx C) D { return ui.FormRow(gtx, k, "Current", &s.current, ui.FormOpts{Hint: "Password"}) })
+		rows = append(rows, func(gtx C) D {
+			return ui.FormRow(gtx, k, "Current", &s.current, ui.FormOpts{Hint: "Password", Invalid: s.bad == &s.current})
+		})
 	}
 
 	rows = append(rows,
-		func(gtx C) D { return ui.FormRow(gtx, k, "New", &s.next, ui.FormOpts{Hint: "At least 10 characters"}) },
 		func(gtx C) D {
-			return ui.FormRow(gtx, k, "Repeat", &s.confirm, ui.FormOpts{Hint: "Same again", Invalid: s.err != ""})
+			return ui.FormRow(gtx, k, "New", &s.next, ui.FormOpts{Hint: "At least 10 characters", Invalid: s.bad == &s.next})
+		},
+		func(gtx C) D {
+			return ui.FormRow(gtx, k, "Repeat", &s.confirm, ui.FormOpts{Hint: "Same again", Invalid: s.bad == &s.confirm})
 		},
 	)
 
@@ -431,7 +436,7 @@ func (s *Security) apply(has, remove bool) {
 
 	if !remove {
 		if err := vault.CheckPassword(next, s.confirm.Text()); err != nil {
-			s.err = err.Error()
+			s.bad, s.err = ui.PasswordField(err, &s.next, &s.confirm), ui.Sentence(err)
 			return
 		}
 	} else {
@@ -439,7 +444,7 @@ func (s *Security) apply(has, remove bool) {
 	}
 
 	if err := s.h.Vault().SetPassword(s.current.Text(), next); err != nil {
-		s.err = "The current password isn't right."
+		s.bad, s.err = &s.current, "The current password isn't right."
 		return
 	}
 
@@ -450,7 +455,7 @@ func (s *Security) apply(has, remove bool) {
 		}
 	}
 
-	s.err = ""
+	s.bad, s.err = nil, ""
 
 	switch {
 	case remove:
