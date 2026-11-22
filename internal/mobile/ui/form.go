@@ -61,14 +61,23 @@ func FormRow(gtx C, k *kit.Kit, label string, ed *widget.Editor, o FormOpts) D {
 }
 
 func FormArea(gtx C, k *kit.Kit, ed *widget.Editor, o FormOpts) D {
-	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(FormAreaHeight))
-	k.FieldArea(gtx, ed, size)
-	gtx.Constraints = layout.Exact(size)
+	minH := gtx.Dp(FormAreaHeight)
+	gtx.Constraints.Min = image.Pt(gtx.Constraints.Max.X, minH)
 
-	return layout.Inset{Left: Gutter, Right: Gutter, Top: 14, Bottom: 14}.Layout(gtx, func(gtx C) D {
-		gtx.Constraints.Min = gtx.Constraints.Max
+	if gtx.Constraints.Max.Y < minH {
+		gtx.Constraints.Max.Y = minH
+	}
+
+	rec := op.Record(gtx.Ops)
+	dims := layout.Inset{Left: Gutter, Right: Gutter, Top: 14, Bottom: 14}.Layout(gtx, func(gtx C) D {
+		gtx.Constraints.Min.X = gtx.Constraints.Max.X
 		return Editor(gtx, k, ed, o.Hint, o.Mono)
 	})
+	call := rec.Stop()
+
+	k.FieldArea(gtx, ed, dims.Size)
+	call.Add(gtx.Ops)
+	return dims
 }
 
 func ActionRow(gtx C, k *kit.Kit, clk *widget.Clickable, ic *icons.Icon, label string, kind Kind) D {
