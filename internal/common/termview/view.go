@@ -94,6 +94,7 @@ type View struct {
 	wantFocus    bool
 	wantKeyboard bool
 	touch        touchState
+	fling        flingState
 	lastInput    time.Time
 	blinkStart   time.Time
 
@@ -198,6 +199,7 @@ func (v *View) Layout(gtx layout.Context) layout.Dimensions {
 	}
 
 	v.applyKeyboard(gtx)
+	v.applyFling(gtx)
 
 	fresh := !v.snapped || gen != v.snapGen || v.offset != v.frame.Offset
 
