@@ -229,7 +229,7 @@ func (a *App) screen(gtx C) {
 func (a *App) overlays(gtx C) {
 	a.toasts.Layout(gtx, a.kit)
 
-	if a.sheet != nil && a.sheet.Layout(gtx, a.kit) {
+	if s := a.sheet; s != nil && s.Layout(gtx, a.kit) && a.sheet == s {
 		a.sheet = nil
 	}
 
