@@ -41,6 +41,7 @@ type Root struct {
 	appearance widget.Clickable
 	terminal   widget.Clickable
 	security   widget.Clickable
+	lockAfter  widget.Clickable
 	snippets   widget.Clickable
 	hideIPs    widget.Bool
 	about      widget.Clickable
@@ -71,6 +72,8 @@ func (r *Root) Layout(gtx C) D {
 		r.h.Push(snippets.NewList(r.h))
 	case r.security.Clicked(gtx):
 		r.h.Push(NewSecurity(r.h))
+	case r.lockAfter.Clicked(gtx):
+		r.h.ShowSheet(r.lockSheet())
 	case r.about.Clicked(gtx):
 		r.h.Push(NewAbout(r.h))
 	}
@@ -78,7 +81,9 @@ func (r *Root) Layout(gtx C) D {
 	themeLabel := theme.Labels[max(slices.Index(theme.Names, s.Theme), 0)]
 	lock := "Off"
 
-	if r.h.Vault().HasPassword() {
+	hasPassword := r.h.Vault().HasPassword()
+
+	if hasPassword {
 		lock = "On"
 	}
 
@@ -98,19 +103,28 @@ func (r *Root) Layout(gtx C) D {
 			)
 		},
 		func(gtx C) D {
-			return ui.Section(gtx, k, "Privacy",
+			rows := []ui.W{
 				func(gtx C) D {
 					return ui.Row(gtx, k, &r.security, ui.RowOpts{Lead: tile(k, icons.Lock), Title: "Master password", Value: lock, Chevron: true})
 				},
-				func(gtx C) D {
-					return ui.Row(gtx, k, nil, ui.RowOpts{
-						Lead:     tile(k, icons.VisibilityOff),
-						Title:    "Hide IP addresses",
-						Subtitle: "For screenshots and screen sharing",
-						Trailing: func(gtx C) D { return k.Toggle(gtx, &r.hideIPs) },
-					})
-				},
-			)
+			}
+
+			if hasPassword {
+				rows = append(rows, func(gtx C) D {
+					return ui.Row(gtx, k, &r.lockAfter, ui.RowOpts{Lead: tile(k, icons.Clock), Title: "Lock when away", Value: lockLabel(s.LockAfter), Chevron: true})
+				})
+			}
+
+			rows = append(rows, func(gtx C) D {
+				return ui.Row(gtx, k, nil, ui.RowOpts{
+					Lead:     tile(k, icons.VisibilityOff),
+					Title:    "Hide IP addresses",
+					Subtitle: "Masks addresses in host lists and titles",
+					Trailing: func(gtx C) D { return k.Toggle(gtx, &r.hideIPs) },
+				})
+			})
+
+			return ui.Section(gtx, k, "Privacy", rows...)
 		},
 		func(gtx C) D {
 			return ui.Section(gtx, k, "",
@@ -120,6 +134,42 @@ func (r *Root) Layout(gtx C) D {
 			)
 		},
 	)
+}
+
+var lockChoices = []int{1, 5, 15, 60, 0}
+
+func lockLabel(minutes int) string {
+	switch {
+	case minutes <= 0:
+		return "Never"
+	case minutes == 60:
+		return "1 hour"
+	case minutes == 1:
+		return "1 minute"
+	}
+
+	return strconv.Itoa(minutes) + " minutes"
+}
+
+func (r *Root) lockSheet() *ui.Sheet {
+	current := r.h.Settings().LockAfter
+	items := make([]ui.SheetItem, len(lockChoices))
+
+	for i, m := range lockChoices {
+		ic := icons.Clock
+
+		if m == current || (m == 0 && current < 0) {
+			ic = icons.Check
+		}
+
+		items[i] = ui.SheetItem{Icon: ic, Label: lockLabel(m), Do: func() {
+			s := r.h.Settings()
+			s.LockAfter = m
+			r.h.UpdateSettings(s)
+		}}
+	}
+
+	return &ui.Sheet{Title: "Lock when away", Subtitle: "Time in the background before Boreal locks", Items: items}
 }
 
 func tile(k *kit.Kit, ic *icons.Icon) ui.W {

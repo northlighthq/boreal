@@ -133,6 +133,17 @@ func (a *App) loop() error {
 			}
 
 			return e.Err
+		case gioapp.ConfigEvent:
+			switch {
+			case e.Config.Focused && !a.focused:
+				a.lockIfAway(time.Now())
+				a.lock.Refocus()
+				a.Invalidate()
+			case !e.Config.Focused && a.focused:
+				a.hiddenAt = time.Now()
+			}
+
+			a.focused = e.Config.Focused
 		case gioapp.FrameEvent:
 			gtx := a.context(&ops, e)
 			a.frame(gtx)
@@ -370,6 +381,25 @@ func (a *App) prune() {
 		default:
 		}
 	}
+}
+
+func (a *App) lockIfAway(now time.Time) {
+	after := time.Duration(a.settings.LockAfter) * time.Minute
+
+	if after <= 0 || a.hiddenAt.IsZero() || now.Sub(a.hiddenAt) < after {
+		return
+	}
+
+	if !a.vault.HasPassword() || a.vault.Locked() {
+		return
+	}
+
+	if err := a.vault.Lock(); err != nil {
+		a.toasts.Info("Couldn't lock Boreal", ui.Sentence(err))
+		return
+	}
+
+	a.sheet = nil
 }
 
 func (a *App) Kit() *kit.Kit                 { return a.kit }
