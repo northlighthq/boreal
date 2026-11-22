@@ -22,6 +22,15 @@ type Setup struct {
 	save  widget.Clickable
 	list  widget.List
 	err   string
+	bad   *widget.Editor
+}
+
+func (s *Setup) help(ed *widget.Editor) string {
+	if s.bad != ed {
+		return ""
+	}
+
+	return s.err
 }
 
 func NewSetup(h ui.Host) *Setup {
@@ -65,10 +74,10 @@ func (s *Setup) Layout(gtx C) D {
 			})
 		},
 		func(gtx C) D {
-			return ui.Field(gtx, k, &s.pass, ui.FieldOpts{Label: "Master password", Hint: "At least 10 characters"})
+			return ui.Field(gtx, k, &s.pass, ui.FieldOpts{Label: "Master password", Hint: "At least 10 characters", Invalid: s.bad == &s.pass, Help: s.help(&s.pass)})
 		},
 		func(gtx C) D {
-			return ui.Field(gtx, k, &s.again, ui.FieldOpts{Label: "Repeat it", Invalid: s.err != "", Help: s.err})
+			return ui.Field(gtx, k, &s.again, ui.FieldOpts{Label: "Repeat it", Invalid: s.bad == &s.again, Help: s.help(&s.again)})
 		},
 		func(gtx C) D { return ui.Button(gtx, k, &s.save, ui.Primary, icons.Lock, "Set password", true) },
 	)
@@ -76,16 +85,16 @@ func (s *Setup) Layout(gtx C) D {
 
 func (s *Setup) apply() {
 	if err := vault.CheckPassword(s.pass.Text(), s.again.Text()); err != nil {
-		s.err = err.Error()
+		s.bad, s.err = ui.PasswordField(err, &s.pass, &s.again), ui.Sentence(err)
 		return
 	}
 
 	if err := s.h.Vault().SetPassword("", s.pass.Text()); err != nil {
-		s.err = err.Error()
+		s.bad, s.err = &s.pass, ui.Sentence(err)
 		return
 	}
 
-	s.err = ""
+	s.bad, s.err = nil, ""
 	s.pass.SetText("")
 	s.again.SetText("")
 	s.h.Invalidate()
