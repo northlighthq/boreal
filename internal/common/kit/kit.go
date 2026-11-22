@@ -82,6 +82,7 @@ type TextStyle struct {
 	MaxLines int
 	Align    text.Alignment
 	Mono     bool
+	Face     font.Typeface
 }
 
 func (k *Kit) Label(gtx C, st TextStyle, s string) D {
@@ -103,7 +104,10 @@ func (k *Kit) Label(gtx C, st TextStyle, s string) D {
 
 	f := Font(st.Weight)
 
-	if st.Mono {
+	switch {
+	case st.Face != "":
+		f = font.Font{Typeface: st.Face, Weight: st.Weight}
+	case st.Mono:
 		f = font.Font{Typeface: fonts.Mono, Weight: st.Weight}
 	}
 
