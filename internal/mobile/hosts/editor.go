@@ -281,7 +281,7 @@ func (e *Editor) submit() {
 	h.Auth, h.KeyID, h.Password = authFor(e.keepsAgent(), e.auth.Value, e.keyID, e.password.Text())
 
 	if _, err := e.h.Vault().SaveHost(h); err != nil {
-		e.h.Notify("Couldn't save the host", err.Error())
+		e.h.Notify("Couldn't save the host", ui.Sentence(err))
 		return
 	}
 

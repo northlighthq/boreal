@@ -185,7 +185,7 @@ func confirmDelete(h ui.Host, host vault.Host, done func()) {
 			}
 
 			if err := h.Vault().DeleteHost(host.ID); err != nil {
-				h.Notify("Couldn't delete the host", err.Error())
+				h.Notify("Couldn't delete the host", ui.Sentence(err))
 				return
 			}
 
