@@ -15,6 +15,8 @@ import (
 
 const (
 	barHeight  = unit.Dp(50)
+	barCompact = unit.Dp(40)
+	chipInset  = unit.Dp(6)
 	chipH      = unit.Dp(36)
 	chipGap    = unit.Dp(5)
 	barPadX    = unit.Dp(8)
@@ -104,7 +106,13 @@ func (b *keyBar) Layout(gtx C, k *kit.Kit, s *Session, compact bool) D {
 		b.page = (b.page + 1) % pageCount
 	}
 
-	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(barHeight))
+	height := barHeight
+
+	if compact {
+		height = barCompact
+	}
+
+	size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(height))
 	kit.Rect(gtx, image.Rectangle{Max: size}, th.Panel)
 	kit.Rect(gtx, image.Rect(0, 0, size.X, max(gtx.Dp(1)/2, 1)), th.Divider)
 	gtx.Constraints = layout.Exact(size)
@@ -151,7 +159,7 @@ func (b *keyBar) chip(gtx C, k *kit.Kit, clk *widget.Clickable, bk barKey, on bo
 			bg = kit.Lerp(th.Selection, th.Text, 0.14)
 		}
 
-		size := image.Pt(gtx.Constraints.Max.X, gtx.Dp(chipH))
+		size := image.Pt(gtx.Constraints.Max.X, min(gtx.Dp(chipH), gtx.Constraints.Max.Y-gtx.Dp(chipInset)))
 		kit.RRect(gtx, image.Rectangle{Max: size}, gtx.Dp(th.RadiusSmall), bg)
 		gtx.Constraints = layout.Exact(size)
 
