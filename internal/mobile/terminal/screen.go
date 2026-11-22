@@ -28,6 +28,8 @@ type (
 
 const (
 	topHeight   = unit.Dp(56)
+	compactMax  = unit.Dp(320)
+	mimeText    = "application/text"
 	minFontSize = 9
 	maxFontSize = 24
 )
@@ -40,9 +42,11 @@ type Screen struct {
 	kbd  widget.Clickable
 	more widget.Clickable
 
-	retry widget.Clickable
-	close widget.Clickable
-	paste bool
+	retry  widget.Clickable
+	close  widget.Clickable
+	cancel widget.Clickable
+	paste  bool
+	copy   bool
 }
 
 func NewScreen(h Host, s *Session) *Screen {
@@ -70,7 +74,7 @@ func (t *Screen) Layout(gtx C) D {
 		t.s.View.ShowKeyboard()
 	}
 
-	if t.more.Clicked(gtx) {
+	if t.more.Clicked(gtx) || t.bar.menu.Clicked(gtx) {
 		t.h.ShowSheet(t.menu())
 	}
 
@@ -89,9 +93,16 @@ func (t *Screen) Layout(gtx C) D {
 
 	size := gtx.Constraints.Max
 	kit.Rect(gtx, image.Rectangle{Max: size}, th.Background)
+	compact := size.Y < gtx.Dp(compactMax) && st == session.Connected
 
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx C) D { return t.top(gtx, st) }),
+		layout.Rigid(func(gtx C) D {
+			if compact {
+				return D{}
+			}
+
+			return t.top(gtx, st)
+		}),
 		layout.Flexed(1, func(gtx C) D {
 			gtx.Constraints.Min = gtx.Constraints.Max
 
@@ -111,7 +122,7 @@ func (t *Screen) Layout(gtx C) D {
 				return D{}
 			}
 
-			return t.bar.Layout(gtx, k, t.s)
+			return t.bar.Layout(gtx, k, t.s, compact)
 		}),
 	)
 }

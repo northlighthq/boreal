@@ -85,10 +85,11 @@ var barPages = [pageCount][pageKeys]barKey{
 type keyBar struct {
 	clks [pageCount][pageKeys]widget.Clickable
 	more widget.Clickable
+	menu widget.Clickable
 	page int
 }
 
-func (b *keyBar) Layout(gtx C, k *kit.Kit, s *Session) D {
+func (b *keyBar) Layout(gtx C, k *kit.Kit, s *Session, compact bool) D {
 	th := k.Th
 
 	for p := range b.clks {
@@ -108,7 +109,7 @@ func (b *keyBar) Layout(gtx C, k *kit.Kit, s *Session) D {
 	kit.Rect(gtx, image.Rect(0, 0, size.X, max(gtx.Dp(1)/2, 1)), th.Divider)
 	gtx.Constraints = layout.Exact(size)
 
-	children := make([]layout.FlexChild, 0, 2*pageKeys+1)
+	children := make([]layout.FlexChild, 0, 2*pageKeys+3)
 
 	for i := range pageKeys {
 		bk := barPages[b.page][i]
@@ -122,6 +123,13 @@ func (b *keyBar) Layout(gtx C, k *kit.Kit, s *Session) D {
 	children = append(children, layout.Flexed(1, func(gtx C) D {
 		return b.chip(gtx, k, &b.more, barKey{label: moreLabel}, b.page > 0)
 	}))
+
+	if compact {
+		children = append(children,
+			layout.Rigid(ui.Gap(chipGap)),
+			layout.Flexed(1, func(gtx C) D { return b.chip(gtx, k, &b.menu, barKey{icon: icons.LucideMore}, false) }),
+		)
+	}
 
 	layout.Inset{Left: barPadX, Right: barPadX}.Layout(gtx, func(gtx C) D {
 		return layout.Flex{Alignment: layout.Middle}.Layout(gtx, children...)
