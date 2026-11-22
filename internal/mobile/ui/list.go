@@ -121,7 +121,28 @@ func Row(gtx C, k *kit.Kit, clk *widget.Clickable, o RowOpts) D {
 		return rowBody(gtx, k, nil, o)
 	}
 
-	return clk.Layout(gtx, func(gtx C) D { return rowBody(gtx, k, clk, o) })
+	if o.Trailing == nil {
+		return clk.Layout(gtx, func(gtx C) D { return rowBody(gtx, k, clk, o) })
+	}
+
+	g := gtx
+	g.Constraints.Min = image.Point{}
+	rec := op.Record(gtx.Ops)
+	tdims := o.Trailing(g)
+	trailing := rec.Stop()
+
+	o.Trailing = func(gtx C) D { return D{Size: tdims.Size} }
+	dims := clk.Layout(gtx, func(gtx C) D { return rowBody(gtx, k, clk, o) })
+
+	off := image.Pt(dims.Size.X-gtx.Dp(8)-tdims.Size.X, (dims.Size.Y-tdims.Size.Y)/2)
+	if o.Chevron {
+		off.X -= gtx.Dp(24)
+	}
+
+	stack := op.Offset(off).Push(gtx.Ops)
+	trailing.Add(gtx.Ops)
+	stack.Pop()
+	return dims
 }
 
 func rowBody(gtx C, k *kit.Kit, clk *widget.Clickable, o RowOpts) D {
