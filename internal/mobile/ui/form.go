@@ -66,10 +66,8 @@ func FormArea(gtx C, k *kit.Kit, ed *widget.Editor, o FormOpts) D {
 	gtx.Constraints = layout.Exact(size)
 
 	return layout.Inset{Left: Gutter, Right: Gutter, Top: 14, Bottom: 14}.Layout(gtx, func(gtx C) D {
-		return layout.NW.Layout(gtx, func(gtx C) D {
-			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			return Editor(gtx, k, ed, o.Hint, o.Mono)
-		})
+		gtx.Constraints.Min = gtx.Constraints.Max
+		return Editor(gtx, k, ed, o.Hint, o.Mono)
 	})
 }
 
