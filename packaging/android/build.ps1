@@ -31,6 +31,26 @@ if (-not $env:ANDROID_NDK_ROOT) {
     $env:ANDROID_NDK_ROOT = $ndk.FullName
 }
 
+if (-not (Get-Command javac -ErrorAction SilentlyContinue)) {
+    $userHome = [Environment]::GetFolderPath("UserProfile")
+    $candidates = @()
+
+    if ($env:JAVA_HOME) {
+        $candidates += $env:JAVA_HOME
+    }
+
+    $candidates += Get-ChildItem (Join-Path $userHome ".jdks") -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | ForEach-Object { $_.FullName }
+    $candidates += @("C:\Program Files\Android\Android Studio\jbr", "/Applications/Android Studio.app/Contents/jbr/Contents/Home")
+    $jdk = $candidates | Where-Object { Test-Path (Join-Path (Join-Path $_ "bin") "javac*") } | Select-Object -First 1
+
+    if (-not $jdk) {
+        throw "No JDK found. Install JDK 17 or newer and set JAVA_HOME."
+    }
+
+    $env:JAVA_HOME = $jdk
+    $env:PATH = (Join-Path $jdk "bin") + [IO.Path]::PathSeparator + $env:PATH
+}
+
 if (-not (Get-Command gogio -ErrorAction SilentlyContinue)) {
     go install gioui.org/cmd/gogio@v0.10.3
 }
