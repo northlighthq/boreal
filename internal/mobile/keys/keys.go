@@ -395,7 +395,7 @@ func (d *Detail) confirmDelete(kk vault.Key) {
 	msg := "The private key is erased from this device. Servers that only accept this key will refuse the connection."
 
 	if used > 0 {
-		msg = strconv.Itoa(used) + " host(s) use this key and will ask for a password instead. " + msg
+		msg = hostsUsing(used) + " this key and will ask for a password instead. " + msg
 	}
 
 	d.h.Ask(&ui.Dialog{
@@ -417,4 +417,12 @@ func (d *Detail) confirmDelete(kk vault.Key) {
 			d.h.Pop()
 		},
 	})
+}
+
+func hostsUsing(n int) string {
+	if n == 1 {
+		return "1 host uses"
+	}
+
+	return strconv.Itoa(n) + " hosts use"
 }
