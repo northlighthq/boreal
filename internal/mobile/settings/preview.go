@@ -3,11 +3,13 @@ package settings
 import (
 	"image"
 
+	"gioui.org/font"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/unit"
 
+	"github.com/northlighthq/boreal/internal/common/fonts"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/core/config"
 	"github.com/northlighthq/boreal/internal/mobile/ui"
@@ -34,7 +36,7 @@ func termPreview(gtx C, k *kit.Kit, s config.Settings) D {
 			c = th.ANSI[i]
 		}
 
-		return kit.TextStyle{Size: size, Color: c, Mono: true, MaxLines: 1}
+		return kit.TextStyle{Size: size, Color: c, Mono: true, Face: font.Typeface(fonts.TerminalFamily(s.TerminalFont)), MaxLines: 1}
 	}
 
 	prompt := func(rest ...layout.FlexChild) layout.FlexChild {
