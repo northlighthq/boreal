@@ -68,6 +68,7 @@ type Options struct {
 
 	OnClipboard func(text string)
 	OnConnect   func(c *sshx.Client)
+	Refresh     func() (sshx.Target, string, bool)
 	Dir         string
 }
 
@@ -194,6 +195,9 @@ func (s *Session) Client() *sshx.Client {
 }
 
 func (s *Session) Target() sshx.Target {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	return s.opts.Target
 }
 
@@ -272,11 +276,24 @@ func (s *Session) Resize(cols, rows int) {
 }
 
 func (s *Session) Reconnect() {
+	var target sshx.Target
+	var title string
+	fresh := false
+
+	if s.opts.Refresh != nil {
+		target, title, fresh = s.opts.Refresh()
+	}
+
 	s.mu.Lock()
 
 	if s.state == Connecting || s.state == Connected {
 		s.mu.Unlock()
 		return
+	}
+
+	if fresh {
+		s.opts.Target = target
+		s.title = title
 	}
 
 	s.state = Connecting
@@ -376,7 +393,7 @@ func (s *Session) connect() {
 		t.Resize(s.term.Size())
 
 		if cmd := strings.TrimSpace(s.opts.Target.Host.StartupCommand); cmd != "" && s.opts.Target.Host.Tmux == "" {
-			s.SendOnly([]byte(cmd + ""))
+			s.SendOnly([]byte(cmd + "\r"))
 		}
 	}
 
