@@ -22,7 +22,7 @@
 
 ![Boreal](.github/screens/home.jpg)
 
-## Overview
+## <img src=".github/icons/terminal.svg" width="20" height="20" alt="" /> Overview
 
 Boreal brings a host manager, a terminal emulator of its own and the everyday SSH tools
 into a single native window. It's written in Go and drawn on the GPU with
@@ -36,7 +36,7 @@ organized and safe.
 - **Private by default.** Hosts, keys and passwords live in an encrypted vault that only
   you can open.
 
-## Features
+## <img src=".github/icons/grid.svg" width="20" height="20" alt="" /> Features
 
 | Area | What's included |
 |---|---|
@@ -62,7 +62,7 @@ organized and safe.
   </tr>
 </table>
 
-## Platforms
+## <img src=".github/icons/monitor.svg" width="20" height="20" alt="" /> Platforms
 
 | System | Status | Download |
 |---|---|---|
@@ -75,7 +75,7 @@ organized and safe.
 The SSH layer, the terminal engine and the vault are portable Go. The issues list what's
 still missing on each system.
 
-## Getting started
+## <img src=".github/icons/download.svg" width="20" height="20" alt="" /> Getting started
 
 ### Download
 
@@ -107,14 +107,7 @@ Settings, the vault and the crash log live in the user config folder: `%AppData%
 Run with `BOREAL_DIAG=<folder>` to write the frame rate, memory stats and CPU and heap
 profiles to that folder every few seconds.
 
-### Releasing
-
-Write the changes under `## Unreleased` in `CHANGELOG.md`, then run the **Release** workflow
-from Actions with the version (`0.1.1-beta.5`). It tests on the three systems, scans the
-dependencies, packages Windows, macOS and Linux, signs the checksums and publishes the
-release. Tick *dry run* to build everything without publishing.
-
-## Tech stack
+## <img src=".github/icons/layers.svg" width="20" height="20" alt="" /> Tech stack
 
 | Layer | Technology |
 |---|---|
@@ -157,7 +150,7 @@ The libraries in `libs/` are also published as their own repositories under
 
 </details>
 
-## Status
+## <img src=".github/icons/info.svg" width="20" height="20" alt="" /> Status
 
 Boreal is in early development: expect rough edges, and please report what you find in the
 [issues](https://github.com/northlighthq/boreal/issues).
