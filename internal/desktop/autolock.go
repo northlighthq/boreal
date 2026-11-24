@@ -14,27 +14,14 @@ const (
 )
 
 type autoLock struct {
-	startLocked   bool
 	helloReady    atomic.Bool
 	sessionLocked atomic.Bool
 	pending       atomic.Bool
 }
 
 func (a *App) startAutoLock() {
-	if a.settings.WindowsHello && a.vault.OSUnlock() && !a.vault.Locked() && a.vault.Lock() == nil {
-		a.autoLock.startLocked = true
-	}
-
-	startLocked := a.autoLock.startLocked
-
 	go func() {
-		ready := hello.Available()
-		a.autoLock.helloReady.Store(ready)
-
-		if !ready && startLocked && !a.vault.HasPassword() {
-			a.vault.UnlockOS()
-		}
-
+		a.autoLock.helloReady.Store(hello.Available())
 		a.Invalidate()
 	}()
 
