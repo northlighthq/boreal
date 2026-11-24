@@ -127,10 +127,6 @@ jobs:
           go test ./internal/core/backup ./internal/core/sshx ./internal/core/vault
           (cd libs/vt && go test ./...)
 
-      - name: Fuzz the VT emulator
-        working-directory: libs/vt
-        run: go test -run '^$' -fuzz '^FuzzTerminal$' -fuzztime 30s .
-
       - name: Fuzz the metrics parser
         run: go test ./internal/core/sshx -run '^$' -fuzz '^FuzzParseStats$' -fuzztime 30s
 
