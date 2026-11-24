@@ -155,12 +155,16 @@ func (d *Intro) finish() bool {
 
 func (d *Intro) savePassword() bool {
 	pass := d.password.Text()
+	keyless := !d.h.Vault().OSUnlock()
 
-	if pass == "" {
+	if pass == "" && !keyless {
 		return true
 	}
 
 	switch {
+	case keyless && len([]rune(pass)) < minPassword:
+		d.passErr = fmt.Sprintf("Boreal can't reach a system keyring here, so it needs a master password of at least %d characters.", minPassword)
+		return false
 	case len([]rune(pass)) < minPassword:
 		d.passErr = fmt.Sprintf("Use at least %d characters, or leave it empty to skip.", minPassword)
 		return false
@@ -176,7 +180,7 @@ func (d *Intro) savePassword() bool {
 		return false
 	}
 
-	if !d.osUnlock.Value {
+	if !keyless && !d.osUnlock.Value {
 		v.SetOSUnlock(false)
 	}
 
