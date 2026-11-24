@@ -47,6 +47,8 @@ type mcpSettings struct {
 	enabled, read, write widget.Bool
 	exec, files, writes  widget.Bool
 	tunnels              widget.Bool
+	saving               async
+	queued               *vault.MCPPolicy
 	ask                  int
 	scope                kit.Segmented
 	folders              map[string]*widget.Bool
@@ -111,15 +113,37 @@ func (s *mcpSettings) policy(folders []string) vault.MCPPolicy {
 	return p
 }
 
-func (s *mcpSettings) save(v *vault.Vault, p vault.MCPPolicy) {
-	s.message = ""
+func (s *mcpSettings) save(a base.Host, p vault.MCPPolicy) {
+	if s.saving.busy() {
+		s.queued = &p
+		return
+	}
 
-	if err := v.SetMCP(p); err != nil {
-		s.message = err.Error()
+	s.message = ""
+	v := a.Vault()
+	s.saving.run(a, func() error { return v.SetMCP(p) })
+}
+
+func (s *mcpSettings) settle(a base.Host) {
+	err, ok := s.saving.poll()
+
+	if !ok {
+		return
+	}
+
+	if err != nil {
+		s.message, s.queued = err.Error(), nil
+		return
+	}
+
+	if q := s.queued; q != nil {
+		s.queued = nil
+		s.save(a, *q)
 	}
 }
 
 func (s *mcpSettings) update(a base.Host, gtx C) {
+	s.settle(a)
 	v := a.Vault()
 	current := v.MCP()
 	folders := s.allFolders(v)
@@ -149,10 +173,12 @@ func (s *mcpSettings) update(a base.Host, gtx C) {
 	case changed && s.files.Value && s.writes.Value && !(current.Files && current.WriteFiles):
 		s.confirming, s.ask = true, askWriteFiles
 	case changed:
-		s.save(v, s.policy(folders))
+		s.save(a, s.policy(folders))
 	}
 
-	s.sync(v.MCP(), folders)
+	if !s.saving.busy() {
+		s.sync(v.MCP(), folders)
+	}
 
 	if s.copy.Clicked(gtx) {
 		gtx.Execute(clipboard.WriteCmd{Type: mimeText, Data: io.NopCloser(strings.NewReader(clientConfig()))})
@@ -188,7 +214,7 @@ func (s *mcpSettings) confirm(a base.Host, gtx C) {
 			p.Enabled = true
 		}
 
-		s.save(a.Vault(), p)
+		s.save(a, p)
 		s.confirming = false
 		return
 	}

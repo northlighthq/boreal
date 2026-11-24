@@ -1,186 +1,159 @@
-<div align="center">
+<p align="center">
+  <img src=".github/boreal.svg" alt="Boreal" width="40" />
+</p>
 
-<img src=".github/boreal.svg" alt="Boreal" width="56" />
+<h1 align="center">Boreal</h1>
 
-# Boreal
+<p align="center">
+  A native SSH client and terminal for Windows, macOS and Linux.
+</p>
 
-**A fast, native SSH client and terminal for Windows, by [Northlight](https://github.com/northlighthq).**
+<p align="center">
+  <a href="https://github.com/northlighthq/boreal/releases"><img src="https://img.shields.io/github/v/release/northlighthq/boreal?include_prereleases&label=release&color=5b8def" alt="Release" /></a>
+  <a href="https://github.com/northlighthq/boreal/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/northlighthq/boreal/ci.yml?branch=main&label=ci" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="License" /></a>
+</p>
 
-No Electron, no web view: Boreal is written in Go and draws its whole interface on
-the GPU with [Gio](https://gioui.org). It brings a **Termius-style host manager**, a
-**terminal emulator of its own** and the everyday SSH tools (**keys, tunnels, SFTP and
-snippets**) into one calm window, with an activity bar for the tools and the Northlight look.
-
-</div>
-
----
+<p align="center">
+  <a href="https://github.com/northlighthq/boreal/releases"><b>Download</b></a> ·
+  <a href="https://northlighthq.github.io/plattyssh.github.io/">Website</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
 
 ![Boreal](.github/screens/home.jpg)
 
-## ✨ Features
+## <img src=".github/icons/terminal.svg" width="20" height="20" alt="" /> Overview
 
-- **Terminal of its own** (`libs/vt`): 256 colors and truecolor, bold, italic and
-  underline styles, alternate screen, scrollback, wide (CJK) characters and **reflow on
-  resize**.
-- **Custom glyph rasterizer** with a cache: 0.04 ms per frame on a static screen and
-  under 6 ms for a full-screen redraw at 1080p, with **color emoji** (COLR v0/v1) and
-  system font fallback.
-- **Selection, copy and paste**, bracketed paste, **search in the scrollback**, Ctrl+click
-  links and mouse reporting for vim and htop.
-- **Tabs and split panes** that come back when you reopen Boreal; rename, reorder, duplicate,
-  and type into several panes of a tab at once (broadcast), choosing which ones receive the
-  input. Local profiles: PowerShell, cmd,
-  WSL and Git Bash.
-- **Font ligatures** (JetBrains Mono, Fira Code), clickable OSC 8 links, OSC 52 copy and
-  OSC 7 working folder; **save a session to a log file** as plain text.
-- **Output triggers**: highlight a line, show a notification or play a sound when the
-  output matches a regular expression, for every session, local terminals or one host.
-- **Hosts in folders**: subfolders, drag and drop, tags, search and **`~/.ssh/config`
-  import**. Each host shows the **logo of its operating system**, in color or monochrome.
-- **Authentication** with a password, a key from the keychain or the Windows OpenSSH
-  agent, including keyboard-interactive; **jump hosts**, keep-alive and reconnect.
-- **Host key verification** (trust on first use) with a warning when a key changes.
-- **SSH certificates** attached to keys, **agent forwarding** and a **command to run on
-  connect** per host. Hardware keys (YubiKey, FIDO) work through the Windows OpenSSH agent.
-- **Keychain**: generate ed25519 keys (with a passphrase) or import existing ones.
-- **Port forwarding**: local (-L), remote (-R) and dynamic (SOCKS5), each with a switch.
-- **SFTP panel** with a **transfer queue** (progress, cancel, whole folders): drag files in
-  from Explorer or out to it, edit a remote file in your own editor and it uploads on save.
-- **Snippets**: saved commands you run in the active session with one click.
-- **Server metrics** for SSH sessions: CPU, memory, disk, network, load and uptime.
-- **Search Everywhere** (Ctrl+Shift+P): hosts, snippets, actions and quick connect.
-- **A short introduction** on first launch: theme, terminal, master password and
-  importing your servers.
-- **Encrypted vault** (XChaCha20-Poly1305): opens with your Windows user, an optional
-  **master password** (Argon2id), or both; **locks** on demand (Ctrl+Shift+L) or when idle.
-  Key passphrases are only kept for the session unless you ask Boreal to remember them.
-- **Export and import**: a `.boreal` file encrypted with a password of your choice, where
-  you pick what goes in (secrets stay out by default), plus export to `~/.ssh/config`.
-- **Themes**: Northlight (the default, with the Aurora accent) plus monochrome Carbon, Graphite, Midnight and Paper, and an option to hide
-  IP addresses on screen.
+Boreal brings a host manager, a terminal emulator of its own and the everyday SSH tools
+into a single native window. It's written in Go and drawn on the GPU with
+[Gio](https://gioui.org), for people who live in SSH sessions and want them to be fast,
+organized and safe.
 
-| | |
+- **Native and fast.** No browser engine. A full redraw at 1080p takes under 6 ms, and an
+  idle screen costs 0.04 ms per frame.
+- **Everything in one place.** Hosts, keys, tunnels, file transfers and snippets share the
+  same window and the same search.
+- **Private by default.** Hosts, keys and passwords live in an encrypted vault that only
+  you can open.
+
+## <img src=".github/icons/grid.svg" width="20" height="20" alt="" /> Features
+
+| Area | What's included |
 |---|---|
-| ![Search Everywhere](.github/screens/search.jpg) | ![Host editor](.github/screens/host-editor.jpg) |
-| ![Connecting](.github/screens/connect.jpg) | ![Snippets](.github/screens/snippets.jpg) |
-| ![Settings](.github/screens/settings.jpg) | |
+| **Terminal** | Own VT emulator with truecolor, alternate screen, scrollback and reflow on resize · GPU glyph rasterizer with color emoji and ligatures · tabs and split panes restored on launch · broadcast input · scrollback search, clickable links, mouse reporting, OSC 7/8/52 · session logs |
+| **Hosts** | Folders, tags and drag and drop · the server's OS shown per host · `~/.ssh/config` import · Search Everywhere (Ctrl+Shift+P) and quick connect |
+| **Connections** | Password, key, SSH agent and keyboard-interactive auth · jump hosts · keep-alive and reconnect · host key verification · certificates, agent forwarding and FIDO keys · command on connect |
+| **Tools** | Keychain with ed25519 generation and import · local, remote and SOCKS5 forwarding · SFTP with a transfer queue and remote editing · snippets · server metrics · output triggers |
+| **Security** | XChaCha20-Poly1305 vault · key protected by the system (DPAPI, Keychain, Secret Service), an Argon2id master password, or both · lock on demand, when idle or with the session · Windows Hello unlock |
+| **Data** | Encrypted `.boreal` export and import with secrets left out by default · export to `~/.ssh/config` |
+| **Appearance** | Northlight theme with the Aurora accent, plus Carbon, Graphite, Midnight and Paper · density, corner and tab styles · option to hide IP addresses |
 
-## 🧱 Tech stack
+<table>
+  <tr>
+    <td><img src=".github/screens/search.jpg" alt="Search Everywhere" /></td>
+    <td><img src=".github/screens/host-editor.jpg" alt="Host editor" /></td>
+  </tr>
+  <tr>
+    <td><img src=".github/screens/connect.jpg" alt="Connecting" /></td>
+    <td><img src=".github/screens/snippets.jpg" alt="Snippets" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src=".github/screens/settings.jpg" alt="Settings" width="50%" /></td>
+  </tr>
+</table>
 
-| Layer | Technology |
-|-------|------------|
-| Language | Go 1.26 · no cgo on Windows |
-| UI | Gio 0.10 (Direct3D 11) · Lucide and Phosphor icons · Segoe UI, Geist and JetBrains Mono |
-| Terminal | Own VT emulator (`libs/vt`) · pseudo terminals with ConPTY or `/dev/ptmx` (`libs/pty`) · own glyph rasterizer (`libs/glyphs`) |
-| SSH | golang.org/x/crypto/ssh · pkg/sftp |
-| Storage | XChaCha20-Poly1305 vault · key wrapped with DPAPI or the system keyring and/or Argon2id · JSON settings |
+## <img src=".github/icons/monitor.svg" width="20" height="20" alt="" /> Platforms
 
-## 🚀 Getting started
+| System | Status | Download |
+|---|---|---|
+| Windows 10 (1809+) and 11, x64 | Supported | Installer or portable `.zip` |
+| Windows 11 on ARM64 | Native builds, not yet tested on hardware | `arm64` installer or `.zip` |
+| macOS 12+ (Apple Silicon and Intel) | Experimental, see [#1](https://github.com/northlighthq/boreal/issues/1) | `.dmg` |
+| Linux x86_64 (X11 and Wayland) | Experimental, see [#2](https://github.com/northlighthq/boreal/issues/2) | `.AppImage` |
+| Android 9+ | In development, see [docs/mobile.md](docs/mobile.md) | |
+
+The SSH layer, the terminal engine and the vault are portable Go. The issues list what's
+still missing on each system.
+
+## <img src=".github/icons/download.svg" width="20" height="20" alt="" /> Getting started
 
 ### Download
 
-Grab the installer or the portable `.zip` from [Releases](https://github.com/northlighthq/boreal/releases);
-on Windows on ARM, pick the `arm64` files for a native build. Boreal needs **Windows 10 1809** or later. Beta builds aren't code-signed yet, so Windows may
-ask you to confirm before running them.
+Grab your build from [Releases](https://github.com/northlighthq/boreal/releases). Beta builds
+aren't code-signed yet, so your system may ask you to confirm before running them.
 
 ### Build from source
 
-You need **Go 1.26+**.
+You need **Go 1.26+**. Linux also needs the Gio libraries (Wayland, X11, Vulkan and
+xkbcommon headers).
 
 ```sh
-# Build the app
+# Windows
 go build -ldflags "-H windowsgui" -o bin/boreal.exe ./cmd/boreal
 
-# Run it
-bin/boreal.exe
+# macOS and Linux
+go build -o bin/boreal ./cmd/boreal
 ```
 
-Settings, the vault and the crash log are kept in `%AppData%\Boreal`; an existing `%AppData%\Platty` folder moves there on first launch.
+Settings, the vault and the crash log live in the user config folder: `%AppData%\Boreal`,
+`~/Library/Application Support/Boreal` or `~/.config/Boreal`.
 
 ### Development
 
 ```sh
-./packaging/build.ps1 -Version 0.1.0          # portable zip in dist/ (add -Installer for the setup)
+./packaging/build.ps1 -Version 0.1.0   # Windows portable zip in dist/, add -Installer for the setup
 ```
 
-Run with `BOREAL_DIAG=<folder>` to write the frame rate, memory stats and CPU/heap
+Run with `BOREAL_DIAG=<folder>` to write the frame rate, memory stats and CPU and heap
 profiles to that folder every few seconds.
 
-### Releasing
+## <img src=".github/icons/layers.svg" width="20" height="20" alt="" /> Tech stack
 
-Write the changes under `## Unreleased` in `CHANGELOG.md`, then run the **Release** workflow
-from Actions with the version (`0.1.1-beta.5`). It tests on the three systems, scans the
-dependencies, packages Windows, macOS and Linux, signs the checksums and publishes the
-release. Tick *dry run* to build everything without publishing.
-
-## ⌨️ Shortcuts
-
-| Action | Shortcut |
+| Layer | Technology |
 |---|---|
-| Search everywhere | Ctrl+Shift+P |
-| New terminal / new host | Ctrl+Shift+T / Ctrl+Shift+N |
-| Split right / down | Ctrl+Shift+D / Ctrl+Shift+E |
-| Close pane | Ctrl+Shift+W |
-| Broadcast input to the tab | Ctrl+Shift+B |
-| Move focus between panes | Alt+Arrows |
-| Switch tab | Ctrl+Tab / Ctrl+Shift+Tab |
-| Sidebar / tool panels | Alt+1 / Alt+2 … Alt+6 |
-| Copy / paste | Ctrl+Shift+C (or Ctrl+C with a selection) / Ctrl+Shift+V |
-| Find in terminal | Ctrl+Shift+F |
-| Settings | Ctrl+Alt+S |
-| Lock Boreal | Ctrl+Shift+L |
+| Language | Go 1.26, no cgo on Windows |
+| UI | Gio 0.10 (Direct3D 11, Metal, Vulkan) · Lucide and Phosphor icons · Geist and JetBrains Mono |
+| Terminal | `libs/vt` emulator · `libs/pty` (ConPTY, `/dev/ptmx`) · `libs/glyphs` rasterizer |
+| SSH | `golang.org/x/crypto/ssh` · `pkg/sftp` |
+| Storage | XChaCha20-Poly1305 vault · key wrapped with DPAPI, Keychain or Secret Service, and/or Argon2id |
 
-## 📚 Documentation
-
-- [Website](https://northlighthq.github.io/plattyssh.github.io/): the landing page and documentation.
-- [Changelog](CHANGELOG.md): what changed in each version.
-- [Branding](https://github.com/northlighthq/branding): the Northlight brand.
-- [Third-party notices](THIRD_PARTY_NOTICES.md): icon and font licenses.
-
-## 📂 Structure
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
 boreal/
-├── cmd/boreal/            # the app
+├── cmd/boreal/            # entry point: desktop on Windows, macOS and Linux, mobile on Android
 ├── internal/
-│   ├── core/              # no UI: sessions, SSH, the vault and everything around them
+│   ├── core/              # no UI, shared by every app
 │   │   ├── session/       # local and SSH sessions
 │   │   ├── sshx/          # SSH: auth, host keys, jump hosts, forwarding, SFTP, metrics
 │   │   ├── vault/         # encrypted storage
 │   │   └── tunnel/  transfer/  config/  backup/  secure/  sshconfig/  update/ ...
-│   ├── common/            # UI building blocks: kit, termview, theme, icons, toast, fonts ...
-│   ├── desktop/           # the window: sidebar, tabs, split panes and wiring
+│   ├── common/            # UI shared by desktop and mobile
+│   │   └── kit/  termview/  theme/  icons/  toast/  fonts/  metrics/ ...
+│   ├── desktop/           # the desktop app: sidebar, tabs, split panes and wiring
 │   │   ├── base/          # interfaces between the window and its parts
 │   │   ├── hosts/  keychain/  forwards/  snippets/  knownhosts/  sftp/
 │   │   └── settings/  palette/  welcome/  dialogs/
-│   └── platform/          # OS integration: local shells, file drop, keyring
+│   ├── mobile/            # the Android app: screens, navigation and touch controls
+│   └── platform/          # OS integration: local shells, file drop, keyring, Hello
 ├── libs/                  # reusable libraries, each with its own go.mod
 │   ├── vt/                # terminal emulator (parser/, input/)
 │   ├── pty/               # pseudo terminals (ConPTY, Unix)
 │   └── glyphs/            # glyph rasterizer
-└── packaging/             # release script, installer and icon
+└── packaging/             # release scripts, installer, icons and the Android build
 ```
 
 The libraries in `libs/` are also published as their own repositories under
 [github.com/northlighthq](https://github.com/northlighthq); the main module uses them through
 `replace` directives.
 
-## 🖥️ Platform support
+</details>
 
-| System | Status |
-|---|---|
-| Windows 10 (1809+) and 11, x64 | ✅ Supported |
-| Windows 11 on ARM64 | 🧪 Native builds, not yet tested on ARM hardware |
-| macOS (Apple Silicon and Intel) | 🛠️ Planned, see [#1](https://github.com/northlighthq/boreal/issues/1) |
-| Linux (X11 and Wayland) | 🛠️ Planned, see [#2](https://github.com/northlighthq/boreal/issues/2) |
+## <img src=".github/icons/info.svg" width="20" height="20" alt="" /> Status
 
-The SSH layer, the terminal engine and the vault are portable Go; the issues list what's
-left for each system.
-
-## ⚠️ Notice
-
-Boreal is in early development. Segoe UI isn't bundled: it's loaded from the Windows
-fonts folder, and Geist is used when it's missing.
+Boreal is in early development: expect rough edges, and please report what you find in the
+[issues](https://github.com/northlighthq/boreal/issues).
 
 Released under the [MIT license](LICENSE). The embedded fonts (JetBrains Mono, Fira Code,
 Geist and Geist Mono) are under the SIL Open Font License 1.1, and the icons come from

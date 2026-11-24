@@ -80,6 +80,7 @@ type Dialog struct {
 	blink, copySel, confirm, hideIPs, restore, ligs, hl widget.Bool
 	autoUpdate                                          widget.Bool
 	links                                               widget.Bool
+	linksJob                                            async
 	skipTags                                            widget.Editor
 
 	ok, apply, cancel widget.Clickable
@@ -253,12 +254,20 @@ func (d *Dialog) Layout(gtx C) bool {
 	}
 	k := a.Kit()
 
-	if d.links.Update(gtx) {
-		if err := urlhandler.Set(d.links.Value); err != nil {
+	if err, ok := d.linksJob.poll(); ok {
+		if err != nil {
+			d.links.Value = !d.links.Value
 			a.Toasts().Error("Couldn't change the link handler", err.Error())
 		}
+	}
 
-		d.links.Value = urlhandler.Registered()
+	if d.links.Update(gtx) {
+		if d.linksJob.busy() {
+			d.links.Value = !d.links.Value
+		} else {
+			on := d.links.Value
+			d.linksJob.run(a, func() error { return urlhandler.Set(on) })
+		}
 	}
 
 	if d.ok.Clicked(gtx) {

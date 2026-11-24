@@ -24,6 +24,7 @@ type security struct {
 	setPassword, remove    widget.Clickable
 	lockNow, forget        widget.Clickable
 	osUnlock               widget.Bool
+	osUnlockJob            async
 	readKnown, writeKnown  widget.Bool
 	lockOnSystem, hello    widget.Bool
 	lockAfter              kit.Select
@@ -60,11 +61,18 @@ func (s *security) report(err error, ok string) {
 func (s *security) update(a base.Host, gtx C) {
 	v := a.Vault()
 
-	if s.osUnlock.Update(gtx) {
-		s.report(v.SetOSUnlock(s.osUnlock.Value), "")
+	if err, ok := s.osUnlockJob.poll(); ok {
+		s.report(err, "")
 	}
 
-	s.osUnlock.Value = v.OSUnlock()
+	if s.osUnlock.Update(gtx) && !s.osUnlockJob.busy() {
+		on := s.osUnlock.Value
+		s.osUnlockJob.run(a, func() error { return v.SetOSUnlock(on) })
+	}
+
+	if !s.osUnlockJob.busy() {
+		s.osUnlock.Value = v.OSUnlock()
+	}
 
 	if s.setPassword.Clicked(gtx) {
 		switch next := s.next.Text(); {
@@ -124,7 +132,7 @@ func (d *Dialog) securityPage(a base.Host, p page) []layout.FlexChild {
 	var lock []layout.Widget
 
 	if helloRow {
-		lock = append(lock, p.item("Windows Hello", "Ask for Windows Hello to open and unlock Boreal.", p.toggle(&s.hello)))
+		lock = append(lock, p.item("Windows Hello", "Ask for Windows Hello to unlock Boreal after it locks.", p.toggle(&s.hello)))
 
 		if !has {
 			lock = append(lock, p.note("Windows Hello locks Boreal's window, but programs running as you could still read the vault. Set a master password to encrypt it with something only you know.", th.Warning))
