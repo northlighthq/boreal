@@ -9,6 +9,8 @@ import (
 const (
 	OSOwner = "Windows user"
 	OSName  = "Windows"
+	System  = "Windows"
+	Device  = "PC"
 )
 
 var (

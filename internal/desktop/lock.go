@@ -35,7 +35,13 @@ type lockScreen struct {
 
 func (a *App) LockVault() {
 	if !a.CanLock() {
-		a.toasts.Info("No master password", "Set one in Settings → Security, or set up Windows Hello, to lock Boreal.")
+		hint := "Set one in Settings → Security to lock Boreal."
+
+		if a.HelloAvailable() {
+			hint = "Set one in Settings → Security, or set up Windows Hello, to lock Boreal."
+		}
+
+		a.toasts.Info("No master password", hint)
 		return
 	}
 
