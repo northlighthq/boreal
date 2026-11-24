@@ -17,55 +17,36 @@ No Electron, no web view: written in Go and drawn on the GPU with [Gio](https://
 [**Download**](https://github.com/northlighthq/boreal/releases) ·
 [Website](https://northlighthq.github.io/plattyssh.github.io/) ·
 [Changelog](CHANGELOG.md) ·
-[Platforms](#-platforms)
+[Platforms](#platforms)
 
 </div>
 
 ![Boreal](.github/screens/home.jpg)
 
-## ✨ Features
+## Overview
 
-### 🖥️ Terminal
+Boreal brings a host manager, a terminal emulator of its own and the everyday SSH tools
+into a single native window. It's built for people who live in SSH sessions and want them
+to be fast, organized and safe.
 
-- **An emulator of its own** (`libs/vt`): 256 colors and truecolor, alternate screen,
-  scrollback, wide (CJK) characters and **reflow on resize**.
-- **Custom glyph rasterizer**: 0.04 ms per frame on a static screen and under 6 ms for a
-  full redraw at 1080p, with **color emoji** (COLR v0/v1), **ligatures** and font fallback.
-- **Tabs and split panes** that come back when you reopen Boreal, and **broadcast** to type
-  into several panes at once.
-- Search in the scrollback, Ctrl+click links, mouse reporting, bracketed paste, OSC 7, 8
-  and 52, and **session logs** to a file.
-- **Output triggers**: highlight a line, notify or play a sound when the output matches a
-  regular expression.
-- Local shells: PowerShell, cmd, WSL and Git Bash on Windows, your login shell elsewhere.
+- **Native and fast.** No browser engine. A full redraw at 1080p takes under 6 ms, and an
+  idle screen costs 0.04 ms per frame.
+- **Everything in one place.** Hosts, keys, tunnels, file transfers and snippets share the
+  same window and the same search.
+- **Private by default.** Hosts, keys and passwords live in an encrypted vault that only
+  you can open.
 
-### 🔐 SSH
+## Features
 
-- **Hosts in folders** with tags, search, drag and drop, the logo of each server's OS and
-  **`~/.ssh/config` import**.
-- Passwords, keys, the **SSH agent** and keyboard-interactive; **jump hosts**, keep-alive
-  and reconnect.
-- **Host key verification** with a warning when a key changes, **certificates**, **agent
-  forwarding**, hardware keys (FIDO) and a command to run on connect.
-- **Keychain**: generate ed25519 keys or import your own.
-- **Port forwarding**: local, remote and dynamic (SOCKS5), each with its own switch.
-- **SFTP** with a transfer queue: drag files in and out, and edit remote files in your own
-  editor.
-- **Snippets**, **server metrics** (CPU, memory, disk, network) and **Search Everywhere**
-  (Ctrl+Shift+P).
-
-### 🛡️ Vault
-
-- **Encrypted** with XChaCha20-Poly1305. It opens with your system account (DPAPI,
-  Keychain or the keyring), a **master password** (Argon2id), or both.
-- **Locks** on demand, when idle or with the session, and unlocks with Windows Hello.
-- **Export and import** to a password-protected `.boreal` file (secrets stay out unless you
-  include them), or to `~/.ssh/config`.
-
-### 🎨 Look
-
-- Northlight with the Aurora accent, plus Carbon, Graphite, Midnight and Paper.
-- Density, corners and tab styles, and an option to hide IP addresses on screen.
+| Area | What's included |
+|---|---|
+| **Terminal** | Own VT emulator with truecolor, alternate screen, scrollback and reflow on resize · GPU glyph rasterizer with color emoji and ligatures · tabs and split panes restored on launch · broadcast input · scrollback search, clickable links, mouse reporting, OSC 7/8/52 · session logs |
+| **Hosts** | Folders, tags and drag and drop · the server's OS shown per host · `~/.ssh/config` import · Search Everywhere (Ctrl+Shift+P) and quick connect |
+| **Connections** | Password, key, SSH agent and keyboard-interactive auth · jump hosts · keep-alive and reconnect · host key verification · certificates, agent forwarding and FIDO keys · command on connect |
+| **Tools** | Keychain with ed25519 generation and import · local, remote and SOCKS5 forwarding · SFTP with a transfer queue and remote editing · snippets · server metrics · output triggers |
+| **Security** | XChaCha20-Poly1305 vault · key protected by the system (DPAPI, Keychain, Secret Service), an Argon2id master password, or both · lock on demand, when idle or with the session · Windows Hello unlock |
+| **Data** | Encrypted `.boreal` export and import with secrets left out by default · export to `~/.ssh/config` |
+| **Appearance** | Northlight theme with the Aurora accent, plus Carbon, Graphite, Midnight and Paper · density, corner and tab styles · option to hide IP addresses |
 
 <table>
   <tr>
@@ -81,20 +62,20 @@ No Electron, no web view: written in Go and drawn on the GPU with [Gio](https://
   </tr>
 </table>
 
-## 💻 Platforms
+## Platforms
 
 | System | Status | Download |
 |---|---|---|
-| Windows 10 (1809+) and 11, x64 | ✅ Supported | Installer or portable `.zip` |
-| Windows 11 on ARM64 | 🧪 Native builds, not yet tested on hardware | `arm64` installer or `.zip` |
-| macOS 12+ (Apple Silicon and Intel) | 🧪 Experimental, see [#1](https://github.com/northlighthq/boreal/issues/1) | `.dmg` |
-| Linux x86_64 (X11 and Wayland) | 🧪 Experimental, see [#2](https://github.com/northlighthq/boreal/issues/2) | `.AppImage` |
-| Android 9+ | 🚧 In development, see [docs/mobile.md](docs/mobile.md) | |
+| Windows 10 (1809+) and 11, x64 | Supported | Installer or portable `.zip` |
+| Windows 11 on ARM64 | Native builds, not yet tested on hardware | `arm64` installer or `.zip` |
+| macOS 12+ (Apple Silicon and Intel) | Experimental, see [#1](https://github.com/northlighthq/boreal/issues/1) | `.dmg` |
+| Linux x86_64 (X11 and Wayland) | Experimental, see [#2](https://github.com/northlighthq/boreal/issues/2) | `.AppImage` |
+| Android 9+ | In development, see [docs/mobile.md](docs/mobile.md) | |
 
 The SSH layer, the terminal engine and the vault are portable Go. The issues list what's
 still missing on each system.
 
-## 🚀 Getting started
+## Getting started
 
 ### Download
 
@@ -133,7 +114,7 @@ from Actions with the version (`0.1.1-beta.5`). It tests on the three systems, s
 dependencies, packages Windows, macOS and Linux, signs the checksums and publishes the
 release. Tick *dry run* to build everything without publishing.
 
-## ⌨️ Shortcuts
+## Shortcuts
 
 | Action | Shortcut |
 |---|---|
@@ -150,7 +131,7 @@ release. Tick *dry run* to build everything without publishing.
 | Settings | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd> |
 | Lock Boreal | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> |
 
-## 🧱 Tech stack
+## Tech stack
 
 | Layer | Technology |
 |---|---|
@@ -161,7 +142,7 @@ release. Tick *dry run* to build everything without publishing.
 | Storage | XChaCha20-Poly1305 vault · key wrapped with DPAPI, Keychain or Secret Service, and/or Argon2id |
 
 <details>
-<summary><b>📂 Project structure</b></summary>
+<summary><b>Project structure</b></summary>
 
 ```
 boreal/
@@ -193,14 +174,14 @@ The libraries in `libs/` are also published as their own repositories under
 
 </details>
 
-## 📚 More
+## More
 
 - [Website](https://northlighthq.github.io/plattyssh.github.io/): landing page and docs.
 - [Changelog](CHANGELOG.md): what changed in each version.
 - [Branding](https://github.com/northlighthq/branding): the Northlight brand.
 - [Third-party notices](THIRD_PARTY_NOTICES.md): icon and font licenses.
 
-## ⚠️ Status
+## Status
 
 Boreal is in early development: expect rough edges, and please report what you find in the
 [issues](https://github.com/northlighthq/boreal/issues).
