@@ -1,33 +1,33 @@
-<div align="center">
+<p align="center">
+  <img src=".github/boreal.svg" alt="Boreal" width="40" />
+</p>
 
-<img src=".github/boreal.svg" alt="Boreal" width="72" />
+<h1 align="center">Boreal</h1>
 
-# Boreal
+<p align="center">
+  A native SSH client and terminal for Windows, macOS and Linux.
+</p>
 
-**A fast, native SSH client and terminal, by [Northlight](https://github.com/northlighthq).**
+<p align="center">
+  <a href="https://github.com/northlighthq/boreal/releases"><img src="https://img.shields.io/github/v/release/northlighthq/boreal?include_prereleases&label=release&color=5b8def" alt="Release" /></a>
+  <a href="https://github.com/northlighthq/boreal/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/northlighthq/boreal/ci.yml?branch=main&label=ci" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="License" /></a>
+</p>
 
-Hosts, keys, tunnels, SFTP and snippets in one calm window.<br/>
-No Electron, no web view: written in Go and drawn on the GPU with [Gio](https://gioui.org).
-
-[![Release](https://img.shields.io/github/v/release/northlighthq/boreal?include_prereleases&label=release&color=5b8def)](https://github.com/northlighthq/boreal/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/northlighthq/boreal/ci.yml?branch=main&label=ci)](https://github.com/northlighthq/boreal/actions/workflows/ci.yml)
-[![Go](https://img.shields.io/badge/go-1.26-00add8)](https://go.dev)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
-
-[**Download**](https://github.com/northlighthq/boreal/releases) ·
-[Website](https://northlighthq.github.io/plattyssh.github.io/) ·
-[Changelog](CHANGELOG.md) ·
-[Platforms](#platforms)
-
-</div>
+<p align="center">
+  <a href="https://github.com/northlighthq/boreal/releases"><b>Download</b></a> ·
+  <a href="https://northlighthq.github.io/plattyssh.github.io/">Website</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
 
 ![Boreal](.github/screens/home.jpg)
 
 ## Overview
 
 Boreal brings a host manager, a terminal emulator of its own and the everyday SSH tools
-into a single native window. It's built for people who live in SSH sessions and want them
-to be fast, organized and safe.
+into a single native window. It's written in Go and drawn on the GPU with
+[Gio](https://gioui.org), for people who live in SSH sessions and want them to be fast,
+organized and safe.
 
 - **Native and fast.** No browser engine. A full redraw at 1080p takes under 6 ms, and an
   idle screen costs 0.04 ms per frame.
@@ -114,23 +114,6 @@ from Actions with the version (`0.1.1-beta.5`). It tests on the three systems, s
 dependencies, packages Windows, macOS and Linux, signs the checksums and publishes the
 release. Tick *dry run* to build everything without publishing.
 
-## Shortcuts
-
-| Action | Shortcut |
-|---|---|
-| Search everywhere | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> |
-| New terminal / new host | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> |
-| Split right / down | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> |
-| Close pane | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>W</kbd> |
-| Broadcast input to the tab | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> |
-| Move focus between panes | <kbd>Alt</kbd>+<kbd>Arrows</kbd> |
-| Switch tab | <kbd>Ctrl</kbd>+<kbd>Tab</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> |
-| Sidebar / tool panels | <kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>Alt</kbd>+<kbd>2</kbd> … <kbd>Alt</kbd>+<kbd>6</kbd> |
-| Copy / paste | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd> |
-| Find in terminal | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> |
-| Settings | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd> |
-| Lock Boreal | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> |
-
 ## Tech stack
 
 | Layer | Technology |
@@ -173,13 +156,6 @@ The libraries in `libs/` are also published as their own repositories under
 `replace` directives.
 
 </details>
-
-## More
-
-- [Website](https://northlighthq.github.io/plattyssh.github.io/): landing page and docs.
-- [Changelog](CHANGELOG.md): what changed in each version.
-- [Branding](https://github.com/northlighthq/branding): the Northlight brand.
-- [Third-party notices](THIRD_PARTY_NOTICES.md): icon and font licenses.
 
 ## Status
 
