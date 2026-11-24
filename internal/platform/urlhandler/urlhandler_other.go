@@ -1,6 +1,11 @@
-//go:build !windows
+//go:build !windows && (!linux || android)
 
 package urlhandler
+
+const (
+	Supported = false
+	Hint      = ""
+)
 
 func Registered() bool {
 	return false
