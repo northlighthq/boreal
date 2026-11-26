@@ -4,6 +4,15 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 
 ## Unreleased
 
+### macOS and Linux
+- macOS unlocks Boreal with Touch ID and Linux with a fingerprint reader (fprintd), the way Windows does with Windows Hello.
+- On macOS, files dropped from Finder on an SSH session upload via SFTP.
+- Locking the Mac or the Linux session (through logind) can lock Boreal too.
+- Boreal can open `ssh://` and `sftp://` links on macOS and Linux. Turn it on in Settings, as on Windows.
+- Output triggers can play a sound on macOS and Linux.
+- On macOS the app and terminal shortcuts also work with ⌘ (⌘T, ⌘W, ⌘C, ⌘V, ⌘F, ⌘, …), ⌘-click opens links and shortcuts are shown with Mac symbols.
+- The Linux AppImage downloads and installs its own updates. On macOS, updating opens the release page.
+
 ### Android
 - A first Android app (Android 9 and later) shares the desktop app's vault format, SSH and terminal. It has hosts, keys, snippets, settings and several sessions at once.
 - Open sessions stay connected while you switch apps, with a notification showing how many are open.
