@@ -86,6 +86,7 @@ func Send(args []string) bool {
 }
 
 func Listen(handle func(args []string)) (func(), error) {
+	setLocal(handle)
 	p, err := path()
 
 	if err != nil {

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"gioui.org/app"
+
+	"github.com/northlighthq/boreal/internal/platform/instance"
 )
 
 func main() {
@@ -32,5 +34,9 @@ func main() {
 
 		os.Exit(0)
 	}()
-	app.Main()
+	for e := range app.Events {
+		if u, ok := e.(app.URLEvent); ok && u.URL != nil {
+			instance.Deliver([]string{u.URL.String()})
+		}
+	}
 }
