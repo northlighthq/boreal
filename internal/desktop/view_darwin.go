@@ -3,6 +3,7 @@ package desktop
 import (
 	gioapp "gioui.org/app"
 
+	"github.com/northlighthq/boreal/internal/platform/dragdrop"
 	"github.com/northlighthq/boreal/internal/platform/titlebar"
 )
 
@@ -12,6 +13,7 @@ func (a *App) attachView(ev gioapp.ViewEvent) {
 	if e, ok := ev.(gioapp.AppKitViewEvent); ok {
 		a.view = e.View
 		a.configured()
+		dragdrop.Enable(a.view, a.dropFiles, a.dragHover)
 	}
 }
 
