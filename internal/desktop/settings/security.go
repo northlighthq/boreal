@@ -8,9 +8,11 @@ import (
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/core/vault"
 	"github.com/northlighthq/boreal/internal/desktop/base"
+	"github.com/northlighthq/boreal/internal/platform/hello"
 )
 
 const minMasterPassword = vault.MinPassword
@@ -132,10 +134,10 @@ func (d *Dialog) securityPage(a base.Host, p page) []layout.FlexChild {
 	var lock []layout.Widget
 
 	if helloRow {
-		lock = append(lock, p.item("Windows Hello", "Ask for Windows Hello to unlock Boreal after it locks.", p.toggle(&s.hello)))
+		lock = append(lock, p.item(hello.Name, "Ask for "+hello.Name+" to unlock Boreal after it locks.", p.toggle(&s.hello)))
 
 		if !has {
-			lock = append(lock, p.note("Windows Hello locks Boreal's window, but programs running as you could still read the vault. Set a master password to encrypt it with something only you know.", th.Warning))
+			lock = append(lock, p.note(hello.Name+" locks Boreal's window, but programs running as you could still read the vault. Set a master password to encrypt it with something only you know.", th.Warning))
 		}
 	}
 
@@ -143,10 +145,10 @@ func (d *Dialog) securityPage(a base.Host, p page) []layout.FlexChild {
 		lock = append(lock,
 			p.item("Lock automatically", "After this long without using Boreal.", p.choose(&s.lockAfter, lockAfterLabels)),
 			p.item("Lock with "+vault.OSName, "Also lock when "+vault.OSName+" locks the session.", p.toggle(&s.lockOnSystem)),
-			p.item("Lock now", "Ctrl+Shift+L", func(gtx C) D { return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock") }),
+			p.item("Lock now", keys.Label("Ctrl+Shift+L"), func(gtx C) D { return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock") }),
 		)
 	} else {
-		lock = append(lock, p.note("Boreal stays unlocked. Turn on Windows Hello or set a master password to lock it.", th.TextMuted))
+		lock = append(lock, p.note("Boreal stays unlocked. Turn on "+hello.Name+" or set a master password to lock it.", th.TextMuted))
 	}
 
 	status := "Not set. The vault opens with your " + vault.OSOwner + " only."

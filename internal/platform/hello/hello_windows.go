@@ -12,6 +12,9 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// Name is how the system calls its own sign-in check.
+const Name = "Windows Hello"
+
 const (
 	verifierClass = "Windows.Security.Credentials.UI.UserConsentVerifier"
 	resultEnum    = "enum(Windows.Security.Credentials.UI.UserConsentVerificationResult;i4)"
@@ -56,7 +59,7 @@ var (
 	iidAsyncResult    = parameterizedIID("pinterface(" + asyncOpIID + ";" + resultEnum + ")")
 	iidAsyncAvailable = parameterizedIID("pinterface(" + asyncOpIID + ";" + availableEnum + ")")
 
-	errTimeout = errors.New("Windows Hello didn't answer in time")
+	errTimeout = errors.New(Name + " didn't answer in time")
 )
 
 func Available() bool {

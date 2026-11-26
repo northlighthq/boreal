@@ -35,7 +35,13 @@ type lockScreen struct {
 
 func (a *App) LockVault() {
 	if !a.CanLock() {
-		a.toasts.Info("No master password", "Set one in Settings → Security, or set up Windows Hello, to lock Boreal.")
+		msg := "Set one in Settings → Security to lock Boreal."
+
+		if a.HelloAvailable() {
+			msg = "Set one in Settings → Security, or set up " + hello.Name + ", to lock Boreal."
+		}
+
+		a.toasts.Info("No master password", msg)
 		return
 	}
 
@@ -184,10 +190,10 @@ func lockContent(k *kit.Kit, l *lockScreen, hasPassword, canHello bool) []layout
 	}
 
 	if canHello {
-		label := "Unlock with Windows Hello"
+		label := "Unlock with " + hello.Name
 
 		if l.viaHello {
-			label = "Waiting for Windows Hello…"
+			label = "Waiting for " + hello.Name + "…"
 		}
 
 		children = append(children, wide(func(gtx C) D {
