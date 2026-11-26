@@ -119,6 +119,14 @@ func (a *App) DownloadUpdate() {
 	}
 
 	rel := u.rel
+
+	// Builds that can't replace themselves (macOS, distro packages) get the release page instead.
+	if !update.SelfUpdate() {
+		u.mu.Unlock()
+		a.OpenURL(rel.Page)
+		return
+	}
+
 	u.info = base.UpdateInfo{State: base.UpdateDownloading, Version: rel.Version}
 	u.shown = 0
 	u.mu.Unlock()
