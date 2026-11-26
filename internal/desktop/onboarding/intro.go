@@ -18,6 +18,7 @@ import (
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/common/fonts"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/mark"
 	"github.com/northlighthq/boreal/internal/common/theme"
@@ -53,7 +54,7 @@ var cursorStyles = []string{config.CursorBlock, config.CursorBar, config.CursorU
 var says = [steps]string{
 	stepWelcome:  "Let's get Boreal ready. It only takes a minute.",
 	stepLook:     "Pick a theme. Everything changes right away.",
-	stepTerminal: "Choose the shell that opens with Ctrl+Shift+T.",
+	stepTerminal: keys.Label("Choose the shell that opens with Ctrl+Shift+T."),
 	stepSecurity: "Hosts and keys live in an encrypted vault. You can lock it with a password.",
 	stepHosts:    "Bring in your servers.",
 	stepDone:     "You're all set. These shortcuts are worth knowing.",

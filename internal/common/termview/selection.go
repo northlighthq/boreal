@@ -12,6 +12,8 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"github.com/northlighthq/vt"
+
+	"github.com/northlighthq/boreal/internal/common/keys"
 )
 
 type selectMode uint8
@@ -185,7 +187,7 @@ func (v *View) updateHover(p f32.Point, m key.Modifiers) {
 }
 
 func (v *View) updateHoverMods(m key.Modifiers) {
-	if !m.Contain(key.ModCtrl) {
+	if !m.Contain(keys.Link) {
 		v.hover.active = false
 		return
 	}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/northlighthq/boreal/internal/common/fonts"
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/theme"
 	"github.com/northlighthq/boreal/internal/core/vault"
@@ -262,7 +263,7 @@ func (d *Intro) servers(gtx C) D {
 	children = append(children,
 		option(&d.addHost, icons.PlusOutline, "Add a host", "Type the address, user and how to log in.", "Add", d.openEditor),
 		layout.Rigid(func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 2}, "You can also skip this: local terminals work right away, and Ctrl+Shift+P connects to any user@host.")
+			return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 2}, keys.Label("You can also skip this: local terminals work right away, and Ctrl+Shift+P connects to any user@host."))
 		}),
 	)
 
@@ -280,7 +281,7 @@ func (d *Intro) done(gtx C) D {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 					layout.Flexed(1, func(gtx C) D { return k.Text(gtx, s[0]) }),
 					layout.Rigid(func(gtx C) D {
-						return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Mono: true, Size: th.TextSizeSmall}, s[1])
+						return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Mono: true, Size: th.TextSizeSmall}, keys.Label(s[1]))
 					}),
 				)
 			})

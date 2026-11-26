@@ -23,6 +23,7 @@ import (
 	"github.com/northlighthq/glyphs"
 
 	"github.com/northlighthq/boreal/internal/common/fonts"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/theme"
 	"github.com/northlighthq/boreal/internal/common/toast"
@@ -362,16 +363,15 @@ func (a *App) Open(m base.Modal) {
 var shortcuts = shortcutFilters()
 
 func shortcutFilters() []event.Filter {
-	cs := key.ModCtrl | key.ModShift
-	return []event.Filter{
-		key.Filter{Name: "P", Required: cs},
-		key.Filter{Name: "T", Required: cs},
-		key.Filter{Name: "W", Required: cs},
-		key.Filter{Name: "D", Required: cs},
-		key.Filter{Name: "E", Required: cs},
-		key.Filter{Name: "N", Required: cs},
-		key.Filter{Name: "L", Required: cs},
-		key.Filter{Name: "B", Required: cs},
+	var out []event.Filter
+
+	for _, mods := range keys.App {
+		for _, name := range []key.Name{"P", "T", "W", "D", "E", "N", "L", "B"} {
+			out = append(out, key.Filter{Name: name, Required: mods})
+		}
+	}
+
+	out = append(out,
 		key.Filter{Name: key.NameTab, Required: key.ModCtrl, Optional: key.ModShift},
 		key.Filter{Name: key.NamePageDown, Required: key.ModCtrl},
 		key.Filter{Name: key.NamePageUp, Required: key.ModCtrl},
@@ -387,7 +387,13 @@ func shortcutFilters() []event.Filter {
 		key.Filter{Name: key.NameDownArrow, Required: key.ModAlt},
 		key.Filter{Name: ",", Required: key.ModCtrl},
 		key.Filter{Name: "S", Required: key.ModCtrl | key.ModAlt},
+	)
+
+	if keys.Command != 0 {
+		out = append(out, key.Filter{Name: ",", Required: keys.Command})
 	}
+
+	return out
 }
 
 func (a *App) handleShortcuts(gtx C) {

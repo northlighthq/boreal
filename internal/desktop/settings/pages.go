@@ -11,6 +11,7 @@ import (
 
 	"github.com/northlighthq/boreal/internal/common/fonts"
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/theme"
 	"github.com/northlighthq/boreal/internal/core/config"
@@ -205,7 +206,7 @@ func (d *Dialog) terminalPage(a base.Host, p page) []layout.FlexChild {
 	return []layout.FlexChild{
 		p.header(settingsPages[pageTerminal].title),
 		p.group("Shell",
-			p.item("Default shell", "Opens with Ctrl+Shift+T and the + button.", p.choose(&d.shell, names)),
+			p.item("Default shell", keys.Label("Opens with Ctrl+Shift+T and the + button."), p.choose(&d.shell, names)),
 			p.item("Reopen tabs on start", "Bring back the tabs and panes from last time.", p.toggle(&d.restore)),
 		),
 		p.group("Text",
@@ -274,7 +275,7 @@ func (d *Dialog) shortcutsPage(p page) []layout.FlexChild {
 
 	for i, km := range keymap {
 		rows[i] = p.item(km[0], "", func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Mono: true, Size: th.TextSizeSmall}, km[1])
+			return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Mono: true, Size: th.TextSizeSmall}, keys.Label(km[1]))
 		})
 	}
 
