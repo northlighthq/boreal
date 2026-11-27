@@ -85,7 +85,7 @@ still missing on each system.
 | App shortcuts | Ctrl+Shift | ⌘ or Ctrl+Shift | Ctrl+Shift |
 | Updates from inside Boreal | ✓ | Opens the release page | AppImage |
 | Drop files to upload via SFTP | ✓ | ✓ | ✓ (Wayland and X11) |
-| Drag files out of SFTP | ✓ | ✓ (file promises) | — |
+| Drag files out of SFTP | ✓ | ✓ (file promises) | ✓ (Wayland and X11) |
 | FIDO keys | Windows WebAuthn | Through an SSH agent | Through an SSH agent |
 
 ## <img src=".github/icons/download.svg" width="20" height="20" alt="" /> Getting started
