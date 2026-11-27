@@ -80,7 +80,7 @@ const (
 var commandKeys = []key.Name{"C", "V", "F", "A", "+", "=", "-", "0", key.NameHome, key.NameEnd}
 
 func (v *View) filters() []event.Filter {
-	f := []event.Filter{
+	filters := []event.Filter{
 		key.FocusFilter{Target: v},
 		transfer.TargetFilter{Target: v, Type: mimeText},
 		pointer.Filter{
@@ -94,11 +94,11 @@ func (v *View) filters() []event.Filter {
 
 	if keys.Command != 0 {
 		for _, name := range commandKeys {
-			f = append(f, key.Filter{Focus: v, Name: name, Required: keys.Command, Optional: key.ModShift})
+			filters = append(filters, key.Filter{Focus: v, Name: name, Required: keys.Command, Optional: key.ModShift})
 		}
 	}
 
-	return f
+	return filters
 }
 
 func (v *View) handleEvents(gtx layout.Context) {

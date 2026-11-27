@@ -101,8 +101,8 @@ func DragVirtual(files []VirtualFile) error {
 	}
 
 	promises.next++
-	h := promises.next
-	promises.files[h] = files
+	handle := promises.next
+	promises.files[handle] = files
 	promises.Unlock()
 
 	root := files[0]
@@ -115,33 +115,33 @@ func DragVirtual(files []VirtualFile) error {
 		dir = 1
 	}
 
-	if C.borealDragPromise(C.uintptr_t(view), C.uintptr_t(h), name, C.int(dir)) != 0 {
-		release(h)
+	if C.borealDragPromise(C.uintptr_t(view), C.uintptr_t(handle), name, C.int(dir)) != 0 {
+		release(handle)
 		return ErrReleased
 	}
 
 	return nil
 }
 
-func release(h uintptr) {
+func release(handle uintptr) {
 	promises.Lock()
-	delete(promises.files, h)
+	delete(promises.files, handle)
 	promises.Unlock()
-	C.borealReleasePromise(C.uintptr_t(h))
+	C.borealReleasePromise(C.uintptr_t(handle))
 }
 
 //export borealPromiseDone
-func borealPromiseDone(h C.uintptr_t) {
-	go release(uintptr(h))
+func borealPromiseDone(handle C.uintptr_t) {
+	go release(uintptr(handle))
 }
 
 //export borealWritePromise
-func borealWritePromise(h C.uintptr_t, dst *C.char) *C.char {
+func borealWritePromise(handle C.uintptr_t, dst *C.char) *C.char {
 	promises.Lock()
-	files := promises.files[uintptr(h)]
+	files := promises.files[uintptr(handle)]
 	promises.Unlock()
 
-	defer func() { go release(uintptr(h)) }()
+	defer func() { go release(uintptr(handle)) }()
 
 	if err := writeTree(files, C.GoString(dst)); err != nil {
 		return C.CString(err.Error())
@@ -157,29 +157,29 @@ func writeTree(files []VirtualFile, dst string) error {
 
 	root := files[0].Name
 
-	for _, f := range files {
-		rel, ok := strings.CutPrefix(f.Name, root)
+	for _, file := range files {
+		relative, ok := strings.CutPrefix(file.Name, root)
 
 		if !ok {
 			continue
 		}
 
-		rel = strings.TrimPrefix(strings.ReplaceAll(rel, `\`, "/"), "/")
-		target := filepath.Join(dst, filepath.FromSlash(rel))
+		relative = strings.TrimPrefix(strings.ReplaceAll(relative, `\`, "/"), "/")
+		target := filepath.Join(dst, filepath.FromSlash(relative))
 
 		if inside, err := filepath.Rel(dst, target); err != nil || inside == ".." || strings.HasPrefix(inside, "../") {
 			continue
 		}
 
-		if f.Dir {
+		if file.Dir {
 			if err := os.MkdirAll(target, 0o755); err != nil {
-				return fmt.Errorf("dragdrop: create folder %s: %w", rel, err)
+				return fmt.Errorf("dragdrop: create folder %s: %w", relative, err)
 			}
 
 			continue
 		}
 
-		if err := writeFile(f, target); err != nil {
+		if err := writeFile(file, target); err != nil {
 			return fmt.Errorf("dragdrop: download %s: %w", filepath.Base(target), err)
 		}
 	}
@@ -187,8 +187,8 @@ func writeTree(files []VirtualFile, dst string) error {
 	return nil
 }
 
-func writeFile(f VirtualFile, target string) error {
-	if f.Open == nil {
+func writeFile(file VirtualFile, target string) error {
+	if file.Open == nil {
 		return nil
 	}
 
@@ -196,28 +196,28 @@ func writeFile(f VirtualFile, target string) error {
 		return err
 	}
 
-	in, err := f.Open()
+	remote, err := file.Open()
 
 	if err != nil {
 		return err
 	}
 
-	defer in.Close()
+	defer remote.Close()
 
-	out, err := os.Create(target)
+	local, err := os.Create(target)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = io.Copy(out, in)
+	_, err = io.Copy(local, remote)
 
-	if cerr := out.Close(); err == nil {
-		err = cerr
+	if closeErr := local.Close(); err == nil {
+		err = closeErr
 	}
 
-	if err == nil && !f.ModTime.IsZero() {
-		os.Chtimes(target, f.ModTime, f.ModTime)
+	if err == nil && !file.ModTime.IsZero() {
+		os.Chtimes(target, file.ModTime, file.ModTime)
 	}
 
 	return err

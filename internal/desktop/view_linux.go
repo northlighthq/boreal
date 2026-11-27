@@ -8,12 +8,12 @@ import (
 	"github.com/northlighthq/boreal/internal/platform/dragdrop"
 )
 
-func (a *App) attachView(ev gioapp.ViewEvent) {
-	switch e := ev.(type) {
+func (a *App) attachView(event gioapp.ViewEvent) {
+	switch view := event.(type) {
 	case gioapp.WaylandViewEvent:
-		dragdrop.EnableWayland(e.Display, e.Surface, a.dropFiles, a.dragHover)
+		dragdrop.EnableWayland(view.Display, view.Surface, a.dropFiles, a.dragHover)
 	case gioapp.X11ViewEvent:
-		dragdrop.EnableX11(e.Window, a.dropFiles, a.dragHover)
+		dragdrop.EnableX11(view.Window, a.dropFiles, a.dragHover)
 	}
 }
 

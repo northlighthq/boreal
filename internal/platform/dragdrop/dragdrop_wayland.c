@@ -20,10 +20,10 @@ static uint32_t pl_manager_version;
 static struct wl_data_offer *pl_current;
 
 static void pl_offer_offer(void *data, struct wl_data_offer *offer, const char *mime) {
-	struct pl_offer *o = data;
+	struct pl_offer *state = data;
 
 	if (strcmp(mime, URI_LIST) == 0) {
-		o->has_uris = 1;
+		state->has_uris = 1;
 	}
 }
 
@@ -46,12 +46,12 @@ static void pl_destroy_offer(struct wl_data_offer *offer) {
 	wl_data_offer_destroy(offer);
 }
 
-static void pl_dev_data_offer(void *data, struct wl_data_device *dev, struct wl_data_offer *offer) {
-	struct pl_offer *o = calloc(1, sizeof(*o));
-	wl_data_offer_add_listener(offer, &pl_offer_listener, o);
+static void pl_dev_data_offer(void *data, struct wl_data_device *device, struct wl_data_offer *offer) {
+	struct pl_offer *state = calloc(1, sizeof(*state));
+	wl_data_offer_add_listener(offer, &pl_offer_listener, state);
 }
 
-static void pl_dev_enter(void *data, struct wl_data_device *dev, uint32_t serial, struct wl_surface *surf, wl_fixed_t x, wl_fixed_t y, struct wl_data_offer *offer) {
+static void pl_dev_enter(void *data, struct wl_data_device *device, uint32_t serial, struct wl_surface *surface, wl_fixed_t x, wl_fixed_t y, struct wl_data_offer *offer) {
 	if (pl_current != NULL && pl_current != offer) {
 		pl_destroy_offer(pl_current);
 	}
@@ -62,9 +62,9 @@ static void pl_dev_enter(void *data, struct wl_data_device *dev, uint32_t serial
 		return;
 	}
 
-	struct pl_offer *o = wl_data_offer_get_user_data(offer);
+	struct pl_offer *state = wl_data_offer_get_user_data(offer);
 
-	if (surf != pl_surface || o == NULL || !o->has_uris) {
+	if (surface != pl_surface || state == NULL || !state->has_uris) {
 		wl_data_offer_accept(offer, serial, NULL);
 		return;
 	}
@@ -78,7 +78,7 @@ static void pl_dev_enter(void *data, struct wl_data_device *dev, uint32_t serial
 	borealDragHover(1);
 }
 
-static void pl_dev_leave(void *data, struct wl_data_device *dev) {
+static void pl_dev_leave(void *data, struct wl_data_device *device) {
 	borealDragHover(0);
 
 	if (pl_current != NULL) {
@@ -87,9 +87,9 @@ static void pl_dev_leave(void *data, struct wl_data_device *dev) {
 	}
 }
 
-static void pl_dev_motion(void *data, struct wl_data_device *dev, uint32_t t, wl_fixed_t x, wl_fixed_t y) {}
+static void pl_dev_motion(void *data, struct wl_data_device *device, uint32_t t, wl_fixed_t x, wl_fixed_t y) {}
 
-static void pl_dev_drop(void *data, struct wl_data_device *dev) {
+static void pl_dev_drop(void *data, struct wl_data_device *device) {
 	struct wl_data_offer *offer = pl_current;
 	pl_current = NULL;
 	borealDragHover(0);
@@ -98,9 +98,9 @@ static void pl_dev_drop(void *data, struct wl_data_device *dev) {
 		return;
 	}
 
-	struct pl_offer *o = wl_data_offer_get_user_data(offer);
+	struct pl_offer *state = wl_data_offer_get_user_data(offer);
 
-	if (o == NULL || !o->has_uris) {
+	if (state == NULL || !state->has_uris) {
 		pl_destroy_offer(offer);
 		return;
 	}
@@ -108,7 +108,7 @@ static void pl_dev_drop(void *data, struct wl_data_device *dev) {
 	borealWaylandDrop((uintptr_t)offer);
 }
 
-static void pl_dev_selection(void *data, struct wl_data_device *dev, struct wl_data_offer *offer) {
+static void pl_dev_selection(void *data, struct wl_data_device *device, struct wl_data_offer *offer) {
 	if (offer != NULL && offer != pl_current) {
 		pl_destroy_offer(offer);
 	}
@@ -123,40 +123,40 @@ static const struct wl_data_device_listener pl_dev_listener = {
 	.selection = pl_dev_selection,
 };
 
-static void pl_global(void *data, struct wl_registry *reg, uint32_t name, const char *iface, uint32_t version) {
-	if (strcmp(iface, wl_seat_interface.name) == 0 && pl_seat == NULL) {
-		pl_seat = wl_registry_bind(reg, name, &wl_seat_interface, version < 5 ? version : 5);
-	} else if (strcmp(iface, wl_data_device_manager_interface.name) == 0 && pl_manager == NULL) {
+static void pl_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
+	if (strcmp(interface, wl_seat_interface.name) == 0 && pl_seat == NULL) {
+		pl_seat = wl_registry_bind(registry, name, &wl_seat_interface, version < 5 ? version : 5);
+	} else if (strcmp(interface, wl_data_device_manager_interface.name) == 0 && pl_manager == NULL) {
 		pl_manager_version = version < 3 ? version : 3;
-		pl_manager = wl_registry_bind(reg, name, &wl_data_device_manager_interface, pl_manager_version);
+		pl_manager = wl_registry_bind(registry, name, &wl_data_device_manager_interface, pl_manager_version);
 	}
 }
 
-static void pl_global_remove(void *data, struct wl_registry *reg, uint32_t name) {}
+static void pl_global_remove(void *data, struct wl_registry *registry, uint32_t name) {}
 
 static const struct wl_registry_listener pl_registry_listener = {
 	.global = pl_global,
 	.global_remove = pl_global_remove,
 };
 
-int borealWaylandSetup(uintptr_t display, uintptr_t surface) {
-	struct wl_display *d = (struct wl_display *)display;
+int borealWaylandSetup(uintptr_t handle, uintptr_t surface) {
+	struct wl_display *display = (struct wl_display *)handle;
 	pl_surface = (struct wl_surface *)surface;
-	pl_queue = wl_display_create_queue(d);
+	pl_queue = wl_display_create_queue(display);
 
-	struct wl_display *wrapped = wl_proxy_create_wrapper(d);
+	struct wl_display *wrapped = wl_proxy_create_wrapper(display);
 	wl_proxy_set_queue((struct wl_proxy *)wrapped, pl_queue);
-	struct wl_registry *reg = wl_display_get_registry(wrapped);
+	struct wl_registry *registry = wl_display_get_registry(wrapped);
 	wl_proxy_wrapper_destroy(wrapped);
-	wl_registry_add_listener(reg, &pl_registry_listener, NULL);
+	wl_registry_add_listener(registry, &pl_registry_listener, NULL);
 
-	if (wl_display_roundtrip_queue(d, pl_queue) < 0 || pl_seat == NULL || pl_manager == NULL) {
+	if (wl_display_roundtrip_queue(display, pl_queue) < 0 || pl_seat == NULL || pl_manager == NULL) {
 		return -1;
 	}
 
-	struct wl_data_device *dev = wl_data_device_manager_get_data_device(pl_manager, pl_seat);
-	wl_data_device_add_listener(dev, &pl_dev_listener, NULL);
-	wl_display_flush(d);
+	struct wl_data_device *device = wl_data_device_manager_get_data_device(pl_manager, pl_seat);
+	wl_data_device_add_listener(device, &pl_dev_listener, NULL);
+	wl_display_flush(display);
 	return 0;
 }
 
@@ -171,12 +171,12 @@ void borealWaylandReceive(uintptr_t display, uintptr_t offer, int fd) {
 }
 
 void borealWaylandFinish(uintptr_t display, uintptr_t offer) {
-	struct wl_data_offer *o = (struct wl_data_offer *)offer;
+	struct wl_data_offer *state = (struct wl_data_offer *)offer;
 
 	if (pl_manager_version >= 3) {
-		wl_data_offer_finish(o);
+		wl_data_offer_finish(state);
 	}
 
-	pl_destroy_offer(o);
+	pl_destroy_offer(state);
 	wl_display_flush((struct wl_display *)display);
 }

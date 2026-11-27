@@ -8,20 +8,20 @@ package sessionlock
 #include <CoreGraphics/CoreGraphics.h>
 
 static int pl_screen_locked(void) {
-	CFDictionaryRef d = CGSessionCopyCurrentDictionary();
+	CFDictionaryRef session = CGSessionCopyCurrentDictionary();
 
-	if (d == NULL) {
+	if (session == NULL) {
 		return 0;
 	}
 
 	int locked = 0;
-	CFBooleanRef v = CFDictionaryGetValue(d, CFSTR("CGSSessionScreenIsLocked"));
+	CFBooleanRef value = CFDictionaryGetValue(session, CFSTR("CGSSessionScreenIsLocked"));
 
-	if (v != NULL && CFGetTypeID(v) == CFBooleanGetTypeID()) {
-		locked = CFBooleanGetValue(v);
+	if (value != NULL && CFGetTypeID(value) == CFBooleanGetTypeID()) {
+		locked = CFBooleanGetValue(value);
 	}
 
-	CFRelease(d);
+	CFRelease(session);
 	return locked;
 }
 */

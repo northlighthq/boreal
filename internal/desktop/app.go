@@ -363,15 +363,15 @@ func (a *App) Open(m base.Modal) {
 var shortcuts = shortcutFilters()
 
 func shortcutFilters() []event.Filter {
-	var out []event.Filter
+	var filters []event.Filter
 
 	for _, mods := range keys.App {
 		for _, name := range []key.Name{"P", "T", "W", "D", "E", "N", "L", "B"} {
-			out = append(out, key.Filter{Name: name, Required: mods})
+			filters = append(filters, key.Filter{Name: name, Required: mods})
 		}
 	}
 
-	out = append(out,
+	filters = append(filters,
 		key.Filter{Name: key.NameTab, Required: key.ModCtrl, Optional: key.ModShift},
 		key.Filter{Name: key.NamePageDown, Required: key.ModCtrl},
 		key.Filter{Name: key.NamePageUp, Required: key.ModCtrl},
@@ -390,10 +390,10 @@ func shortcutFilters() []event.Filter {
 	)
 
 	if keys.Command != 0 {
-		out = append(out, key.Filter{Name: ",", Required: keys.Command})
+		filters = append(filters, key.Filter{Name: ",", Required: keys.Command})
 	}
 
-	return out
+	return filters
 }
 
 func (a *App) handleShortcuts(gtx C) {

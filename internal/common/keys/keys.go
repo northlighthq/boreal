@@ -8,9 +8,9 @@ var App = appMods
 
 const Link = linkMod
 
-func IsApp(m key.Modifiers) bool {
-	for _, a := range App {
-		if m == a {
+func IsApp(modifiers key.Modifiers) bool {
+	for _, mods := range App {
+		if modifiers == mods {
 			return true
 		}
 	}

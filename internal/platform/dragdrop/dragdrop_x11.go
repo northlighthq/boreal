@@ -41,8 +41,8 @@ func EnableX11(window uintptr, onDrop func(paths []string), onHover func(over bo
 }
 
 //export borealX11Drop
-func borealX11Drop(data *C.char, n C.int) {
-	paths := parseURIList(strings.NewReader(C.GoStringN(data, n)))
+func borealX11Drop(data *C.char, length C.int) {
+	paths := parseURIList(strings.NewReader(C.GoStringN(data, length)))
 
 	x11.Lock()
 	drop := x11.drop

@@ -10,28 +10,28 @@ package urlhandler
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 static int pl_is_default(const char *scheme, const char *bundle) {
-	CFStringRef s = CFStringCreateWithCString(NULL, scheme, kCFStringEncodingUTF8);
-	CFStringRef cur = LSCopyDefaultHandlerForURLScheme(s);
-	CFRelease(s);
+	CFStringRef schemeRef = CFStringCreateWithCString(NULL, scheme, kCFStringEncodingUTF8);
+	CFStringRef current = LSCopyDefaultHandlerForURLScheme(schemeRef);
+	CFRelease(schemeRef);
 
-	if (cur == NULL) {
+	if (current == NULL) {
 		return 0;
 	}
 
-	CFStringRef b = CFStringCreateWithCString(NULL, bundle, kCFStringEncodingUTF8);
-	int same = CFStringCompare(cur, b, kCFCompareCaseInsensitive) == kCFCompareEqualTo;
-	CFRelease(b);
-	CFRelease(cur);
+	CFStringRef bundleRef = CFStringCreateWithCString(NULL, bundle, kCFStringEncodingUTF8);
+	int same = CFStringCompare(current, bundleRef, kCFCompareCaseInsensitive) == kCFCompareEqualTo;
+	CFRelease(bundleRef);
+	CFRelease(current);
 	return same;
 }
 
 static int pl_set_default(const char *scheme, const char *bundle) {
-	CFStringRef s = CFStringCreateWithCString(NULL, scheme, kCFStringEncodingUTF8);
-	CFStringRef b = CFStringCreateWithCString(NULL, bundle, kCFStringEncodingUTF8);
-	OSStatus st = LSSetDefaultHandlerForURLScheme(s, b);
-	CFRelease(s);
-	CFRelease(b);
-	return (int)st;
+	CFStringRef schemeRef = CFStringCreateWithCString(NULL, scheme, kCFStringEncodingUTF8);
+	CFStringRef bundleRef = CFStringCreateWithCString(NULL, bundle, kCFStringEncodingUTF8);
+	OSStatus status = LSSetDefaultHandlerForURLScheme(schemeRef, bundleRef);
+	CFRelease(schemeRef);
+	CFRelease(bundleRef);
+	return (int)status;
 }
 */
 import "C"
@@ -52,8 +52,8 @@ var schemes = []string{"ssh", "sftp"}
 var errNoBundle = errors.New("Links can only be registered when Boreal runs from Boreal.app")
 
 func Registered() bool {
-	for _, s := range schemes {
-		if !isDefault(s, bundleID) {
+	for _, scheme := range schemes {
+		if !isDefault(scheme, bundleID) {
 			return false
 		}
 	}
@@ -62,8 +62,8 @@ func Registered() bool {
 }
 
 func Set(enabled bool) error {
-	for _, s := range schemes {
-		if !enabled && !isDefault(s, bundleID) {
+	for _, scheme := range schemes {
+		if !enabled && !isDefault(scheme, bundleID) {
 			continue
 		}
 
@@ -73,12 +73,12 @@ func Set(enabled bool) error {
 			target = fallbackID
 		}
 
-		if st := setDefault(s, target); st != 0 {
+		if status := setDefault(scheme, target); status != 0 {
 			if enabled {
-				return fmt.Errorf("%w (status %d)", errNoBundle, st)
+				return fmt.Errorf("%w (status %d)", errNoBundle, status)
 			}
 
-			return fmt.Errorf("urlhandler: release %s:// links: status %d", s, st)
+			return fmt.Errorf("urlhandler: release %scheme:// links: status %d", scheme, status)
 		}
 	}
 
@@ -86,15 +86,15 @@ func Set(enabled bool) error {
 }
 
 func isDefault(scheme, bundle string) bool {
-	cs, cb := C.CString(scheme), C.CString(bundle)
-	defer C.free(unsafe.Pointer(cs))
-	defer C.free(unsafe.Pointer(cb))
-	return C.pl_is_default(cs, cb) != 0
+	cScheme, cBundle := C.CString(scheme), C.CString(bundle)
+	defer C.free(unsafe.Pointer(cScheme))
+	defer C.free(unsafe.Pointer(cBundle))
+	return C.pl_is_default(cScheme, cBundle) != 0
 }
 
 func setDefault(scheme, bundle string) int {
-	cs, cb := C.CString(scheme), C.CString(bundle)
-	defer C.free(unsafe.Pointer(cs))
-	defer C.free(unsafe.Pointer(cb))
-	return int(C.pl_set_default(cs, cb))
+	cScheme, cBundle := C.CString(scheme), C.CString(bundle)
+	defer C.free(unsafe.Pointer(cScheme))
+	defer C.free(unsafe.Pointer(cBundle))
+	return int(C.pl_set_default(cScheme, cBundle))
 }

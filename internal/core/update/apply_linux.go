@@ -46,29 +46,29 @@ func Prepare(path string, k Kind) error {
 		return errNotAppImage
 	}
 
-	in, err := os.Open(path)
+	download, err := os.Open(path)
 
 	if err != nil {
 		return fmt.Errorf("update: open download: %w", err)
 	}
 
-	defer in.Close()
+	defer download.Close()
 
-	dst := target + stagedSuffix
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o755)
+	stagedPath := target + stagedSuffix
+	staged, err := os.OpenFile(stagedPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o755)
 
 	if err != nil {
 		return fmt.Errorf("update: stage: %w", err)
 	}
 
-	_, err = io.Copy(out, io.LimitReader(in, maxAsset))
+	_, err = io.Copy(staged, io.LimitReader(download, maxAsset))
 
-	if cerr := out.Close(); err == nil {
-		err = cerr
+	if closeErr := staged.Close(); err == nil {
+		err = closeErr
 	}
 
 	if err != nil {
-		os.Remove(dst)
+		os.Remove(stagedPath)
 		return fmt.Errorf("update: stage: %w", err)
 	}
 

@@ -24,16 +24,16 @@ func Locked() bool {
 	defer mu.Unlock()
 
 	if conn == nil {
-		c, err := dbus.ConnectSystemBus()
+		bus, err := dbus.ConnectSystemBus()
 
 		if err != nil {
 			return false
 		}
 
-		conn = c
+		conn = bus
 	}
 
-	v, err := conn.Object(login1, sessionPath).GetProperty(lockedHint)
+	hint, err := conn.Object(login1, sessionPath).GetProperty(lockedHint)
 
 	if err != nil {
 		conn.Close()
@@ -41,6 +41,6 @@ func Locked() bool {
 		return false
 	}
 
-	locked, _ := v.Value().(bool)
+	locked, _ := hint.Value().(bool)
 	return locked
 }

@@ -34,24 +34,24 @@ func EnableWayland(display, surface unsafe.Pointer, onDrop func(paths []string),
 	}
 
 	wayland.once.Do(func() {
-		d := uintptr(display)
+		displayPtr := uintptr(display)
 
 		wayland.Lock()
-		wayland.display, wayland.drop = d, onDrop
+		wayland.display, wayland.drop = displayPtr, onDrop
 		wayland.Unlock()
 		setHover(onHover)
 
-		if C.borealWaylandSetup(C.uintptr_t(d), C.uintptr_t(uintptr(surface))) != 0 {
+		if C.borealWaylandSetup(C.uintptr_t(displayPtr), C.uintptr_t(uintptr(surface))) != 0 {
 			return
 		}
 
-		go C.borealWaylandDispatch(C.uintptr_t(d))
+		go C.borealWaylandDispatch(C.uintptr_t(displayPtr))
 	})
 }
 
 //export borealWaylandDrop
 func borealWaylandDrop(offer C.uintptr_t) {
-	r, w, err := os.Pipe()
+	reader, writer, err := os.Pipe()
 
 	wayland.Lock()
 	display, drop := wayland.display, wayland.drop
@@ -62,14 +62,14 @@ func borealWaylandDrop(offer C.uintptr_t) {
 		return
 	}
 
-	C.borealWaylandReceive(C.uintptr_t(display), offer, C.int(w.Fd()))
-	w.Close()
+	C.borealWaylandReceive(C.uintptr_t(display), offer, C.int(writer.Fd()))
+	writer.Close()
 
 	go func() {
 		defer C.borealWaylandFinish(C.uintptr_t(display), offer)
-		defer r.Close()
+		defer reader.Close()
 
-		paths := parseURIList(io.LimitReader(r, maxURIList))
+		paths := parseURIList(io.LimitReader(reader, maxURIList))
 
 		if drop != nil && len(paths) > 0 {
 			drop(paths)

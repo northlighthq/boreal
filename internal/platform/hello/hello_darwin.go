@@ -28,10 +28,10 @@ static int pl_verify(const char *reason) {
 
 	[ctx evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics
 	    localizedReason:[NSString stringWithUTF8String:reason]
-	              reply:^(BOOL ok, NSError *e) {
+	              reply:^(BOOL ok, NSError *failure) {
 		if (ok) {
 			result = plOK;
-		} else if (e.code == LAErrorUserCancel || e.code == LAErrorSystemCancel || e.code == LAErrorAppCancel) {
+		} else if (failure.code == LAErrorUserCancel || failure.code == LAErrorSystemCancel || failure.code == LAErrorAppCancel) {
 			result = plCanceled;
 		}
 

@@ -35,8 +35,8 @@ static BOOL pl_perform(id self, SEL _cmd, id<NSDraggingInfo> info) {
 
 	NSMutableString *joined = [NSMutableString string];
 
-	for (NSURL *u in urls) {
-		[joined appendString:u.path];
+	for (NSURL *fileURL in urls) {
+		[joined appendString:fileURL.path];
 		[joined appendString:@"\n"];
 	}
 
@@ -44,22 +44,22 @@ static BOOL pl_perform(id self, SEL _cmd, id<NSDraggingInfo> info) {
 	return YES;
 }
 
-static void pl_add(Class c, SEL sel, IMP imp, const char *types) {
-	if (!class_addMethod(c, sel, imp, types)) {
-		class_replaceMethod(c, sel, imp, types);
+static void pl_add(Class viewClass, SEL sel, IMP imp, const char *types) {
+	if (!class_addMethod(viewClass, sel, imp, types)) {
+		class_replaceMethod(viewClass, sel, imp, types);
 	}
 }
 
 void borealEnableDrop(uintptr_t view) {
 	dispatch_async(dispatch_get_main_queue(), ^{
-		NSView *v = (__bridge NSView *)(void *)view;
-		Class c = object_getClass(v);
-		pl_add(c, @selector(draggingEntered:), (IMP)pl_entered, "Q@:@");
-		pl_add(c, @selector(draggingUpdated:), (IMP)pl_updated, "Q@:@");
-		pl_add(c, @selector(draggingExited:), (IMP)pl_exited, "v@:@");
-		pl_add(c, @selector(prepareForDragOperation:), (IMP)pl_prepare, "c@:@");
-		pl_add(c, @selector(performDragOperation:), (IMP)pl_perform, "c@:@");
-		[v registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
+		NSView *gioView = (__bridge NSView *)(void *)view;
+		Class viewClass = object_getClass(gioView);
+		pl_add(viewClass, @selector(draggingEntered:), (IMP)pl_entered, "Q@:@");
+		pl_add(viewClass, @selector(draggingUpdated:), (IMP)pl_updated, "Q@:@");
+		pl_add(viewClass, @selector(draggingExited:), (IMP)pl_exited, "gioView@:@");
+		pl_add(viewClass, @selector(prepareForDragOperation:), (IMP)pl_prepare, "viewClass@:@");
+		pl_add(viewClass, @selector(performDragOperation:), (IMP)pl_perform, "viewClass@:@");
+		[gioView registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
 	});
 }
 
@@ -96,8 +96,8 @@ void borealEnableDrop(uintptr_t view) {
 	return context == NSDraggingContextOutsideApplication ? NSDragOperationCopy : NSDragOperationNone;
 }
 
-- (void)draggingSession:(NSDraggingSession *)session endedAtPoint:(NSPoint)p operation:(NSDragOperation)op {
-	if (op == NSDragOperationNone) {
+- (void)draggingSession:(NSDraggingSession *)session endedAtPoint:(NSPoint)promise operation:(NSDragOperation)operation {
+	if (operation == NSDragOperationNone) {
 		borealPromiseDone(self.handle);
 	}
 }
@@ -111,10 +111,10 @@ int borealDragPromise(uintptr_t view, uintptr_t handle, const char *name, int di
 		return 1;
 	}
 
-	NSView *v = (__bridge NSView *)(void *)view;
-	NSWindow *w = v.window;
+	NSView *gioView = (__bridge NSView *)(void *)view;
+	NSWindow *window = gioView.window;
 
-	if (w == nil) {
+	if (window == nil) {
 		return 1;
 	}
 
@@ -122,40 +122,40 @@ int borealDragPromise(uintptr_t view, uintptr_t handle, const char *name, int di
 		pl_live = [NSMutableSet set];
 	}
 
-	BorealPromise *p = [BorealPromise new];
-	p.handle = handle;
-	p.name = [NSString stringWithUTF8String:name];
-	p.queue = [NSOperationQueue new];
-	[pl_live addObject:p];
+	BorealPromise *promise = [BorealPromise new];
+	promise.handle = handle;
+	promise.name = [NSString stringWithUTF8String:name];
+	promise.queue = [NSOperationQueue new];
+	[pl_live addObject:promise];
 
 	NSString *type = dir ? (NSString *)@"public.folder" : (NSString *)@"public.data";
-	NSFilePromiseProvider *provider = [[NSFilePromiseProvider alloc] initWithFileType:type delegate:p];
+	NSFilePromiseProvider *provider = [[NSFilePromiseProvider alloc] initWithFileType:type delegate:promise];
 	NSDraggingItem *item = [[NSDraggingItem alloc] initWithPasteboardWriter:provider];
 
-	NSPoint at = [w mouseLocationOutsideOfEventStream];
-	NSPoint local = [v convertPoint:at fromView:nil];
-	NSImage *icon = dir ? [NSImage imageNamed:NSImageNameFolder] : [[NSWorkspace sharedWorkspace] iconForFileType:p.name.pathExtension];
+	NSPoint at = [window mouseLocationOutsideOfEventStream];
+	NSPoint local = [gioView convertPoint:at fromView:nil];
+	NSImage *icon = dir ? [NSImage imageNamed:NSImageNameFolder] : [[NSWorkspace sharedWorkspace] iconForFileType:promise.name.pathExtension];
 	icon.size = NSMakeSize(48, 48);
 	[item setDraggingFrame:NSMakeRect(local.x - 24, local.y - 24, 48, 48) contents:icon];
 
-	NSEvent *ev = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDragged
+	NSEvent *dragEvent = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDragged
 	                                 location:at
 	                            modifierFlags:0
 	                                timestamp:[NSProcessInfo processInfo].systemUptime
-	                             windowNumber:w.windowNumber
+	                             windowNumber:window.windowNumber
 	                                  context:nil
 	                              eventNumber:0
 	                               clickCount:1
 	                                 pressure:1];
 
-	[v beginDraggingSessionWithItems:@[item] event:ev source:p];
+	[gioView beginDraggingSessionWithItems:@[item] event:dragEvent source:promise];
 	return 0;
 }
 
 void borealReleasePromise(uintptr_t handle) {
-	for (BorealPromise *p in [pl_live copy]) {
-		if (p.handle == handle) {
-			[pl_live removeObject:p];
+	for (BorealPromise *promise in [pl_live copy]) {
+		if (promise.handle == handle) {
+			[pl_live removeObject:promise];
 		}
 	}
 }

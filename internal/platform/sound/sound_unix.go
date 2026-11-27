@@ -15,13 +15,13 @@ type player struct {
 }
 
 var pick = sync.OnceValue(func() *player {
-	for i, p := range candidates {
-		if _, err := exec.LookPath(p.cmd); err != nil {
+	for i, candidate := range candidates {
+		if _, err := exec.LookPath(candidate.cmd); err != nil {
 			continue
 		}
 
-		if p.file != "" {
-			if _, err := os.Stat(p.file); err != nil {
+		if candidate.file != "" {
+			if _, err := os.Stat(candidate.file); err != nil {
 				continue
 			}
 		}
@@ -35,19 +35,19 @@ var pick = sync.OnceValue(func() *player {
 var Available = pick() != nil
 
 func Play() {
-	p := pick()
+	chosen := pick()
 
-	if p == nil {
+	if chosen == nil {
 		return
 	}
 
-	args := p.args
+	args := chosen.args
 
-	if p.file != "" {
-		args = append(args[:len(args):len(args)], p.file)
+	if chosen.file != "" {
+		args = append(args[:len(args):len(args)], chosen.file)
 	}
 
-	cmd := exec.Command(p.cmd, args...)
+	cmd := exec.Command(chosen.cmd, args...)
 
 	if cmd.Start() == nil {
 		go cmd.Wait()

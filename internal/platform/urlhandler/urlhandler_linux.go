@@ -25,8 +25,8 @@ var errNoXdgMime = errors.New("Boreal needs xdg-mime (from xdg-utils) to open li
 var schemes = []string{"ssh", "sftp"}
 
 func executable() (string, error) {
-	if p := os.Getenv(appImageEnv); p != "" {
-		return p, nil
+	if path := os.Getenv(appImageEnv); path != "" {
+		return path, nil
 	}
 
 	exe, err := os.Executable()
@@ -54,9 +54,9 @@ func applicationsDir() (string, error) {
 	return filepath.Join(data, "applications"), nil
 }
 
-func quoteExec(s string) string {
-	r := strings.NewReplacer(`\`, `\\\\`, `"`, `\\"`, "`", "\\\\`", "$", `\\$`)
-	return `"` + r.Replace(s) + `"`
+func quoteExec(raw string) string {
+	replacer := strings.NewReplacer(`\`, `\\\\`, `"`, `\\"`, "`", "\\\\`", "$", `\\$`)
+	return `"` + replacer.Replace(raw) + `"`
 }
 
 func Registered() bool {
@@ -66,17 +66,17 @@ func Registered() bool {
 		return false
 	}
 
-	raw, err := os.ReadFile(filepath.Join(dir, desktopFile))
+	entry, err := os.ReadFile(filepath.Join(dir, desktopFile))
 	exe, exeErr := executable()
 
-	if err != nil || exeErr != nil || !strings.Contains(string(raw), quoteExec(exe)) {
+	if err != nil || exeErr != nil || !strings.Contains(string(entry), quoteExec(exe)) {
 		return false
 	}
 
-	for _, s := range schemes {
-		out, err := exec.Command(xdgMime, "query", "default", schemePrefix+s).Output()
+	for _, scheme := range schemes {
+		handler, err := exec.Command(xdgMime, "query", "default", schemePrefix+scheme).Output()
 
-		if err != nil || strings.TrimSpace(string(out)) != desktopFile {
+		if err != nil || strings.TrimSpace(string(handler)) != desktopFile {
 			return false
 		}
 	}
@@ -114,8 +114,8 @@ func Set(enabled bool) error {
 
 	mimes := make([]string, len(schemes))
 
-	for i, s := range schemes {
-		mimes[i] = schemePrefix + s
+	for index, scheme := range schemes {
+		mimes[index] = schemePrefix + scheme
 	}
 
 	entry := "[Desktop Entry]\n" +
