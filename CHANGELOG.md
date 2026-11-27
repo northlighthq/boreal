@@ -2,6 +2,18 @@
 
 All notable changes to Boreal (formerly Platty) are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## Unreleased
+
+### macOS and Linux
+- macOS unlocks Boreal with Touch ID and Linux with a fingerprint reader (fprintd), the way Windows does with Windows Hello.
+- On macOS, files dropped from Finder on an SSH session upload via SFTP, and files and folders dragged out of SFTP download where you drop them.
+- Locking the Mac or the Linux session (through logind) can lock Boreal too.
+- Boreal can open `ssh://` and `sftp://` links on macOS and Linux. Turn it on in Settings, as on Windows.
+- Output triggers can play a sound on macOS and Linux.
+- On Linux, with Wayland or X11, files dropped on an SSH session upload via SFTP, and files dragged out of SFTP download where you drop them.
+- On macOS the app and terminal shortcuts also work with ⌘ (⌘T, ⌘W, ⌘C, ⌘V, ⌘F, ⌘, …), ⌘-click opens links and shortcuts are shown with Mac symbols.
+- The Linux AppImage downloads and installs its own updates. On macOS, updating opens the release page.
+
 ## 0.1.1-beta.8 (2026-11-21)
 
 ### MCP
