@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"net/url"
-	"os/exec"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -41,6 +40,7 @@ import (
 	"github.com/northlighthq/boreal/internal/desktop/settings"
 	"github.com/northlighthq/boreal/internal/desktop/snippets"
 	"github.com/northlighthq/boreal/internal/desktop/welcome"
+	"github.com/northlighthq/boreal/internal/platform/open"
 	"github.com/northlighthq/boreal/internal/platform/shell"
 )
 
@@ -499,7 +499,7 @@ func openURL(raw string) bool {
 		return false
 	}
 
-	return exec.Command("rundll32", "url.dll,FileProtocolHandler", u.String()).Start() == nil
+	return open.URL(u.String()) == nil
 }
 
 func moveArea(gtx C, size image.Point) {

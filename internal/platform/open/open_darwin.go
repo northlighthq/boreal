@@ -1,13 +1,20 @@
 package open
 
-import (
-	"os/exec"
+import "os/exec"
+
+const (
+	opener   = "open"
+	textFlag = "-t"
 )
 
 func File(path string) error {
-	return exec.Command("open", path).Start()
+	return start(exec.Command(opener, path))
+}
+
+func URL(link string) error {
+	return start(exec.Command(opener, link))
 }
 
 func Edit(path string) error {
-	return exec.Command("open", "-t", path).Start()
+	return start(exec.Command(opener, textFlag, path))
 }
