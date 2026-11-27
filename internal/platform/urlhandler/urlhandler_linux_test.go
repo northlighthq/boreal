@@ -4,7 +4,7 @@ package urlhandler
 
 import "testing"
 
-func TestQuoteExec(t *testing.T) {
+func TestQuoteExecEscapesDesktopEntrySpecials(t *testing.T) {
 	cases := map[string]string{
 		"/opt/Boreal/boreal":        `"/opt/Boreal/boreal"`,
 		"/home/a b/Boreal.AppImage": `"/home/a b/Boreal.AppImage"`,

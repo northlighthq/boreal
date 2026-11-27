@@ -22,6 +22,8 @@ import (
 	"unsafe"
 )
 
+const pathSeparator = "\n"
+
 var handlers struct {
 	sync.Mutex
 	drop  func([]string)
@@ -49,7 +51,7 @@ func Enable(view uintptr, onDrop func(paths []string), onHover func(over bool)) 
 
 //export borealDrop
 func borealDrop(joined *C.char) {
-	paths := strings.Split(strings.TrimSuffix(C.GoString(joined), "\n"), "\n")
+	paths := strings.Split(strings.TrimSuffix(C.GoString(joined), pathSeparator), pathSeparator)
 
 	handlers.Lock()
 	drop := handlers.drop

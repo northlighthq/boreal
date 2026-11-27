@@ -360,13 +360,15 @@ func (a *App) Open(m base.Modal) {
 	a.modal = m
 }
 
+var appShortcutKeys = []key.Name{"P", "T", "W", "D", "E", "N", "L", "B"}
+
 var shortcuts = shortcutFilters()
 
 func shortcutFilters() []event.Filter {
 	var filters []event.Filter
 
 	for _, mods := range keys.App {
-		for _, name := range []key.Name{"P", "T", "W", "D", "E", "N", "L", "B"} {
+		for _, name := range appShortcutKeys {
 			filters = append(filters, key.Filter{Name: name, Required: mods})
 		}
 	}

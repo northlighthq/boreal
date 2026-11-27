@@ -1,8 +1,6 @@
 package keys
 
-import (
-	"gioui.org/io/key"
-)
+import "gioui.org/io/key"
 
 var App = appMods
 
@@ -18,10 +16,10 @@ func IsApp(modifiers key.Modifiers) bool {
 	return false
 }
 
-func Label(s string) string {
+func Label(shortcut string) string {
 	if labels == nil {
-		return s
+		return shortcut
 	}
 
-	return labels.Replace(s)
+	return labels.Replace(shortcut)
 }
