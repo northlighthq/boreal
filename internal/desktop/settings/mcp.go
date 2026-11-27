@@ -26,6 +26,8 @@ const (
 	hostsAll        = 0
 	hostsFolders    = 1
 	clientConfigKey = "boreal"
+	appImageEnv     = "APPIMAGE"
+	fallbackCommand = "boreal"
 	mimeText        = "application/text"
 	timeLayout      = "Jan 2 15:04"
 	confirmWidth    = 460
@@ -252,7 +254,11 @@ var clientConfig = sync.OnceValue(func() string {
 	exe, err := os.Executable()
 
 	if err != nil {
-		exe = "boreal"
+		exe = fallbackCommand
+	}
+
+	if appImage := os.Getenv(appImageEnv); appImage != "" {
+		exe = appImage
 	}
 
 	cfg := map[string]any{"mcpServers": map[string]any{clientConfigKey: map[string]any{"command": exe, "args": []string{borealmcp.Command}}}}
