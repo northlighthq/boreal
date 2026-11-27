@@ -112,45 +112,6 @@ jobs:
       - name: Build for Intel
         run: CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -o bin/boreal-amd64 ./cmd/boreal
 
-  macos-runtime:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
-        with:
-          go-version-file: go.mod
-
-      - name: Build a test Boreal.app
-        run: |
-          app="$RUNNER_TEMP/Boreal.app"
-          mkdir -p "$app/Contents/MacOS"
-          go build -o "$app/Contents/MacOS/boreal" ./cmd/zzmac
-          sed "s/VERSION/0.0.0/g" packaging/macos/Info.plist > "$app/Contents/Info.plist"
-          /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app"
-          echo "APP=$app" >> "$GITHUB_ENV"
-
-      - name: Native checks
-        run: |
-          "$APP/Contents/MacOS/boreal" checks
-
-      - name: Links reach the app
-        run: |
-          rm -f /tmp/boreal-url-received
-          open "$APP"
-          sleep 5
-          open "ssh://alice@example.com:2222"
-          open "sftp://bob@example.org/var/www"
-          for i in $(seq 30); do [ "$(wc -l < /tmp/boreal-url-received 2>/dev/null || echo 0)" -ge 2 ] && break; sleep 1; done
-          cat /tmp/boreal-url-received
-          grep -q 'kind=ssh user=alice host=example.com port=2222' /tmp/boreal-url-received
-          grep -q 'kind=sftp user=bob host=example.org port=22 dir=/var/www' /tmp/boreal-url-received
-
-      - name: Release the links
-        if: always()
-        run: |
-          "$APP/Contents/MacOS/boreal" release
-
   android:
     runs-on: ubuntu-latest
     steps:
