@@ -193,7 +193,7 @@ static int pl_has_uris(XClientMessageEvent *message) {
 	if (XGetWindowProperty(pl_dpy, (Window)message->data.l[0], XInternAtom(pl_dpy, "XdndTypeList", False), 0, 1024, False, XA_ATOM, &type, &format, &count, &after, &data) == Success && data != NULL) {
 		Atom *atoms = (Atom *)data;
 
-		for (unsigned long index = 0; index < count; index++) {
+		for (unsigned long index = 0; format == 32 && index < count; index++) {
 			if (atoms[index] == a_uris) {
 				found = 1;
 			}
