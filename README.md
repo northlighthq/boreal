@@ -44,7 +44,7 @@ organized and safe.
 | **Hosts** | Folders, tags and drag and drop · the server's OS shown per host · `~/.ssh/config` import · Search Everywhere (Ctrl+Shift+P) and quick connect |
 | **Connections** | Password, key, SSH agent and keyboard-interactive auth · jump hosts · keep-alive and reconnect · host key verification · certificates, agent forwarding and FIDO keys · command on connect |
 | **Tools** | Keychain with ed25519 generation and import · local, remote and SOCKS5 forwarding · SFTP with a transfer queue and remote editing · snippets · server metrics · output triggers |
-| **Security** | XChaCha20-Poly1305 vault · key protected by the system (DPAPI, Keychain, Secret Service), an Argon2id master password, or both · lock on demand, when idle or with the session · Windows Hello unlock |
+| **Security** | XChaCha20-Poly1305 vault · key protected by the system (DPAPI, Keychain, Secret Service), an Argon2id master password, or both · lock on demand, when idle or with the session · Windows Hello, Touch ID and fingerprint unlock |
 | **Data** | Encrypted `.boreal` export and import with secrets left out by default · export to `~/.ssh/config` |
 | **Appearance** | Northlight theme with the Aurora accent, plus Carbon, Graphite, Midnight and Paper · density, corner and tab styles · option to hide IP addresses |
 
@@ -74,6 +74,19 @@ organized and safe.
 
 The SSH layer, the terminal engine and the vault are portable Go. The issues list what's
 still missing on each system.
+
+| Feature | Windows | macOS | Linux |
+|---|---|---|---|
+| Vault key in the system keyring | DPAPI | Keychain | Secret Service |
+| Unlock without the password | Windows Hello | Touch ID | Fingerprint (fprintd) |
+| Lock with the session | ✓ | ✓ | logind (`LockedHint`) |
+| Open `ssh://` and `sftp://` links | ✓ | ✓ | ✓ (xdg-mime) |
+| Trigger sounds | ✓ | ✓ | libcanberra, PulseAudio, PipeWire or ALSA |
+| App shortcuts | Ctrl+Shift | ⌘ or Ctrl+Shift | Ctrl+Shift |
+| Updates from inside Boreal | ✓ | Opens the release page | AppImage |
+| Drop files to upload via SFTP | ✓ | ✓ | ✓ (Wayland and X11) |
+| Drag files out of SFTP | ✓ | ✓ (file promises) | ✓ (Wayland and X11) |
+| FIDO keys | Windows WebAuthn | Through an SSH agent | Through an SSH agent |
 
 ## <img src=".github/icons/download.svg" width="20" height="20" alt="" /> Getting started
 
