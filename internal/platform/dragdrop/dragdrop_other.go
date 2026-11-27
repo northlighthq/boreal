@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows && !(darwin && cgo) && !(linux && !android && cgo)
 
 package dragdrop
 

@@ -21,6 +21,8 @@ import (
 	"github.com/northlighthq/boreal/internal/platform/shell"
 )
 
+const dragOutFailed = "Boreal couldn't download it from the server. Check the connection and try again."
+
 var _ base.Host = (*App)(nil)
 
 func (a *App) Kit() *kit.Kit                { return a.kit }
@@ -144,6 +146,10 @@ func (a *App) handleDrop(paths []string) {
 func (a *App) Transfers() *transfer.Queue { return a.transfers }
 
 func (a *App) DragOut(files []dragdrop.VirtualFile) {
+	dragdrop.OnFailure(func(err error) {
+		a.toasts.Error("Couldn't drag the file out", dragOutFailed)
+	})
+
 	a.win.Run(func() {
 		err := dragdrop.DragVirtual(files)
 
