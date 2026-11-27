@@ -37,5 +37,9 @@ func main() {
 
 		os.Exit(0)
 	}()
-	app.Main()
+	for event := range app.Events {
+		if opened, ok := event.(app.URLEvent); ok && opened.URL != nil {
+			instance.Deliver([]string{opened.URL.String()})
+		}
+	}
 }
