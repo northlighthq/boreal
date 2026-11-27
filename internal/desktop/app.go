@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"net/url"
-	"os/exec"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -23,6 +22,7 @@ import (
 	"github.com/northlighthq/glyphs"
 
 	"github.com/northlighthq/boreal/internal/common/fonts"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/theme"
 	"github.com/northlighthq/boreal/internal/common/toast"
@@ -40,6 +40,7 @@ import (
 	"github.com/northlighthq/boreal/internal/desktop/settings"
 	"github.com/northlighthq/boreal/internal/desktop/snippets"
 	"github.com/northlighthq/boreal/internal/desktop/welcome"
+	"github.com/northlighthq/boreal/internal/platform/open"
 	"github.com/northlighthq/boreal/internal/platform/shell"
 )
 
@@ -359,19 +360,20 @@ func (a *App) Open(m base.Modal) {
 	a.modal = m
 }
 
+var appShortcutKeys = []key.Name{"P", "T", "W", "D", "E", "N", "L", "B"}
+
 var shortcuts = shortcutFilters()
 
 func shortcutFilters() []event.Filter {
-	cs := key.ModCtrl | key.ModShift
-	return []event.Filter{
-		key.Filter{Name: "P", Required: cs},
-		key.Filter{Name: "T", Required: cs},
-		key.Filter{Name: "W", Required: cs},
-		key.Filter{Name: "D", Required: cs},
-		key.Filter{Name: "E", Required: cs},
-		key.Filter{Name: "N", Required: cs},
-		key.Filter{Name: "L", Required: cs},
-		key.Filter{Name: "B", Required: cs},
+	var filters []event.Filter
+
+	for _, mods := range keys.App {
+		for _, name := range appShortcutKeys {
+			filters = append(filters, key.Filter{Name: name, Required: mods})
+		}
+	}
+
+	filters = append(filters,
 		key.Filter{Name: key.NameTab, Required: key.ModCtrl, Optional: key.ModShift},
 		key.Filter{Name: key.NamePageDown, Required: key.ModCtrl},
 		key.Filter{Name: key.NamePageUp, Required: key.ModCtrl},
@@ -387,7 +389,13 @@ func shortcutFilters() []event.Filter {
 		key.Filter{Name: key.NameDownArrow, Required: key.ModAlt},
 		key.Filter{Name: ",", Required: key.ModCtrl},
 		key.Filter{Name: "S", Required: key.ModCtrl | key.ModAlt},
+	)
+
+	if keys.Command != 0 {
+		filters = append(filters, key.Filter{Name: ",", Required: keys.Command})
 	}
+
+	return filters
 }
 
 func (a *App) handleShortcuts(gtx C) {
@@ -491,7 +499,7 @@ func openURL(raw string) bool {
 		return false
 	}
 
-	return exec.Command("rundll32", "url.dll,FileProtocolHandler", u.String()).Start() == nil
+	return open.URL(u.String()) == nil
 }
 
 func moveArea(gtx C, size image.Point) {

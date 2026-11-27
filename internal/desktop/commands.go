@@ -2,6 +2,7 @@ package desktop
 
 import (
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/theme"
 	"github.com/northlighthq/boreal/internal/core/sshx"
 	"github.com/northlighthq/boreal/internal/core/vault"
@@ -62,7 +63,7 @@ func (a *App) paletteEntries() []palette.Entry {
 	}
 
 	for _, act := range actions {
-		out = append(out, palette.Entry{Section: "Actions", Title: act.title, Detail: act.detail, Icon: act.icon, Run: act.run})
+		out = append(out, palette.Entry{Section: "Actions", Title: act.title, Detail: keys.Label(act.detail), Icon: act.icon, Run: act.run})
 	}
 
 	for i, name := range theme.Names {

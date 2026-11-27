@@ -15,6 +15,7 @@ import (
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/mark"
 	"github.com/northlighthq/boreal/internal/common/metrics"
@@ -558,7 +559,7 @@ func (c *chrome) searchBar(a *App, gtx C) D {
 					})
 				}),
 				layout.Rigid(func(gtx C) D {
-					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextFaint}, "Ctrl+Shift+P")
+					return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextFaint}, keys.Label("Ctrl+Shift+P"))
 				}),
 			)
 		})
