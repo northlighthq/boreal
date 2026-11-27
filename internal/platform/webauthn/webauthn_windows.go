@@ -8,6 +8,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+var ErrUnsupported = errors.New("security keys need Windows 10 1903 or later")
+
 const (
 	clientDataVersion   = 1
 	credentialVersion   = 1
