@@ -3,14 +3,19 @@ package settings
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"gioui.org/layout"
 	"gioui.org/widget"
 
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
+	"github.com/northlighthq/boreal/internal/core/config"
 	"github.com/northlighthq/boreal/internal/core/vault"
 	"github.com/northlighthq/boreal/internal/desktop/base"
+	"github.com/northlighthq/boreal/internal/platform/hello"
+	"github.com/northlighthq/boreal/internal/platform/sessionlock"
 )
 
 const minMasterPassword = vault.MinPassword
@@ -132,21 +137,26 @@ func (d *Dialog) securityPage(a base.Host, p page) []layout.FlexChild {
 	var lock []layout.Widget
 
 	if helloRow {
-		lock = append(lock, p.item("Windows Hello", "Ask for Windows Hello to unlock Boreal after it locks.", p.toggle(&s.hello)))
+		lock = append(lock, p.item(hello.Name, "Ask for "+hello.Name+" to unlock Boreal after it locks.", p.toggle(&s.hello)))
 
 		if !has {
-			lock = append(lock, p.note("Windows Hello locks Boreal's window, but programs running as you could still read the vault. Set a master password to encrypt it with something only you know.", th.Warning))
+			lock = append(lock, p.note(hello.Name+" locks Boreal's window, but programs running as you could still read the vault. Set a master password to encrypt it with something only you know.", th.Warning))
 		}
 	}
 
-	if canLock {
-		lock = append(lock,
-			p.item("Lock automatically", "After this long without using Boreal.", p.choose(&s.lockAfter, lockAfterLabels)),
-			p.item("Lock with "+vault.OSName, "Also lock when "+vault.OSName+" locks the session.", p.toggle(&s.lockOnSystem)),
-			p.item("Lock now", "Ctrl+Shift+L", func(gtx C) D { return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock") }),
-		)
-	} else {
-		lock = append(lock, p.note("Boreal stays unlocked. Turn on Windows Hello or set a master password to lock it.", th.TextMuted))
+	switch {
+	case canLock:
+		lock = append(lock, p.item("Lock automatically", "After this long without using Boreal.", p.choose(&s.lockAfter, lockAfterLabels)))
+
+		if sessionlock.Supported {
+			lock = append(lock, p.item("Lock with "+vault.System, "Also lock when "+vault.System+" locks the session.", p.toggle(&s.lockOnSystem)))
+		}
+
+		lock = append(lock, p.item("Lock now", keys.Label("Ctrl+Shift+L"), func(gtx C) D { return k.Button(gtx, &s.lockNow, kit.Secondary, icons.Lock, "Lock") }))
+	case helloRow:
+		lock = append(lock, p.note("Boreal stays unlocked. Turn on "+hello.Name+" or set a master password to lock it.", th.TextMuted))
+	default:
+		lock = append(lock, p.note("Boreal stays unlocked. Set a master password to lock it.", th.TextMuted))
 	}
 
 	status := "Not set. The vault opens with your " + vault.OSOwner + " only."
@@ -156,12 +166,12 @@ func (d *Dialog) securityPage(a base.Host, p page) []layout.FlexChild {
 	}
 
 	vaultRows := []layout.Widget{
-		p.item("Storage", "Encrypted with XChaCha20-Poly1305 in %AppData%\\Boreal. "+vaultSummary(a), nil),
+		p.item("Storage", "Encrypted with XChaCha20-Poly1305"+storageDir()+". "+vaultSummary(a), nil),
 		p.item("Master password", status, nil),
 	}
 
 	if has {
-		vaultRows = append(vaultRows, p.item("Unlock with "+vault.OSName, "Open the vault on this PC without typing the password.", p.toggle(&s.osUnlock)))
+		vaultRows = append(vaultRows, p.item("Unlock with "+vault.OSName, "Open the vault on this "+vault.Device+" without typing the password.", p.toggle(&s.osUnlock)))
 	}
 
 	title, label := "Set a master password", "Set password"
@@ -251,3 +261,13 @@ func (d *Dialog) dataPage(p page) []layout.FlexChild {
 		),
 	}
 }
+
+var storageDir = sync.OnceValue(func() string {
+	dir, err := config.Dir()
+
+	if err != nil {
+		return ""
+	}
+
+	return " in " + dir
+})

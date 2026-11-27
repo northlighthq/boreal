@@ -11,11 +11,13 @@ import (
 
 	"github.com/northlighthq/boreal/internal/common/fonts"
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 	"github.com/northlighthq/boreal/internal/common/theme"
 	"github.com/northlighthq/boreal/internal/core/config"
 	"github.com/northlighthq/boreal/internal/core/sshx"
 	"github.com/northlighthq/boreal/internal/desktop/base"
+	"github.com/northlighthq/boreal/internal/platform/urlhandler"
 )
 
 const (
@@ -205,7 +207,7 @@ func (d *Dialog) terminalPage(a base.Host, p page) []layout.FlexChild {
 	return []layout.FlexChild{
 		p.header(settingsPages[pageTerminal].title),
 		p.group("Shell",
-			p.item("Default shell", "Opens with Ctrl+Shift+T and the + button.", p.choose(&d.shell, names)),
+			p.item("Default shell", keys.Label("Opens with Ctrl+Shift+T and the + button."), p.choose(&d.shell, names)),
 			p.item("Reopen tabs on start", "Bring back the tabs and panes from last time.", p.toggle(&d.restore)),
 		),
 		p.group("Text",
@@ -250,7 +252,7 @@ func (d *Dialog) agentStatus(now time.Time) string {
 func (d *Dialog) sshPage(p page, now time.Time) []layout.FlexChild {
 	agent := d.agentStatus(now)
 
-	return []layout.FlexChild{
+	children := []layout.FlexChild{
 		p.header(settingsPages[pageSSH].title),
 		p.group("Connections",
 			p.item("Keep-alive", "Seconds between keep-alive messages, so idle sessions stay open. 0 turns them off.", p.field(&d.keepAlive, "30", fieldWidth)),
@@ -261,10 +263,15 @@ func (d *Dialog) sshPage(p page, now time.Time) []layout.FlexChild {
 			p.item("Read known_hosts", "Trust servers already in ~/.ssh/known_hosts and respect its @revoked lines.", p.toggle(&d.sec.readKnown)),
 			p.item("Write known_hosts", "Add the server keys you accept to ~/.ssh/known_hosts too.", p.toggle(&d.sec.writeKnown)),
 		),
-		p.group("Links",
-			p.item("Open ssh:// links", "ssh:// and sftp:// links open in Boreal. If another app keeps opening them, choose Boreal in Windows Settings › Default apps.", p.toggle(&d.links)),
-		),
 	}
+
+	if urlhandler.Supported {
+		children = append(children, p.group("Links",
+			p.item("Open ssh:// links", "ssh:// and sftp:// links open in Boreal. "+urlhandler.Hint, p.toggle(&d.links)),
+		))
+	}
+
+	return children
 }
 
 func (d *Dialog) shortcutsPage(p page) []layout.FlexChild {
@@ -274,7 +281,7 @@ func (d *Dialog) shortcutsPage(p page) []layout.FlexChild {
 
 	for i, km := range keymap {
 		rows[i] = p.item(km[0], "", func(gtx C) D {
-			return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Mono: true, Size: th.TextSizeSmall}, km[1])
+			return k.Label(gtx, kit.TextStyle{Color: th.TextMuted, Mono: true, Size: th.TextSizeSmall}, keys.Label(km[1]))
 		})
 	}
 
