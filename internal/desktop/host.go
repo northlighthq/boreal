@@ -144,6 +144,10 @@ func (a *App) handleDrop(paths []string) {
 func (a *App) Transfers() *transfer.Queue { return a.transfers }
 
 func (a *App) DragOut(files []dragdrop.VirtualFile) {
+	dragdrop.OnFailure(func(err error) {
+		a.toasts.Error("Couldn't drag the file out", err.Error())
+	})
+
 	a.win.Run(func() {
 		err := dragdrop.DragVirtual(files)
 

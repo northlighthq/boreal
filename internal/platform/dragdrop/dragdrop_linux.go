@@ -4,6 +4,7 @@ package dragdrop
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 
 const (
 	stagingPattern = "boreal-drag-"
+	pipeName       = "boreal-drag"
 	uriSeparator   = "\r\n"
 )
 
@@ -77,21 +79,26 @@ func stagedURIs() (string, error) {
 
 	dragging.staged = true
 	dragging.uris, dragging.staging, dragging.err = stage(dragging.files)
+
+	if dragging.err != nil {
+		reportFailure(dragging.err)
+	}
+
 	return dragging.uris, dragging.err
 }
 
-func stage(files []VirtualFile) (string, string, error) {
+func stage(files []VirtualFile) (uris, staging string, err error) {
 	if len(files) == 0 {
 		return "", "", errNoFiles
 	}
 
-	staging, err := os.MkdirTemp("", stagingPattern)
+	staging, err = os.MkdirTemp("", stagingPattern)
 
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("dragdrop: stage: %w", err)
 	}
 
-	root := filepath.Join(staging, filepath.Base(strings.ReplaceAll(files[0].Name, `\`, "/")))
+	root := filepath.Join(staging, filepath.Base(strings.ReplaceAll(files[0].Name, windowsSeparator, "/")))
 
 	if err := writeTree(files, root); err != nil {
 		os.RemoveAll(staging)
@@ -101,10 +108,10 @@ func stage(files []VirtualFile) (string, string, error) {
 	if !files[0].Dir {
 		if _, err := os.Stat(root); err != nil {
 			os.RemoveAll(staging)
-			return "", "", err
+			return "", "", fmt.Errorf("dragdrop: stage: %w", err)
 		}
 	}
 
-	location := url.URL{Scheme: "file", Path: root}
+	location := url.URL{Scheme: fileScheme, Path: root}
 	return location.String() + uriSeparator, staging, nil
 }

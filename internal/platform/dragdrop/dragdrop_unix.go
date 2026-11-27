@@ -12,7 +12,11 @@ import (
 	"sync"
 )
 
-const maxURIList = 1 << 20
+const (
+	maxURIList = 1 << 20
+	fileScheme = "file"
+	localHost  = "localhost"
+)
 
 var hovering struct {
 	sync.Mutex
@@ -49,7 +53,7 @@ func parseURIList(reader io.Reader) []string {
 
 		link, err := url.Parse(line)
 
-		if err != nil || link.Scheme != "file" || (link.Host != "" && link.Host != "localhost") || link.Path == "" {
+		if err != nil || link.Scheme != fileScheme || (link.Host != "" && link.Host != localHost) || link.Path == "" {
 			continue
 		}
 

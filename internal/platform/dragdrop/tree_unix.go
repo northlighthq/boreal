@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const windowsSeparator = `\`
+
 var errNoFiles = errors.New("dragdrop: nothing to drag")
 
 func writeTree(files []VirtualFile, dst string) error {
@@ -27,7 +29,7 @@ func writeTree(files []VirtualFile, dst string) error {
 			continue
 		}
 
-		relative = strings.TrimPrefix(strings.ReplaceAll(relative, `\`, "/"), "/")
+		relative = strings.TrimPrefix(strings.ReplaceAll(relative, windowsSeparator, "/"), "/")
 		target := filepath.Join(dst, filepath.FromSlash(relative))
 
 		if inside, err := filepath.Rel(dst, target); err != nil || inside == ".." || strings.HasPrefix(inside, "../") {

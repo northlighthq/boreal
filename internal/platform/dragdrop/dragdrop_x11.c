@@ -12,6 +12,7 @@
 #define XDND_VERSION 5
 #define DRAG_TICK_USEC 16000
 #define FIND_DEPTH 8
+#define COORD_MASK 0xffff
 
 enum { dragIdle, dragMoving, dragDropped };
 
@@ -140,7 +141,7 @@ static void pl_drag_tick(void) {
 	}
 
 	if (pl_drag_target != None) {
-		pl_send_as(pl_drag_dest, pl_drag_target, a_position, pl_proxy, 0, ((long)rootX << 16) | (rootY & 0xffff), CurrentTime, a_copy);
+		pl_send_as(pl_drag_dest, pl_drag_target, a_position, pl_proxy, 0, ((long)rootX << 16) | (rootY & COORD_MASK), CurrentTime, a_copy);
 	}
 }
 

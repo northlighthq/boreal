@@ -61,7 +61,7 @@ func startWaylandDrag() error {
 
 //export borealWaylandSend
 func borealWaylandSend(fd C.int32_t) {
-	pipe := os.NewFile(uintptr(fd), "boreal-drag")
+	pipe := os.NewFile(uintptr(fd), pipeName)
 
 	go func() {
 		defer pipe.Close()
