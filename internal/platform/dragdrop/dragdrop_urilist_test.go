@@ -1,4 +1,4 @@
-//go:build linux && !android && !nowayland && cgo
+//go:build linux && !android && cgo
 
 package dragdrop
 

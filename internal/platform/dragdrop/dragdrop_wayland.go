@@ -15,23 +15,17 @@ void borealWaylandFinish(uintptr_t display, uintptr_t offer);
 import "C"
 
 import (
-	"bufio"
 	"io"
-	"net/url"
 	"os"
-	"strings"
 	"sync"
 	"unsafe"
 )
-
-const maxURIList = 1 << 20
 
 var wayland struct {
 	sync.Mutex
 	once    sync.Once
 	display uintptr
 	drop    func([]string)
-	hover   func(bool)
 }
 
 // EnableWayland receives files dropped on the Wayland surface through a data device of
@@ -45,7 +39,10 @@ func EnableWayland(display, surface unsafe.Pointer, onDrop func(paths []string),
 		d := uintptr(display)
 
 		wayland.Lock()
-		wayland.display, wayland.drop, wayland.hover = d, onDrop, onHover
+		wayland.display, wayland.drop = d, onDrop
+		wayland.Unlock()
+		setHover(onHover)
+		wayland.Lock()
 		wayland.Unlock()
 
 		if C.borealWaylandSetup(C.uintptr_t(d), C.uintptr_t(uintptr(surface))) != 0 {
@@ -54,17 +51,6 @@ func EnableWayland(display, surface unsafe.Pointer, onDrop func(paths []string),
 
 		go C.borealWaylandDispatch(C.uintptr_t(d))
 	})
-}
-
-//export borealDragHover
-func borealDragHover(over C.int) {
-	wayland.Lock()
-	hover := wayland.hover
-	wayland.Unlock()
-
-	if hover != nil {
-		hover(over != 0)
-	}
 }
 
 //export borealWaylandDrop
@@ -93,28 +79,4 @@ func borealWaylandDrop(offer C.uintptr_t) {
 			drop(paths)
 		}
 	}()
-}
-
-// parseURIList reads text/uri-list (RFC 2483) and keeps the local files.
-func parseURIList(r io.Reader) []string {
-	var paths []string
-	sc := bufio.NewScanner(r)
-
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		u, err := url.Parse(line)
-
-		if err != nil || u.Scheme != "file" || (u.Host != "" && u.Host != "localhost") || u.Path == "" {
-			continue
-		}
-
-		paths = append(paths, u.Path)
-	}
-
-	return paths
 }

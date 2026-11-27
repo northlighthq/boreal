@@ -9,8 +9,11 @@ import (
 )
 
 func (a *App) attachView(ev gioapp.ViewEvent) {
-	if e, ok := ev.(gioapp.WaylandViewEvent); ok {
+	switch e := ev.(type) {
+	case gioapp.WaylandViewEvent:
 		dragdrop.EnableWayland(e.Display, e.Surface, a.dropFiles, a.dragHover)
+	case gioapp.X11ViewEvent:
+		dragdrop.EnableX11(e.Window, a.dropFiles, a.dragHover)
 	}
 }
 

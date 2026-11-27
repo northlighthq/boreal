@@ -1,10 +1,10 @@
-//go:build linux && !android && !nowayland && cgo
+//go:build linux && !android && cgo
 
 package dragdrop
 
 import "errors"
 
-// Enable is a no-op on Linux: drops arrive through EnableWayland. X11 has no drop support.
+// Enable is a no-op on Linux: drops arrive through EnableWayland or EnableX11.
 func Enable(hwnd uintptr, onDrop func(paths []string), onHover func(over bool)) {}
 
 func DragOut(paths []string) error {
