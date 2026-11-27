@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -116,19 +115,7 @@ func Check(ctx context.Context, current string) (Release, bool, error) {
 }
 
 func (r Release) assetName(k Kind) string {
-	if runtime.GOOS != "windows" {
-		return ""
-	}
-
-	if k != Installer {
-		return "boreal-" + r.Version + "-windows-" + runtime.GOARCH + ".zip"
-	}
-
-	if runtime.GOARCH == "amd64" {
-		return "boreal-" + r.Version + "-setup.exe"
-	}
-
-	return "boreal-" + r.Version + "-" + runtime.GOARCH + "-setup.exe"
+	return assetFor(r.Version, k)
 }
 
 func (r Release) Download(ctx context.Context, k Kind, dir string, progress func(done, total int64)) (string, error) {

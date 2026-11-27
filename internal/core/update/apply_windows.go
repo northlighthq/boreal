@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 const (
@@ -15,6 +16,20 @@ const (
 )
 
 var ErrNoBinary = errors.New("update: the archive has no boreal.exe")
+
+func SelfUpdate() bool { return true }
+
+func assetFor(version string, k Kind) string {
+	if k != Installer {
+		return "boreal-" + version + "-windows-" + runtime.GOARCH + ".zip"
+	}
+
+	if runtime.GOARCH == "amd64" {
+		return "boreal-" + version + "-setup.exe"
+	}
+
+	return "boreal-" + version + "-" + runtime.GOARCH + "-setup.exe"
+}
 
 func Detect() Kind {
 	exe, err := os.Executable()
