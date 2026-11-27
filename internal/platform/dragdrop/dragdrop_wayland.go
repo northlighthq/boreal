@@ -40,8 +40,6 @@ func EnableWayland(display, surface unsafe.Pointer, onDrop func(paths []string),
 		wayland.display, wayland.drop = d, onDrop
 		wayland.Unlock()
 		setHover(onHover)
-		wayland.Lock()
-		wayland.Unlock()
 
 		if C.borealWaylandSetup(C.uintptr_t(d), C.uintptr_t(uintptr(surface))) != 0 {
 			return

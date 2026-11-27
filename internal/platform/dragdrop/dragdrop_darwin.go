@@ -17,6 +17,7 @@ import "C"
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -172,14 +173,14 @@ func writeTree(files []VirtualFile, dst string) error {
 
 		if f.Dir {
 			if err := os.MkdirAll(target, 0o755); err != nil {
-				return err
+				return fmt.Errorf("dragdrop: create folder %s: %w", rel, err)
 			}
 
 			continue
 		}
 
 		if err := writeFile(f, target); err != nil {
-			return err
+			return fmt.Errorf("dragdrop: download %s: %w", filepath.Base(target), err)
 		}
 	}
 
