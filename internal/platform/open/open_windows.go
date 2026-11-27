@@ -22,6 +22,10 @@ func File(path string) error {
 	return windows.ShellExecute(0, verb, file, nil, nil, windows.SW_SHOWNORMAL)
 }
 
+func URL(link string) error {
+	return start(exec.Command("rundll32", "url.dll,FileProtocolHandler", link))
+}
+
 func Edit(path string) error {
-	return exec.Command("notepad.exe", path).Start()
+	return start(exec.Command("notepad.exe", path))
 }
