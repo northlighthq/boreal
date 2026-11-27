@@ -18,6 +18,12 @@ static struct wl_seat *pl_seat;
 static struct wl_data_device_manager *pl_manager;
 static uint32_t pl_manager_version;
 static struct wl_data_offer *pl_current;
+static struct wl_display *pl_display;
+static struct wl_data_device *pl_device;
+static struct wl_pointer *pl_pointer;
+static uint32_t pl_press_serial;
+static int pl_pressed;
+static int pl_dragging;
 
 static void pl_offer_offer(void *data, struct wl_data_offer *offer, const char *mime) {
 	struct pl_offer *state = data;
@@ -64,7 +70,7 @@ static void pl_dev_enter(void *data, struct wl_data_device *device, uint32_t ser
 
 	struct pl_offer *state = wl_data_offer_get_user_data(offer);
 
-	if (surface != pl_surface || state == NULL || !state->has_uris) {
+	if (pl_dragging || surface != pl_surface || state == NULL || !state->has_uris) {
 		wl_data_offer_accept(offer, serial, NULL);
 		return;
 	}
@@ -123,6 +129,76 @@ static const struct wl_data_device_listener pl_dev_listener = {
 	.selection = pl_dev_selection,
 };
 
+static void pl_pointer_enter(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface, wl_fixed_t x, wl_fixed_t y) {}
+
+static void pl_pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface) {
+	pl_pressed = 0;
+}
+
+static void pl_pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y) {}
+
+static void pl_pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
+	pl_pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
+
+	if (pl_pressed) {
+		pl_press_serial = serial;
+	}
+}
+
+static void pl_pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {}
+
+static void pl_pointer_frame(void *data, struct wl_pointer *pointer) {}
+
+static void pl_pointer_axis_source(void *data, struct wl_pointer *pointer, uint32_t source) {}
+
+static void pl_pointer_axis_stop(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis) {}
+
+static void pl_pointer_axis_discrete(void *data, struct wl_pointer *pointer, uint32_t axis, int32_t discrete) {}
+
+static const struct wl_pointer_listener pl_pointer_listener = {
+	.enter = pl_pointer_enter,
+	.leave = pl_pointer_leave,
+	.motion = pl_pointer_motion,
+	.button = pl_pointer_button,
+	.axis = pl_pointer_axis,
+	.frame = pl_pointer_frame,
+	.axis_source = pl_pointer_axis_source,
+	.axis_stop = pl_pointer_axis_stop,
+	.axis_discrete = pl_pointer_axis_discrete,
+};
+
+static void pl_source_target(void *data, struct wl_data_source *source, const char *mime) {}
+
+static void pl_source_send(void *data, struct wl_data_source *source, const char *mime, int32_t fd) {
+	borealWaylandSend(fd);
+}
+
+static void pl_source_done(struct wl_data_source *source) {
+	pl_dragging = 0;
+	wl_data_source_destroy(source);
+}
+
+static void pl_source_cancelled(void *data, struct wl_data_source *source) {
+	pl_source_done(source);
+}
+
+static void pl_source_dropped(void *data, struct wl_data_source *source) {}
+
+static void pl_source_finished(void *data, struct wl_data_source *source) {
+	pl_source_done(source);
+}
+
+static void pl_source_action(void *data, struct wl_data_source *source, uint32_t action) {}
+
+static const struct wl_data_source_listener pl_source_listener = {
+	.target = pl_source_target,
+	.send = pl_source_send,
+	.cancelled = pl_source_cancelled,
+	.dnd_drop_performed = pl_source_dropped,
+	.dnd_finished = pl_source_finished,
+	.action = pl_source_action,
+};
+
 static void pl_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
 	if (strcmp(interface, wl_seat_interface.name) == 0 && pl_seat == NULL) {
 		pl_seat = wl_registry_bind(registry, name, &wl_seat_interface, version < 5 ? version : 5);
@@ -154,9 +230,31 @@ int borealWaylandSetup(uintptr_t handle, uintptr_t surface) {
 		return -1;
 	}
 
-	struct wl_data_device *device = wl_data_device_manager_get_data_device(pl_manager, pl_seat);
-	wl_data_device_add_listener(device, &pl_dev_listener, NULL);
+	pl_display = display;
+	pl_device = wl_data_device_manager_get_data_device(pl_manager, pl_seat);
+	wl_data_device_add_listener(pl_device, &pl_dev_listener, NULL);
+	pl_pointer = wl_seat_get_pointer(pl_seat);
+	wl_pointer_add_listener(pl_pointer, &pl_pointer_listener, NULL);
 	wl_display_flush(display);
+	return 0;
+}
+
+int borealWaylandStartDrag(void) {
+	if (pl_device == NULL || !pl_pressed) {
+		return -1;
+	}
+
+	struct wl_data_source *source = wl_data_device_manager_create_data_source(pl_manager);
+	wl_data_source_offer(source, URI_LIST);
+
+	if (pl_manager_version >= 3) {
+		wl_data_source_set_actions(source, WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY);
+	}
+
+	wl_data_source_add_listener(source, &pl_source_listener, NULL);
+	pl_dragging = 1;
+	wl_data_device_start_drag(pl_device, source, pl_surface, NULL, pl_press_serial);
+	wl_display_flush(pl_display);
 	return 0;
 }
 

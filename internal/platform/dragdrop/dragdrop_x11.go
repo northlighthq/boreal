@@ -7,6 +7,7 @@ package dragdrop
 
 int borealX11Setup(unsigned long target);
 void borealX11Loop(void);
+int borealX11StartDrag(void);
 */
 import "C"
 
@@ -37,7 +38,27 @@ func EnableX11(window uintptr, onDrop func(paths []string), onHover func(over bo
 		}
 
 		go C.borealX11Loop()
+		setBackend(startX11Drag)
 	})
+}
+
+func startX11Drag() error {
+	if C.borealX11StartDrag() != 0 {
+		return ErrReleased
+	}
+
+	return nil
+}
+
+//export borealX11URIs
+func borealX11URIs() *C.char {
+	uris, err := stagedURIs()
+
+	if err != nil {
+		return nil
+	}
+
+	return C.CString(uris)
 }
 
 //export borealX11Drop
