@@ -39,7 +39,7 @@ func (d *Intro) welcome(gtx C) D {
 		point(icons.Server, "Keep your servers in folders and connect with a double click."),
 		point(icons.Terminal, "A fast terminal of its own, with tabs and split panes."),
 		point(icons.Key, "Keys, port forwarding, SFTP and snippets, all in one window."),
-		point(icons.Lock, "Everything stays encrypted on this computer."),
+		point(icons.Lock, "Everything stays encrypted on this "+vault.Device+"."),
 	)
 }
 
@@ -183,10 +183,17 @@ func (d *Intro) security(gtx C) D {
 		})
 	}
 
+	keyless := !d.h.Vault().OSUnlock()
+	title, hint := "MASTER PASSWORD · OPTIONAL", fmt.Sprintf("At least %d characters, or leave empty", minPassword)
+
+	if keyless {
+		title, hint = "MASTER PASSWORD · REQUIRED", fmt.Sprintf("At least %d characters", minPassword)
+	}
+
 	children := []layout.FlexChild{
-		layout.Rigid(func(gtx C) D { return k.SectionTitle(gtx, "MASTER PASSWORD · OPTIONAL") }),
+		layout.Rigid(func(gtx C) D { return k.SectionTitle(gtx, title) }),
 		layout.Rigid(kit.Gap(10)),
-		field(&d.password, fmt.Sprintf("At least %d characters, or leave empty", minPassword)),
+		field(&d.password, hint),
 		field(&d.confirm, "Repeat it"),
 	}
 
@@ -196,6 +203,17 @@ func (d *Intro) security(gtx C) D {
 				return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.Danger}, d.passErr)
 			})
 		}))
+	}
+
+	if keyless {
+		children = append(children,
+			layout.Rigid(kit.Gap(6)),
+			layout.Rigid(func(gtx C) D {
+				return k.Label(gtx, kit.TextStyle{Size: th.TextSizeSmall, Color: th.TextMuted, MaxLines: 3}, "There's no system keyring on this "+vault.Device+", so Boreal asks for this password every time it opens. If you forget it, Boreal can't open the vault again.")
+			}),
+		)
+
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, children...)
 	}
 
 	children = append(children,
