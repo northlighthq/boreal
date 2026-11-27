@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"gioui.org/io/key"
+
+	"github.com/northlighthq/boreal/internal/common/keys"
 )
 
 var (
@@ -102,10 +104,8 @@ func (b Binding) function() bool {
 }
 
 func (b Binding) reserved() bool {
-	ctrlShift := key.ModCtrl | key.ModShift
-
 	switch {
-	case b.Mods == ctrlShift:
+	case keys.IsApp(b.Mods):
 		return true
 	case b.Mods == key.ModAlt && len(b.Name) == 1 && b.Name[0] >= '1' && b.Name[0] <= '6':
 		return true

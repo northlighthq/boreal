@@ -20,6 +20,7 @@ import (
 	"gioui.org/widget/material"
 
 	"github.com/northlighthq/boreal/internal/common/fonts"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/shape"
 	"github.com/northlighthq/boreal/internal/common/theme"
 )
@@ -268,7 +269,7 @@ func (k *Kit) Badge(gtx C, s string, c color.NRGBA) D {
 }
 
 func (k *Kit) Kbd(gtx C, s string) D {
-	return k.Label(gtx, TextStyle{Size: k.Th.TextSizeSmall, Color: k.Th.TextFaint}, s)
+	return k.Label(gtx, TextStyle{Size: k.Th.TextSizeSmall, Color: k.Th.TextFaint}, keys.Label(s))
 }
 
 func (k *Kit) SectionTitle(gtx C, s string) D {

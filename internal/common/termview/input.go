@@ -17,6 +17,7 @@ import (
 	"github.com/northlighthq/vt/input"
 
 	"github.com/northlighthq/boreal/internal/common/icons"
+	"github.com/northlighthq/boreal/internal/common/keys"
 	"github.com/northlighthq/boreal/internal/common/kit"
 )
 
@@ -76,8 +77,10 @@ const (
 	menuExtras
 )
 
+var commandKeys = []key.Name{"C", "V", "F", "A", "+", "=", "-", "0", key.NameHome, key.NameEnd}
+
 func (v *View) filters() []event.Filter {
-	return []event.Filter{
+	filters := []event.Filter{
 		key.FocusFilter{Target: v},
 		transfer.TargetFilter{Target: v, Type: mimeText},
 		pointer.Filter{
@@ -88,6 +91,14 @@ func (v *View) filters() []event.Filter {
 		key.Filter{Focus: v, Name: key.NameTab, Optional: allMods},
 		key.Filter{Focus: v, Name: "", Optional: allMods},
 	}
+
+	if keys.Command != 0 {
+		for _, name := range commandKeys {
+			filters = append(filters, key.Filter{Focus: v, Name: name, Required: keys.Command, Optional: key.ModShift})
+		}
+	}
+
+	return filters
 }
 
 func (v *View) handleEvents(gtx layout.Context) {
@@ -166,6 +177,10 @@ func (v *View) shortcut(gtx layout.Context, e key.Event) bool {
 	ctrl := m.Contain(key.ModCtrl)
 	shift := m.Contain(key.ModShift)
 	ctrlShift := ctrl && shift
+
+	if keys.Command != 0 && m.Contain(keys.Command) {
+		ctrl, shift, ctrlShift = true, false, true
+	}
 
 	switch {
 	case ctrlShift && e.Name == "C":
@@ -297,7 +312,7 @@ func (v *View) handlePointer(gtx layout.Context, e pointer.Event) {
 			return
 		}
 
-		if e.Modifiers.Contain(key.ModCtrl) && v.hover.active {
+		if e.Modifiers.Contain(keys.Link) && v.hover.active {
 			if v.OnOpenURL != nil {
 				v.OnOpenURL(v.hover.url)
 			}
