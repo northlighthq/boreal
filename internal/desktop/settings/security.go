@@ -163,7 +163,7 @@ func (d *Dialog) securityPage(a base.Host, p page) []layout.FlexChild {
 	}
 
 	if has {
-		vaultRows = append(vaultRows, p.item("Unlock with "+vault.OSName, "Open the vault on this PC without typing the password.", p.toggle(&s.osUnlock)))
+		vaultRows = append(vaultRows, p.item("Unlock with "+vault.OSName, "Open the vault on this computer without typing the password.", p.toggle(&s.osUnlock)))
 	}
 
 	title, label := "Set a master password", "Set password"

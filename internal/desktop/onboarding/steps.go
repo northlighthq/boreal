@@ -39,7 +39,7 @@ func (d *Intro) welcome(gtx C) D {
 		point(icons.Server, "Keep your servers in folders and connect with a double click."),
 		point(icons.Terminal, "A fast terminal of its own, with tabs and split panes."),
 		point(icons.Key, "Keys, port forwarding, SFTP and snippets, all in one window."),
-		point(icons.Lock, "Everything stays encrypted on this PC."),
+		point(icons.Lock, "Everything stays encrypted on this computer."),
 	)
 }
 
