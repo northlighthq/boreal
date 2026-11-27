@@ -43,6 +43,8 @@ import (
 )
 
 const (
+	Supported  = true
+	Hint       = "If another app keeps opening them, turn this off and on again."
 	bundleID   = "io.github.borealssh.boreal"
 	fallbackID = "com.apple.Terminal"
 )

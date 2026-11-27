@@ -9,6 +9,8 @@ import (
 )
 
 const (
+	Supported    = true
+	Hint         = "If another app keeps opening them, choose Boreal in Windows Settings › Default apps."
 	appName      = "Boreal"
 	classesKey   = `Software\Classes\`
 	capabilities = `Software\Northlight\Boreal\Capabilities`

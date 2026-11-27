@@ -2,6 +2,11 @@
 
 package urlhandler
 
+const (
+	Supported = false
+	Hint      = ""
+)
+
 func Registered() bool {
 	return false
 }

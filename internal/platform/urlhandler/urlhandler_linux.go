@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	Supported    = true
+	Hint         = "If another app keeps opening them, choose Boreal for ssh links in your desktop's default apps."
 	desktopFile  = "boreal-links.desktop"
 	schemePrefix = "x-scheme-handler/"
 	xdgMime      = "xdg-mime"

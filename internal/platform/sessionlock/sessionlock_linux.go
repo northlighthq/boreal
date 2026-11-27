@@ -9,38 +9,73 @@ import (
 )
 
 const (
-	login1      = "org.freedesktop.login1"
-	sessionPath = "/org/freedesktop/login1/session/auto"
-	lockedHint  = "org.freedesktop.login1.Session.LockedHint"
+	Supported       = true
+	login1          = "org.freedesktop.login1"
+	sessionPath     = "/org/freedesktop/login1/session/auto"
+	lockedHint      = "org.freedesktop.login1.Session.LockedHint"
+	screenSaver     = "org.freedesktop.ScreenSaver"
+	screenSaverPath = "/org/freedesktop/ScreenSaver"
+	getActive       = screenSaver + ".GetActive"
 )
 
 var (
-	mu   sync.Mutex
-	conn *dbus.Conn
+	mu         sync.Mutex
+	systemBus  *dbus.Conn
+	sessionBus *dbus.Conn
 )
 
 func Locked() bool {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if conn == nil {
+	if locked, ok := logindLocked(); ok {
+		return locked
+	}
+
+	return screenSaverActive()
+}
+
+func logindLocked() (bool, bool) {
+	if systemBus == nil {
 		bus, err := dbus.ConnectSystemBus()
+
+		if err != nil {
+			return false, false
+		}
+
+		systemBus = bus
+	}
+
+	hint, err := systemBus.Object(login1, sessionPath).GetProperty(lockedHint)
+
+	if err != nil {
+		systemBus.Close()
+		systemBus = nil
+		return false, false
+	}
+
+	locked, ok := hint.Value().(bool)
+	return locked, ok
+}
+
+func screenSaverActive() bool {
+	if sessionBus == nil {
+		bus, err := dbus.ConnectSessionBus()
 
 		if err != nil {
 			return false
 		}
 
-		conn = bus
+		sessionBus = bus
 	}
 
-	hint, err := conn.Object(login1, sessionPath).GetProperty(lockedHint)
+	var active bool
 
-	if err != nil {
-		conn.Close()
-		conn = nil
+	if err := sessionBus.Object(screenSaver, screenSaverPath).Call(getActive, 0).Store(&active); err != nil {
+		sessionBus.Close()
+		sessionBus = nil
 		return false
 	}
 
-	locked, _ := hint.Value().(bool)
-	return locked
+	return active
 }

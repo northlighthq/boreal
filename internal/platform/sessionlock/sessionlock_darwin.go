@@ -27,6 +27,8 @@ static int pl_screen_locked(void) {
 */
 import "C"
 
+const Supported = true
+
 func Locked() bool {
 	return C.pl_screen_locked() != 0
 }
