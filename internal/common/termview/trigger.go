@@ -10,6 +10,10 @@ import (
 const maxWord = 64
 
 func (v *View) typeText(text string) {
+	if v.Transform != nil {
+		text = v.Transform(text)
+	}
+
 	if v.Expand == nil {
 		v.send([]byte(text))
 		return

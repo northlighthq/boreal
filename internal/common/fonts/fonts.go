@@ -43,6 +43,12 @@ func Load() (*text.Shaper, font.Font) {
 	return text.NewShaper(text.NoSystemFonts(), text.WithCollection(faces)), font.Font{Typeface: Mono}
 }
 
+func LoadEmbedded() (*text.Shaper, font.Font) {
+	faces := append(embedded(monoFiles), embedded(uiFiles)...)
+	faces = append(faces, embedded([]string{terminalFiles[JetBrainsMono][0], terminalFiles[FiraCode][0]})...)
+	return text.NewShaper(text.NoSystemFonts(), text.WithCollection(faces)), font.Font{Typeface: Mono}
+}
+
 const (
 	JetBrainsMono = "JetBrains Mono"
 	FiraCode      = "Fira Code"
@@ -62,13 +68,17 @@ var (
 	glyphSets = map[string]*glyphs.Set{}
 )
 
-func Glyphs(family string) (*glyphs.Set, error) {
-	files, ok := terminalFiles[family]
-
-	if !ok {
-		family = TerminalFonts[0]
-		files = terminalFiles[family]
+func TerminalFamily(name string) string {
+	if _, ok := terminalFiles[name]; ok {
+		return name
 	}
+
+	return TerminalFonts[0]
+}
+
+func Glyphs(family string) (*glyphs.Set, error) {
+	family = TerminalFamily(family)
+	files := terminalFiles[family]
 
 	glyphMu.Lock()
 	defer glyphMu.Unlock()

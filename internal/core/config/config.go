@@ -2,12 +2,15 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
 
 const (
 	appDir       = "Boreal"
+	previewDir   = "Boreal Mobile Preview"
 	legacyDir    = "Platty"
 	settingsFile = "settings.json"
 )
@@ -115,6 +118,12 @@ func Defaults() Settings {
 	}
 }
 
+var preview bool
+
+func UsePreview() {
+	preview = true
+}
+
 func Dir() (string, error) {
 	base, err := os.UserConfigDir()
 
@@ -122,10 +131,20 @@ func Dir() (string, error) {
 		return "", err
 	}
 
-	dir := filepath.Join(base, appDir)
+	if preview {
+		dir := filepath.Join(base, previewDir)
+		return dir, os.MkdirAll(dir, 0o700)
+	}
 
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	dir := filepath.Join(base, appDir)
+	private, hasPrivate := privateDir()
+
+	if !exists(dir) && (!hasPrivate || !exists(private)) {
 		os.Rename(filepath.Join(base, legacyDir), dir)
+	}
+
+	if hasPrivate {
+		dir = movePrivate(dir, private)
 	}
 
 	if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -133,6 +152,30 @@ func Dir() (string, error) {
 	}
 
 	return dir, nil
+}
+
+func exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func movePrivate(dir, private string) string {
+	_, err := os.Stat(private)
+
+	switch {
+	case err == nil:
+		return private
+	case !errors.Is(err, fs.ErrNotExist):
+		return dir
+	case !exists(dir):
+		return private
+	}
+
+	if os.MkdirAll(filepath.Dir(private), 0o700) != nil || os.Rename(dir, private) != nil {
+		return dir
+	}
+
+	return private
 }
 
 func Load() Settings {

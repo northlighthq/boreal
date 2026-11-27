@@ -1,3 +1,5 @@
+//go:build !android
+
 package main
 
 import (
@@ -11,7 +13,7 @@ import (
 	"time"
 
 	"github.com/northlighthq/boreal/internal/core/config"
-	boreal "github.com/northlighthq/boreal/internal/desktop"
+	"github.com/northlighthq/boreal/internal/desktop"
 )
 
 const (
@@ -53,7 +55,7 @@ func init() {
 	go func() {
 		for {
 			time.Sleep(diagInterval)
-			n := boreal.Frames.Swap(0)
+			n := desktop.Frames.Swap(0)
 			os.WriteFile(filepath.Join(dir, "fps.txt"), []byte(strconv.FormatFloat(float64(n)/diagInterval.Seconds(), 'f', 1, 64)), 0o644)
 
 			if f, err := os.Create(filepath.Join(dir, "goroutines.txt")); err == nil {

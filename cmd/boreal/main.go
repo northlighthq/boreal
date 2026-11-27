@@ -8,20 +8,17 @@ import (
 
 	"gioui.org/app"
 
-	"github.com/northlighthq/boreal/internal/core/launch"
-	boreal "github.com/northlighthq/boreal/internal/desktop"
-	borealmcp "github.com/northlighthq/boreal/internal/mcp"
 	"github.com/northlighthq/boreal/internal/platform/instance"
 )
 
 func main() {
 	args := os.Args[1:]
 
-	if len(args) == 1 && args[0] == borealmcp.Command {
-		os.Exit(borealmcp.Main())
+	if code, ok := subcommand(args); ok {
+		os.Exit(code)
 	}
 
-	if _, ok := launch.Parse(args); ok && instance.Send(args) {
+	if handoff(args) {
 		return
 	}
 
@@ -31,7 +28,7 @@ func main() {
 		debug.FreeOSMemory()
 	}()
 	go func() {
-		if err := boreal.Run(args); err != nil {
+		if err := run(args); err != nil {
 			log.Fatal(err)
 		}
 

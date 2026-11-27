@@ -85,7 +85,7 @@ func (v *View) filters() []event.Filter {
 		transfer.TargetFilter{Target: v, Type: mimeText},
 		pointer.Filter{
 			Target:  v,
-			Kinds:   pointer.Press | pointer.Release | pointer.Drag | pointer.Move | pointer.Scroll | pointer.Leave,
+			Kinds:   pointer.Press | pointer.Release | pointer.Drag | pointer.Move | pointer.Scroll | pointer.Leave | pointer.Cancel,
 			ScrollY: pointer.ScrollRange{Min: -scrollMax, Max: scrollMax},
 		},
 		key.Filter{Focus: v, Name: key.NameTab, Optional: allMods},
@@ -297,6 +297,10 @@ func (v *View) reporting(m key.Modifiers) bool {
 }
 
 func (v *View) handlePointer(gtx layout.Context, e pointer.Event) {
+	if v.handleTouch(gtx, e) {
+		return
+	}
+
 	switch e.Kind {
 	case pointer.Press:
 		v.wantFocus = true
@@ -462,6 +466,7 @@ func (v *View) send(p []byte) {
 	}
 
 	v.offset = 0
+	v.fling = flingState{}
 	v.sel.clear()
 	v.touchInput()
 	v.backend.Send(p)
@@ -480,6 +485,20 @@ func (v *View) copySelection(gtx layout.Context) {
 	}
 
 	gtx.Execute(clipboard.WriteCmd{Type: mimeText, Data: io.NopCloser(strings.NewReader(text))})
+}
+
+func (v *View) VisibleText() string {
+	f := &v.frame
+	first := f.TopLine
+	last := f.TopLine + f.Rows - 1
+	text := v.backend.Terminal().TextRange(vt.Pos{Line: first}, vt.Pos{Line: last, Col: f.Cols - 1})
+	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
+
+	for i, l := range lines {
+		lines[i] = strings.TrimRight(l, " \t\x00")
+	}
+
+	return strings.TrimRight(strings.Join(lines, "\n"), "\n")
 }
 
 func (v *View) selectAll() {

@@ -112,6 +112,38 @@ jobs:
       - name: Build for Intel
         run: CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -o bin/boreal-amd64 ./cmd/boreal
 
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+
+      - name: Android SDK
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.1.0" "ndk;28.2.13676358" > /dev/null
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+
+      - name: Linux libraries
+        run: sudo apt-get update && sudo apt-get install -y gcc pkg-config libwayland-dev libx11-dev libx11-xcb-dev libxkbcommon-x11-dev libgles2-mesa-dev libegl1-mesa-dev libffi-dev libxcursor-dev libvulkan-dev
+
+      - name: Mobile tests
+        run: go test ./internal/mobile/... ./internal/common/termview/... ./packaging/android/...
+
+      - name: Build the APK
+        shell: pwsh
+        run: ./packaging/android/build.ps1 -Version 0.0.0-ci -Arch arm64,amd64
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: boreal-android
+          path: dist/*.apk
+          retention-days: 7
+
   fuzz:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

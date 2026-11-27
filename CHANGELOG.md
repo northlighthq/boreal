@@ -14,6 +14,14 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 - On macOS the app and terminal shortcuts also work with ⌘ (⌘T, ⌘W, ⌘C, ⌘V, ⌘F, ⌘, …), ⌘-click opens links and shortcuts are shown with Mac symbols.
 - The Linux AppImage downloads and installs its own updates. On macOS, updating opens the release page.
 
+### Android
+- A first Android app (Android 9 and later) shares the desktop app's vault format, SSH and terminal. It has hosts, keys, snippets, settings and several sessions at once.
+- Open sessions stay connected while you switch apps, with a notification showing how many are open.
+- The terminal has a key bar with Esc, Tab, Ctrl, Alt, arrows, Home, End, page keys, F1–F12, Ins and Del. You can scroll it with a flick, copy what's on screen and paste.
+- In landscape with the keyboard open, the terminal hides its title bar to keep more lines visible.
+- The vault locks again after Boreal has been in the background for the time you choose in Settings.
+- Fields for keys, commands and addresses turn off autocorrect and suggestions.
+
 ## 0.1.1-beta.8 (2026-11-21)
 
 ### MCP
