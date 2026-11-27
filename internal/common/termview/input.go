@@ -77,7 +77,6 @@ const (
 	menuExtras
 )
 
-// commandKeys are the terminal shortcuts macOS also takes with Command alone.
 var commandKeys = []key.Name{"C", "V", "F", "A", "+", "=", "-", "0", key.NameHome, key.NameEnd}
 
 func (v *View) filters() []event.Filter {
@@ -179,7 +178,6 @@ func (v *View) shortcut(gtx layout.Context, e key.Event) bool {
 	shift := m.Contain(key.ModShift)
 	ctrlShift := ctrl && shift
 
-	// On macOS Command stands for both: Cmd+C copies, Cmd+= zooms.
 	if keys.Command != 0 && m.Contain(keys.Command) {
 		ctrl, shift, ctrlShift = true, false, true
 	}

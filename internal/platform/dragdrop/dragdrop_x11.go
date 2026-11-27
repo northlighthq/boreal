@@ -20,7 +20,6 @@ var x11 struct {
 	drop func([]string)
 }
 
-// EnableX11 receives files dropped on Gio's X11 window through an XdndProxy of Boreal's own.
 func EnableX11(window uintptr, onDrop func(paths []string), onHover func(over bool)) {
 	if window == 0 {
 		return

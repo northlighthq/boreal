@@ -2,8 +2,6 @@
 
 package update
 
-// SelfUpdate reports whether this build can download and install its own updates.
-// macOS builds ship as a disk image, so the update comes from the release page.
 func SelfUpdate() bool { return false }
 
 func assetFor(version string, k Kind) string { return "" }

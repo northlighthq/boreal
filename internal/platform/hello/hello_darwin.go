@@ -55,7 +55,6 @@ func Available() bool {
 	return int(C.pl_available()) == int(C.plOK)
 }
 
-// Verify asks for Touch ID. macOS shows its own sheet, so the window handle isn't needed.
 func Verify(hwnd uintptr, message string) error {
 	reason := C.CString(strings.TrimSpace(message))
 	defer C.free(unsafe.Pointer(reason))

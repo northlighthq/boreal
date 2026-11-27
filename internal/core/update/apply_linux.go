@@ -14,12 +14,10 @@ var errNotAppImage = errors.New("update: only the AppImage can update itself")
 
 var appImageArch = map[string]string{"amd64": "x86_64", "arm64": "aarch64"}
 
-// appImage is the AppImage file Boreal runs from, empty for any other install.
 func appImage() string {
 	return os.Getenv("APPIMAGE")
 }
 
-// SelfUpdate reports whether this build can download and install its own updates.
 func SelfUpdate() bool {
 	return appImage() != "" && appImageArch[runtime.GOARCH] != ""
 }
@@ -38,7 +36,6 @@ func Detect() Kind {
 	return Portable
 }
 
-// Prepare stages the new AppImage next to the running one, so the swap is a rename.
 func Prepare(path string, k Kind) error {
 	target := appImage()
 

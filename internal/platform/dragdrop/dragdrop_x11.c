@@ -109,8 +109,6 @@ static void pl_message(XClientMessageEvent *e) {
 	}
 }
 
-// borealX11Setup opens Boreal's own X connection and makes a hidden window of it the
-// XdndProxy of Gio's window, so drag-and-drop messages reach Boreal instead of Gio.
 int borealX11Setup(unsigned long target) {
 	pl_dpy = XOpenDisplay(NULL);
 
@@ -137,14 +135,12 @@ int borealX11Setup(unsigned long target) {
 	Atom version = XDND_VERSION;
 	XChangeProperty(pl_dpy, pl_target, a_aware, XA_ATOM, 32, PropModeReplace, (unsigned char *)&version, 1);
 	XChangeProperty(pl_dpy, pl_proxy, a_aware, XA_ATOM, 32, PropModeReplace, (unsigned char *)&version, 1);
-	// The spec asks the proxy to point at itself, so sources can tell a stale proxy apart.
 	XChangeProperty(pl_dpy, pl_target, a_proxy, XA_WINDOW, 32, PropModeReplace, (unsigned char *)&pl_proxy, 1);
 	XChangeProperty(pl_dpy, pl_proxy, a_proxy, XA_WINDOW, 32, PropModeReplace, (unsigned char *)&pl_proxy, 1);
 	XFlush(pl_dpy);
 	return 0;
 }
 
-// borealX11Loop handles Boreal's connection until it closes.
 void borealX11Loop(void) {
 	XEvent ev;
 

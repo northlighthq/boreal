@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	// Command is the extra shortcut modifier; zero where the platform has none.
 	Command key.Modifiers = 0
 	linkMod               = key.ModCtrl
 )

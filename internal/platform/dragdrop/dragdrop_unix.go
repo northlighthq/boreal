@@ -36,7 +36,6 @@ func borealDragHover(over C.int) {
 	}
 }
 
-// parseURIList reads text/uri-list (RFC 2483) and keeps the local files.
 func parseURIList(r io.Reader) []string {
 	var paths []string
 	sc := bufio.NewScanner(r)

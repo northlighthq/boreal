@@ -12,7 +12,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// Name is how the system calls its own sign-in check.
 const Name = "Windows Hello"
 
 const (

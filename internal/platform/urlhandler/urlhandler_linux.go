@@ -13,7 +13,6 @@ const desktopFile = "boreal-links.desktop"
 
 var schemes = []string{"ssh", "sftp"}
 
-// executable prefers the AppImage path, since the mounted binary moves on every launch.
 func executable() (string, error) {
 	if p := os.Getenv("APPIMAGE"); p != "" {
 		return p, nil
@@ -45,7 +44,6 @@ func applicationsDir() (string, error) {
 }
 
 func quoteExec(s string) string {
-	// Exec quotes escape with a backslash, and the key's string type doubles every backslash again.
 	r := strings.NewReplacer(`\`, `\\\\`, `"`, `\\"`, "`", "\\\\`", "$", `\\$`)
 	return `"` + r.Replace(s) + `"`
 }

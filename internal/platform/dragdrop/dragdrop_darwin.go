@@ -40,7 +40,6 @@ var promises struct {
 
 var errNoFiles = errors.New("dragdrop: nothing to drag")
 
-// Enable lets Finder drop files on the window. Only one window is supported, like on Windows.
 func Enable(view uintptr, onDrop func(paths []string), onHover func(over bool)) {
 	if view == 0 {
 		return
@@ -81,9 +80,6 @@ func DragOut(paths []string) error {
 	return errors.ErrUnsupported
 }
 
-// DragVirtual drags remote files out as a file promise: Finder picks the folder and
-// Boreal writes the files there once the drop lands. files[0] is the root, file or folder,
-// and the other names are paths under it.
 func DragVirtual(files []VirtualFile) error {
 	handlers.Lock()
 	view := handlers.view
@@ -138,9 +134,6 @@ func borealPromiseDone(h C.uintptr_t) {
 	go release(uintptr(h))
 }
 
-// borealWritePromise writes the promised files to dst, the path Finder chose for files[0].
-// It returns NULL on success, or an error message the caller frees.
-//
 //export borealWritePromise
 func borealWritePromise(h C.uintptr_t, dst *C.char) *C.char {
 	promises.Lock()
@@ -164,7 +157,6 @@ func writeTree(files []VirtualFile, dst string) error {
 	root := files[0].Name
 
 	for _, f := range files {
-		// Names come Windows-style: root\sub\file.
 		rel, ok := strings.CutPrefix(f.Name, root)
 
 		if !ok {

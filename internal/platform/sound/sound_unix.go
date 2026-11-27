@@ -5,27 +5,14 @@ package sound
 import (
 	"os"
 	"os/exec"
-	"runtime"
 	"sync"
 )
 
 type player struct {
 	cmd  string
 	args []string
+	file string
 }
-
-var candidates = func() []player {
-	if runtime.GOOS == "darwin" {
-		return []player{{"afplay", []string{"/System/Library/Sounds/Glass.aiff"}}}
-	}
-
-	return []player{
-		{"canberra-gtk-play", []string{"-i", "bell", "-d", "Boreal"}},
-		{"paplay", []string{"/usr/share/sounds/freedesktop/stereo/bell.oga"}},
-		{"pw-play", []string{"/usr/share/sounds/freedesktop/stereo/bell.oga"}},
-		{"aplay", []string{"-q", "/usr/share/sounds/alsa/Front_Center.wav"}},
-	}
-}()
 
 var pick = sync.OnceValue(func() *player {
 	for i, p := range candidates {
@@ -33,8 +20,8 @@ var pick = sync.OnceValue(func() *player {
 			continue
 		}
 
-		if p.cmd != "canberra-gtk-play" {
-			if _, err := os.Stat(p.args[len(p.args)-1]); err != nil {
+		if p.file != "" {
+			if _, err := os.Stat(p.file); err != nil {
 				continue
 			}
 		}
@@ -45,7 +32,6 @@ var pick = sync.OnceValue(func() *player {
 	return nil
 })
 
-// Available reports whether a sound player was found on this system.
 var Available = pick() != nil
 
 func Play() {
@@ -55,7 +41,13 @@ func Play() {
 		return
 	}
 
-	cmd := exec.Command(p.cmd, p.args...)
+	args := p.args
+
+	if p.file != "" {
+		args = append(args[:len(args):len(args)], p.file)
+	}
+
+	cmd := exec.Command(p.cmd, args...)
 
 	if cmd.Start() == nil {
 		go cmd.Wait()

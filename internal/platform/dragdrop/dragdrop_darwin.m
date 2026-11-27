@@ -106,8 +106,6 @@ void borealEnableDrop(uintptr_t view) {
 
 static NSMutableSet *pl_live;
 
-// borealDragPromise starts a drag of one promised file or folder. It returns 0 when the
-// drag started, 1 when the mouse button is already up.
 int borealDragPromise(uintptr_t view, uintptr_t handle, const char *name, int dir) {
 	if (([NSEvent pressedMouseButtons] & 1) == 0) {
 		return 1;

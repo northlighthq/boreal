@@ -8,7 +8,6 @@ var local struct {
 	pending [][]string
 }
 
-// Deliver hands args to the running instance's handler, queueing them until Listen is called.
 func Deliver(args []string) {
 	local.mu.Lock()
 	handle := local.handle

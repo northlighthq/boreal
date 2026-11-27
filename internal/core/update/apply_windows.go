@@ -17,7 +17,6 @@ const (
 
 var ErrNoBinary = errors.New("update: the archive has no boreal.exe")
 
-// SelfUpdate reports whether this build can download and install its own updates.
 func SelfUpdate() bool { return true }
 
 func assetFor(version string, k Kind) string {

@@ -8,7 +8,6 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
-// Name is how the system calls its own sign-in check.
 const Name = "Fingerprint"
 
 const (
@@ -21,7 +20,6 @@ const (
 	noMatch       = "verify-no-match"
 )
 
-// device returns fprintd's default reader, when there is one.
 func device(conn *dbus.Conn) (dbus.BusObject, bool) {
 	var path dbus.ObjectPath
 
@@ -32,7 +30,6 @@ func device(conn *dbus.Conn) (dbus.BusObject, bool) {
 	return conn.Object(fprint, path), true
 }
 
-// Available reports whether fprintd has a reader with at least one enrolled finger for this user.
 func Available() bool {
 	conn, err := dbus.ConnectSystemBus()
 
@@ -52,7 +49,6 @@ func Available() bool {
 	return dev.Call(deviceIface+".ListEnrolledFingers", 0, "").Store(&fingers) == nil && len(fingers) > 0
 }
 
-// Verify asks for a fingerprint through fprintd. The reader has no window, so hwnd is unused.
 func Verify(hwnd uintptr, message string) error {
 	conn, err := dbus.ConnectSystemBus()
 

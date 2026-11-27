@@ -28,8 +28,6 @@ var wayland struct {
 	drop    func([]string)
 }
 
-// EnableWayland receives files dropped on the Wayland surface through a data device of
-// Boreal's own, since Gio's ignores drops.
 func EnableWayland(display, surface unsafe.Pointer, onDrop func(paths []string), onHover func(over bool)) {
 	if display == nil || surface == nil {
 		return

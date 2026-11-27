@@ -19,7 +19,6 @@ var (
 	conn *dbus.Conn
 )
 
-// Locked reads logind's LockedHint, which desktop lock screens set while the session is locked.
 func Locked() bool {
 	mu.Lock()
 	defer mu.Unlock()

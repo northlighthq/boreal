@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	// Command alone is the macOS shortcut modifier; Ctrl+Shift stays for muscle memory.
 	Command = key.ModCommand
 	linkMod = key.ModCommand
 )

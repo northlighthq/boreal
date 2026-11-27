@@ -1,6 +1,5 @@
 package webauthn
 
-
 type Request struct {
 	RPID       string
 	ClientData []byte

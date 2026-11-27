@@ -43,8 +43,7 @@ import (
 )
 
 const (
-	bundleID = "io.github.borealssh.boreal"
-	// Terminal.app is macOS's own handler for ssh:// links.
+	bundleID   = "io.github.borealssh.boreal"
 	fallbackID = "com.apple.Terminal"
 )
 

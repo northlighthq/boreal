@@ -81,7 +81,6 @@ static void pl_dev_enter(void *data, struct wl_data_device *dev, uint32_t serial
 static void pl_dev_leave(void *data, struct wl_data_device *dev) {
 	borealDragHover(0);
 
-	// After a drop, the offer is handed to Go and released there.
 	if (pl_current != NULL) {
 		pl_destroy_offer(pl_current);
 		pl_current = NULL;
@@ -110,7 +109,6 @@ static void pl_dev_drop(void *data, struct wl_data_device *dev) {
 }
 
 static void pl_dev_selection(void *data, struct wl_data_device *dev, struct wl_data_offer *offer) {
-	// Gio handles the clipboard through its own data device.
 	if (offer != NULL && offer != pl_current) {
 		pl_destroy_offer(offer);
 	}
@@ -141,8 +139,6 @@ static const struct wl_registry_listener pl_registry_listener = {
 	.global_remove = pl_global_remove,
 };
 
-// borealWaylandSetup binds a seat and a data device of Boreal's own on a private queue.
-// It returns 0 when drops can be received.
 int borealWaylandSetup(uintptr_t display, uintptr_t surface) {
 	struct wl_display *d = (struct wl_display *)display;
 	pl_surface = (struct wl_surface *)surface;
@@ -164,19 +160,16 @@ int borealWaylandSetup(uintptr_t display, uintptr_t surface) {
 	return 0;
 }
 
-// borealWaylandDispatch blocks handling Boreal's queue; it returns when the connection fails.
 void borealWaylandDispatch(uintptr_t display) {
 	while (wl_display_dispatch_queue((struct wl_display *)display, pl_queue) >= 0) {
 	}
 }
 
-// borealWaylandReceive asks for the dropped URI list on fd.
 void borealWaylandReceive(uintptr_t display, uintptr_t offer, int fd) {
 	wl_data_offer_receive((struct wl_data_offer *)offer, URI_LIST, fd);
 	wl_display_flush((struct wl_display *)display);
 }
 
-// borealWaylandFinish tells the source the drop is done and frees the offer.
 void borealWaylandFinish(uintptr_t display, uintptr_t offer) {
 	struct wl_data_offer *o = (struct wl_data_offer *)offer;
 
