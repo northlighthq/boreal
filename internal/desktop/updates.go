@@ -9,14 +9,17 @@ import (
 
 	"gioui.org/io/system"
 
+	"github.com/northlighthq/boreal/internal/core/config"
 	"github.com/northlighthq/boreal/internal/core/update"
 	"github.com/northlighthq/boreal/internal/core/version"
 	"github.com/northlighthq/boreal/internal/desktop/base"
 )
 
 const (
-	updateDelay = 20 * time.Second
-	updateEvery = 24 * time.Hour
+	updateDelay  = 20 * time.Second
+	updateEvery  = 24 * time.Hour
+	cacheFolder  = "Boreal"
+	updateFolder = "update"
 )
 
 type updater struct {
@@ -30,7 +33,14 @@ type updater struct {
 }
 
 func updateDir() string {
-	return filepath.Join(os.TempDir(), "boreal-update")
+	cache, err := os.UserCacheDir()
+
+	if err != nil {
+		dir, _ := config.Dir()
+		return filepath.Join(dir, updateFolder)
+	}
+
+	return filepath.Join(cache, cacheFolder, updateFolder)
 }
 
 func (a *App) startUpdates() {
