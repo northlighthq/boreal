@@ -10,7 +10,7 @@ All notable changes to Boreal (formerly Platty) are listed here. Versions follow
 - Locking the Mac or the Linux session (through logind) can lock Boreal too.
 - Boreal can open `ssh://` and `sftp://` links on macOS and Linux. Turn it on in Settings, as on Windows.
 - Output triggers can play a sound on macOS and Linux.
-- On Linux with Wayland, files dropped on an SSH session upload via SFTP.
+- On Linux, with Wayland or X11, files dropped on an SSH session upload via SFTP.
 - On macOS the app and terminal shortcuts also work with ⌘ (⌘T, ⌘W, ⌘C, ⌘V, ⌘F, ⌘, …), ⌘-click opens links and shortcuts are shown with Mac symbols.
 - The Linux AppImage downloads and installs its own updates. On macOS, updating opens the release page.
 

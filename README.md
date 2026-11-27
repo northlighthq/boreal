@@ -84,7 +84,7 @@ still missing on each system.
 | Trigger sounds | ✓ | ✓ | libcanberra, PulseAudio, PipeWire or ALSA |
 | App shortcuts | Ctrl+Shift | ⌘ or Ctrl+Shift | Ctrl+Shift |
 | Updates from inside Boreal | ✓ | Opens the release page | AppImage |
-| Drop files to upload via SFTP | ✓ | ✓ | Wayland (X11: Upload button) |
+| Drop files to upload via SFTP | ✓ | ✓ | ✓ (Wayland and X11) |
 | Drag files out of SFTP | ✓ | ✓ (file promises) | — |
 | FIDO keys | Windows WebAuthn | Through an SSH agent | Through an SSH agent |
 
