@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	Supported        = true
 	currentServer    = 0
 	currentSession   = 0xffffffff
 	wtsSessionInfoEx = 25
