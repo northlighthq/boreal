@@ -294,8 +294,30 @@ int borealX11Setup(unsigned long target) {
 	return 0;
 }
 
+static Display *pl_query_dpy;
+
+static int pl_button_held(void) {
+	if (pl_query_dpy == NULL) {
+		pl_query_dpy = XOpenDisplay(NULL);
+	}
+
+	if (pl_query_dpy == NULL) {
+		return 1;
+	}
+
+	Window root, child;
+	int rootX, rootY, localX, localY;
+	unsigned int mask;
+
+	if (!XQueryPointer(pl_query_dpy, DefaultRootWindow(pl_query_dpy), &root, &child, &rootX, &rootY, &localX, &localY, &mask)) {
+		return 1;
+	}
+
+	return (mask & Button1Mask) != 0;
+}
+
 int borealX11StartDrag(void) {
-	if (pl_wake[1] < 0) {
+	if (pl_wake[1] < 0 || !pl_button_held()) {
 		return -1;
 	}
 
