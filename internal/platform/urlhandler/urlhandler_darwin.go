@@ -49,7 +49,7 @@ const (
 
 var schemes = []string{"ssh", "sftp"}
 
-var errNoBundle = errors.New("links can only be registered when Boreal runs from Boreal.app")
+var errNoBundle = errors.New("Links can only be registered when Boreal runs from Boreal.app")
 
 func Registered() bool {
 	for _, s := range schemes {
@@ -78,7 +78,7 @@ func Set(enabled bool) error {
 				return fmt.Errorf("%w (status %d)", errNoBundle, st)
 			}
 
-			return fmt.Errorf("couldn't release %s:// links (status %d)", s, st)
+			return fmt.Errorf("urlhandler: release %s:// links: status %d", s, st)
 		}
 	}
 

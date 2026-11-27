@@ -3,18 +3,29 @@
 package urlhandler
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-const desktopFile = "boreal-links.desktop"
+const (
+	desktopFile  = "boreal-links.desktop"
+	schemePrefix = "x-scheme-handler/"
+	xdgMime      = "xdg-mime"
+	updateDB     = "update-desktop-database"
+	appImageEnv  = "APPIMAGE"
+	dataHomeEnv  = "XDG_DATA_HOME"
+)
+
+var errNoXdgMime = errors.New("Boreal needs xdg-mime (from xdg-utils) to open links")
 
 var schemes = []string{"ssh", "sftp"}
 
 func executable() (string, error) {
-	if p := os.Getenv("APPIMAGE"); p != "" {
+	if p := os.Getenv(appImageEnv); p != "" {
 		return p, nil
 	}
 
@@ -28,7 +39,7 @@ func executable() (string, error) {
 }
 
 func applicationsDir() (string, error) {
-	data := os.Getenv("XDG_DATA_HOME")
+	data := os.Getenv(dataHomeEnv)
 
 	if data == "" {
 		home, err := os.UserHomeDir()
@@ -63,7 +74,7 @@ func Registered() bool {
 	}
 
 	for _, s := range schemes {
-		out, err := exec.Command("xdg-mime", "query", "default", "x-scheme-handler/"+s).Output()
+		out, err := exec.Command(xdgMime, "query", "default", schemePrefix+s).Output()
 
 		if err != nil || strings.TrimSpace(string(out)) != desktopFile {
 			return false
@@ -77,30 +88,34 @@ func Set(enabled bool) error {
 	dir, err := applicationsDir()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("urlhandler: data dir: %w", err)
 	}
 
 	path := filepath.Join(dir, desktopFile)
 
 	if !enabled {
 		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-			return err
+			return fmt.Errorf("urlhandler: remove: %w", err)
 		}
 
 		refresh(dir)
 		return nil
 	}
 
+	if _, err := exec.LookPath(xdgMime); err != nil {
+		return errNoXdgMime
+	}
+
 	exe, err := executable()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("urlhandler: executable: %w", err)
 	}
 
 	mimes := make([]string, len(schemes))
 
 	for i, s := range schemes {
-		mimes[i] = "x-scheme-handler/" + s
+		mimes[i] = schemePrefix + s
 	}
 
 	entry := "[Desktop Entry]\n" +
@@ -114,20 +129,24 @@ func Set(enabled bool) error {
 		"MimeType=" + strings.Join(mimes, ";") + ";\n"
 
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+		return fmt.Errorf("urlhandler: create dir: %w", err)
 	}
 
 	if err := os.WriteFile(path, []byte(entry), 0o644); err != nil {
-		return err
+		return fmt.Errorf("urlhandler: write entry: %w", err)
 	}
 
 	refresh(dir)
 
-	return exec.Command("xdg-mime", append([]string{"default", desktopFile}, mimes...)...).Run()
+	if err := exec.Command(xdgMime, append([]string{"default", desktopFile}, mimes...)...).Run(); err != nil {
+		return fmt.Errorf("urlhandler: set default: %w", err)
+	}
+
+	return nil
 }
 
 func refresh(dir string) {
-	if _, err := exec.LookPath("update-desktop-database"); err == nil {
-		exec.Command("update-desktop-database", dir).Run()
+	if _, err := exec.LookPath(updateDB); err == nil {
+		exec.Command(updateDB, dir).Run()
 	}
 }

@@ -4,11 +4,14 @@ package update
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"runtime"
 )
+
+const stagedSuffix = ".new"
 
 var errNotAppImage = errors.New("update: only the AppImage can update itself")
 
@@ -46,16 +49,16 @@ func Prepare(path string, k Kind) error {
 	in, err := os.Open(path)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("update: open download: %w", err)
 	}
 
 	defer in.Close()
 
-	dst := target + ".new"
+	dst := target + stagedSuffix
 	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o755)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("update: stage: %w", err)
 	}
 
 	_, err = io.Copy(out, io.LimitReader(in, maxAsset))
@@ -66,9 +69,10 @@ func Prepare(path string, k Kind) error {
 
 	if err != nil {
 		os.Remove(dst)
+		return fmt.Errorf("update: stage: %w", err)
 	}
 
-	return err
+	return nil
 }
 
 func Launch(path string, k Kind) error {
@@ -78,8 +82,8 @@ func Launch(path string, k Kind) error {
 		return errNotAppImage
 	}
 
-	if err := os.Rename(target+".new", target); err != nil {
-		return err
+	if err := os.Rename(target+stagedSuffix, target); err != nil {
+		return fmt.Errorf("update: swap: %w", err)
 	}
 
 	return exec.Command(target).Start()
@@ -87,7 +91,7 @@ func Launch(path string, k Kind) error {
 
 func Cleanup(dir string) {
 	if target := appImage(); target != "" {
-		os.Remove(target + ".new")
+		os.Remove(target + stagedSuffix)
 	}
 
 	os.RemoveAll(dir)

@@ -18,6 +18,8 @@ const (
 	verifyTimeout = 30 * time.Second
 	matched       = "verify-match"
 	noMatch       = "verify-no-match"
+	verifyStatus  = "VerifyStatus"
+	anyFinger     = "any"
 )
 
 func device(conn *dbus.Conn) (dbus.BusObject, bool) {
@@ -70,14 +72,14 @@ func Verify(hwnd uintptr, message string) error {
 
 	defer dev.Call(deviceIface+".Release", 0)
 
-	if err := conn.AddMatchSignal(dbus.WithMatchObjectPath(dev.Path()), dbus.WithMatchInterface(deviceIface), dbus.WithMatchMember("VerifyStatus")); err != nil {
+	if err := conn.AddMatchSignal(dbus.WithMatchObjectPath(dev.Path()), dbus.WithMatchInterface(deviceIface), dbus.WithMatchMember(verifyStatus)); err != nil {
 		return ErrUnavailable
 	}
 
 	signals := make(chan *dbus.Signal, 8)
 	conn.Signal(signals)
 
-	if dev.Call(deviceIface+".VerifyStart", 0, "any").Err != nil {
+	if dev.Call(deviceIface+".VerifyStart", 0, anyFinger).Err != nil {
 		return ErrUnavailable
 	}
 
@@ -90,7 +92,7 @@ func Verify(hwnd uintptr, message string) error {
 		case <-timeout:
 			return ErrCanceled
 		case s := <-signals:
-			if s == nil || s.Name != deviceIface+".VerifyStatus" || len(s.Body) < 2 {
+			if s == nil || s.Name != deviceIface+"."+verifyStatus || len(s.Body) < 2 {
 				continue
 			}
 
